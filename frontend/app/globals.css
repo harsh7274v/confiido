@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --surface: #f9fafb;
+  --surface-light: #ffffff;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* Remove any red outlines or focus rings that might appear */
+* {
+  outline: none !important;
+}
+
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove any default browser focus styles - GLOBAL OVERRIDE */
+*:focus,
+*:focus-visible,
+*:focus-within,
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus,
+div:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* Custom scrollbar with blue theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+}
+
+/* Remove any red debugging styles */
+.debug,
+.debug * {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Ensure no red elements appear on click */
+*::selection {
+  background-color: #2563eb;
+  color: white;
+}
+
+*::-moz-selection {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* Smooth transitions */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Completely remove focus styles */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Override all Tailwind focus classes */
+.focus\:ring-2:focus,
+.focus\:ring-blue-500:focus,
+.focus\:ring-blue-600:focus,
+.focus\:outline-none:focus,
+.focus\:border-transparent:focus,
+.focus\:border-blue-500:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-color: transparent !important;
+}
+
+/* Button hover effects */
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Card hover effects */
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
