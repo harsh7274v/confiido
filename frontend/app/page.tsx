@@ -59,71 +59,71 @@ export default function Home() {
       avatar: "SC",
       verified: true
     },
-    {
-      id: 2,
-      name: "Marcus Rodriguez",
-      title: "Tech Startup Advisor",
-      company: "Microsoft",
-      expertise: "Startup Growth, Fundraising",
-      rating: 4.8,
-      reviews: 89,
-      price: "$200",
-      duration: "45 min",
-      avatar: "MR",
-      verified: true
-    },
-    {
-      id: 3,
-      name: "Dr. Emily Watson",
-      title: "Career Development Coach",
-      company: "Self-employed",
-      expertise: "Career Transition, Leadership",
-      rating: 4.9,
-      reviews: 156,
-      price: "$120",
-      duration: "30 min",
-      avatar: "EW",
-      verified: true
-    },
-    {
-      id: 4,
-      name: "Alex Kumar",
-      title: "Digital Marketing Expert",
-      company: "Meta",
-      expertise: "Growth Marketing, SEO",
-      rating: 4.7,
-      reviews: 203,
-      price: "$100",
-      duration: "30 min",
-      avatar: "AK",
-      verified: true
-    },
-    {
-      id: 5,
-      name: "Lisa Wang",
-      title: "UX Designer",
-      company: "Apple",
-      expertise: "UI/UX Design, User Research",
-      rating: 4.6,
-      reviews: 78,
-      price: "$180",
-      duration: "60 min",
-      avatar: "LW",
-      verified: true
-    },
-    {
-      id: 6,
-      name: "David Kim",
-      title: "Financial Advisor",
-      company: "Morgan Stanley",
-      expertise: "Investment Planning, Retirement",
-      rating: 4.9,
-      reviews: 203,
-      price: "$250",
-      duration: "90 min",
-      avatar: "DK",
-      verified: true
-    }
+    // {
+    //   id: 2,
+    //   name: "Ajatika Singh",
+    //   title: "Tech Startup Advisor",
+    //   company: "Microsoft",
+    //   expertise: "Startup Growth, Fundraising",
+    //   rating: 4.8,
+    //   reviews: 89,
+    //   price: "$200",
+    //   duration: "45 min",
+    //   avatar: "MR",
+    //   verified: true
+    // },
+    // {
+    //   id: 3,
+    //   name: "Dr. Emily Watson",
+    //   title: "Career Development Coach",
+    //   company: "Self-employed",
+    //   expertise: "Career Transition, Leadership",
+    //   rating: 4.9,
+    //   reviews: 156,
+    //   price: "$120",
+    //   duration: "30 min",
+    //   avatar: "EW",
+    //   verified: true
+    // },
+    // {
+    //   id: 4,
+    //   name: "Alex Kumar",
+    //   title: "Digital Marketing Expert",
+    //   company: "Meta",
+    //   expertise: "Growth Marketing, SEO",
+    //   rating: 4.7,
+    //   reviews: 203,
+    //   price: "$100",
+    //   duration: "30 min",
+    //   avatar: "AK",
+    //   verified: true
+    // },
+    // {
+    //   id: 5,
+    //   name: "Lisa Wang",
+    //   title: "UX Designer",
+    //   company: "Apple",
+    //   expertise: "UI/UX Design, User Research",
+    //   rating: 4.6,
+    //   reviews: 78,
+    //   price: "$180",
+    //   duration: "60 min",
+    //   avatar: "LW",
+    //   verified: true
+    // },
+    // {
+    //   id: 6,
+    //   name: "David Kim",
+    //   title: "Financial Advisor",
+    //   company: "Morgan Stanley",
+    //   expertise: "Investment Planning, Retirement",
+    //   rating: 4.9,
+    //   reviews: 203,
+    //   price: "$250",
+    //   duration: "90 min",
+    //   avatar: "DK",
+    //   verified: true
+    // }
   ];
 
   const testimonials = [
@@ -190,9 +190,7 @@ export default function Home() {
   ];
 
   const categories = [
-    "Career", "Consulting", "Content", "Cybersecurity", "Data & AI", "Design", 
-    "Finance", "HR", "Law", "Marketing", "Mental Health", "Product", "Software", 
-    "Study Abroad", "Best Selling", "Supply Chain", "Others"
+    "Career Guidance", "Public Speaking", "Debate", "Mentorship", "Others"
   ];
 
   return (
@@ -208,9 +206,9 @@ export default function Home() {
               <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
                 Explore Mentors
               </Link>
-              <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
+              {/* <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
                 AI Mentors
-              </Link>
+              </Link> */}
               <Link href="#features" className="text-gray-700 hover:text-blue-600 transition-colors">
                 Success Stories
               </Link>
@@ -232,7 +230,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-6xl font-bold tracking-tight sm:text-7xl mb-6">
-              <span className="text-gray-900">SPEAK BOLDLY</span>
+              <span className="text-gray-900">Speak Confidently</span>
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Lead Confidently</span>
             </h1>
@@ -281,7 +279,7 @@ export default function Home() {
           
           {/* Mentors Grid */}
           <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Mentor 1 - Sarah Chen */}
+            {/* Mentor 1 - Megha Upadhyay */}
             <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
               <div className="flex flex-col items-center text-center mb-6">
                 <div className="relative mb-4">
@@ -294,9 +292,9 @@ export default function Home() {
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Sarah Chen</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Megha Upadhyay</h3>
                 <p className="text-blue-600 font-medium mb-1">Public Speaking Coach</p>
-                <p className="text-gray-500 text-sm mb-4">10+ years experience • Google Alumni</p>
+                <p className="text-gray-500 text-sm mb-4">4+ years experience • ABP News Alumni</p>
                 
                 {/* Video Introduction */}
                 <div className="w-full mb-6">
@@ -307,7 +305,7 @@ export default function Home() {
                           <path d="M8 5v10l8-5-8-5z"/>
                         </svg>
                       </div>
-                      <p className="text-sm font-medium">Watch Sarah's Introduction</p>
+                      <p className="text-sm font-medium">Watch Megha's Introduction</p>
                       <p className="text-xs text-gray-400 mt-1">2 min video</p>
                       <button className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                         Play Video
@@ -321,7 +319,7 @@ export default function Home() {
               <div className="space-y-4 text-left">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-gray-700 text-sm leading-relaxed italic">
-                    "I used to be terrified of speaking in meetings. Now I help executives find their authentic voice and speak with confidence."
+                    "I used to be uncomfortable speaking in public. Now I help students/professional find their authentic voice and speak with confidence."
                   </p>
                 </div>
                 
@@ -347,12 +345,12 @@ export default function Home() {
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span className="flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                    <span> Rs 500/session</span>
                       4.9 (127 reviews)
                     </span>
-                    <span>$150/session</span>
                   </div>
                   <button className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors">
-                    Book Sarah
+                    Book Megha
                   </button>
                 </div>
               </div>
@@ -498,7 +496,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Love & Praise by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">The Mentees</span></h2>
-            <p className="text-xl text-gray-600">Get inspired by the real-life experiences of our mentee and their journey to success with Preplaced.</p>
+            <p className="text-xl text-gray-600">Get inspired by the real-life experiences of our students and their journey to success with Confiido.</p>
           </div>
 
           {/* Black Frame Container for Continuous Scrolling */}
@@ -837,9 +835,8 @@ export default function Home() {
               {openFaq === 0 && (
                 <div className="px-6 pb-6">
                   <p className="text-gray-700 leading-relaxed ml-11">
-                    Yes, we offer a satisfaction guarantee. If you're not completely satisfied with your coaching session, 
-                    you can request a full refund within 24 hours of your session. We're committed to ensuring you have 
-                    a valuable experience and will work with you to address any concerns.
+                    We truly value your trust in booking a session with us. Since each session is personalized and time is reserved exclusively for you, all bookings are non-refundable.
+                    However, if you’re unable to attend, we’ll be happy to help you reschedule (subject to availability).
                   </p>
                 </div>
               )}
@@ -899,9 +896,8 @@ export default function Home() {
               {openFaq === 2 && (
                 <div className="px-6 pb-6">
                   <p className="text-gray-700 leading-relaxed ml-11">
-                    Our primary coaching sessions are conducted in English. However, we have coaches who can conduct 
-                    sessions in multiple languages including Hindi, Spanish, and French. When booking your session, 
-                    you can specify your preferred language, and we'll match you with an appropriate coach.
+                    Our mentors are fluent in both English and Hindi.
+                    The language of the session will be based entirely on your comfort and preference, so you can learn in the way that feels most natural to you.
                   </p>
                 </div>
               )}
@@ -931,7 +927,7 @@ export default function Home() {
                 <div className="px-6 pb-6">
                   <p className="text-gray-700 leading-relaxed ml-11">
                     Absolutely! Our coaching is especially beneficial for introverts. We understand that introverts often 
-                    have unique challenges with public speaking, and our coaches are specially trained to work with different 
+                    have unique challenges with public speaking, and our mentors are specially trained to work with different 
                     personality types. We focus on building confidence gradually, leveraging your natural strengths, and 
                     providing strategies that work specifically for introverted communicators.
                   </p>
