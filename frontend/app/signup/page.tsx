@@ -108,9 +108,9 @@ export default function Signup() {
 
       setSuccess('Account created successfully! Redirecting...');
       
-      // Navigate to dashboard
+      // Redirect to login page after signup
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/login');
       }, 1500);
       
     } catch (error: any) {

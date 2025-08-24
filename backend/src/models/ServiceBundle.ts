@@ -371,5 +371,5 @@ bundlePurchaseSchema.index({ userId: 1 });
 bundlePurchaseSchema.index({ expertId: 1 });
 bundlePurchaseSchema.index({ paymentStatus: 1 });
 
-export const ServiceBundle = mongoose.model<IServiceBundle>('ServiceBundle', serviceBundleSchema);
-export const BundlePurchase = mongoose.model<IBundlePurchase>('BundlePurchase', bundlePurchaseSchema);
+export const ServiceBundle = mongoose.model<IServiceBundle>('ServiceBundle', serviceBundleSchema, 'servicebundles');
+export const BundlePurchase = mongoose.model<IBundlePurchase>('BundlePurchase', bundlePurchaseSchema, 'bundlepurchases');

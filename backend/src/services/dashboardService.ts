@@ -12,7 +12,6 @@ interface DashboardData {
     fullName: string;
     handle: string;
     email: string;
-    avatar: string;
     profileUrl: string;
     userType: 'expert' | 'seeker';
   };
@@ -164,9 +163,8 @@ export const getDashboardData = async (req: Request, res: Response) => {
       .limit(3);
 
       inspiration = topExperts.map(expert => ({
-        id: expert._id.toString(),
-        name: `${expert.firstName} ${expert.lastName}`,
-        avatar: expert.avatar
+  id: expert._id.toString(),
+  name: `${expert.firstName} ${expert.lastName}`
       }));
     }
 
@@ -177,7 +175,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
         fullName: `${user.firstName} ${user.lastName}`,
         handle: user.email.split('@')[0], // Use email prefix as handle for now
         email: user.email,
-        avatar: user.avatar || '',
+  // avatar/profile picture removed
         profileUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile/${user._id}`,
         userType: user.isExpert ? 'expert' : 'seeker'
       },

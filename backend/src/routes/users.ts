@@ -2,8 +2,47 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
 import User from '../models/User';
+import UserData from '../models/UserData';
 
 const router = express.Router();
+
+// Test endpoint to verify backend is working
+router.get('/test', (req, res) => {
+  res.json({ message: 'Users API is working!' });
+});
+
+// @route   GET /api/users/userdata
+// @desc    Get current user's profile fields (from users collection)
+// @access  Private
+router.get('/userdata', protect, async (req, res, next) => {
+  try {
+    console.log('=== GET USERDATA DEBUG ===');
+    console.log('User ID:', req.user._id);
+    
+    const user = await User.findById(req.user._id).select('-password');
+    console.log('Found user:', JSON.stringify(user, null, 2));
+    
+    const userData = user ? {
+      username: user.username || '',
+      password: '',
+      dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0,10) : '',
+      profession: user.profession || '',
+      phoneNumber: user.phoneNumber || user.phone || '',
+      whatsappNumber: user.whatsappNumber || '',
+      linkedin: user.socialLinks?.linkedin || ''
+    } : null;
+    
+    console.log('Returning userData:', JSON.stringify(userData, null, 2));
+    
+    res.json({
+      success: true,
+      data: { userdata: userData }
+    });
+  } catch (error) {
+    console.error('Error in userdata endpoint:', error);
+    next(error);
+  }
+});
 
 // @route   GET /api/users/profile
 // @desc    Get current user profile
@@ -66,7 +105,47 @@ router.put('/profile', protect, [
   body('socialLinks.website')
     .optional()
     .isURL()
-    .withMessage('Please enter a valid website URL')
+    .withMessage('Please enter a valid website URL'),
+  // Add validation for userdata fields
+  body('userdata.username')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Username cannot exceed 100 characters'),
+  body('userdata.gender')
+    .optional()
+    .isIn(['male', 'female', 'prefer-not-to-say'])
+    .withMessage('Gender must be male, female, or prefer-not-to-say'),
+  body('userdata.dateOfBirth')
+    .optional()
+    .custom((value) => {
+      if (value === '' || value === null || value === undefined) {
+        return true; // Allow empty values
+      }
+      const date = new Date(value);
+      return !isNaN(date.getTime());
+    })
+    .withMessage('Date of birth must be a valid date'),
+  body('userdata.profession')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Profession cannot exceed 100 characters'),
+  body('userdata.phoneNumber')
+    .optional()
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('Phone number cannot exceed 20 characters'),
+  body('userdata.whatsappNumber')
+    .optional()
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('WhatsApp number cannot exceed 20 characters'),
+  body('userdata.linkedin')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('LinkedIn URL cannot exceed 500 characters')
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -77,16 +156,106 @@ router.put('/profile', protect, [
       });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      req.body,
-      { new: true, runValidators: true }
-    ).select('-password');
+    // Save edit profile fields directly into users collection
+    if (req.body.userdata) {
+      try {
+        const profile = req.body.userdata;
+        console.log('=== PROFILE UPDATE DEBUG ===');
+        console.log('Received profile data:', JSON.stringify(profile, null, 2));
+        console.log('User ID from request:', req.user._id);
+        console.log('User object:', JSON.stringify(req.user, null, 2));
+        
+        const update: any = {};
+        
+        // Handle each field properly - allow empty strings but not undefined
+        if (profile.username !== undefined) {
+          update.username = profile.username;
+          console.log('Setting username:', profile.username);
+        }
+        if (profile.gender !== undefined) {
+          update.gender = profile.gender;
+          console.log('Setting gender:', profile.gender);
+        }
+        if (profile.dateOfBirth !== undefined && profile.dateOfBirth !== '') {
+          update.dateOfBirth = new Date(profile.dateOfBirth);
+          console.log('Setting dateOfBirth:', profile.dateOfBirth);
+        } else if (profile.dateOfBirth === '') {
+          update.dateOfBirth = null;
+          console.log('Setting dateOfBirth to null');
+        }
+        if (profile.profession !== undefined) {
+          update.profession = profile.profession;
+          console.log('Setting profession:', profile.profession);
+        }
+        if (profile.phoneNumber !== undefined) {
+          update.phoneNumber = profile.phoneNumber;
+          console.log('Setting phoneNumber:', profile.phoneNumber);
+        }
+        if (profile.whatsappNumber !== undefined) {
+          update.whatsappNumber = profile.whatsappNumber;
+          console.log('Setting whatsappNumber:', profile.whatsappNumber);
+        }
+        if (profile.user_id !== undefined) {
+          update.user_id = profile.user_id;
+          console.log('Setting user_id:', profile.user_id);
+        }
+        if (profile.linkedin !== undefined) {
+          update.socialLinks = {
+            ...(req.user?.socialLinks || {}),
+            linkedin: profile.linkedin
+          };
+          console.log('Setting linkedin:', profile.linkedin);
+        }
+        
+        console.log('Final update object:', JSON.stringify(update, null, 2));
+        console.log('User ID for update:', req.user._id);
+        
+        // First, let's check if the user exists
+        const existingUser = await User.findById(req.user._id);
+        console.log('Existing user before update:', JSON.stringify(existingUser, null, 2));
+        
+        if (!existingUser) {
+          throw new Error('User not found in database');
+        }
+        
+        const updatedUser = await User.findByIdAndUpdate(
+          req.user._id, 
+          update, 
+          { new: true, runValidators: true }
+        );
+        
+        console.log('Updated user result:', JSON.stringify(updatedUser, null, 2));
+        
+        if (!updatedUser) {
+          throw new Error('User not found or update failed');
+        }
+        
+        console.log('=== PROFILE UPDATE SUCCESS ===');
+        
+        // Return the updated user data immediately
+        return res.json({
+          success: true,
+          message: 'Profile updated successfully',
+          data: { user: updatedUser }
+        });
+        
+      } catch (err) {
+        console.error('=== PROFILE UPDATE ERROR ===');
+        console.error('Error saving User edit profile fields:', err);
+        console.error('Error stack:', err.stack);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update profile',
+          details: err.message
+        });
+      }
+    }
 
+    // If no userdata was provided, return success
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user: updatedUser }
+      data: { user: req.user }
     });
   } catch (error) {
     next(error);

@@ -71,6 +71,12 @@ if (process.env['NODE_ENV'] === 'development') {
   app.use(morgan('dev'));
 }
 
+// Debug logging middleware
+app.use((req, res, next) => {
+  console.log(`[DEBUG] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
@@ -126,4 +132,4 @@ const startServer = async () => {
 
 startServer();
 
-export default app; 
+export default app;

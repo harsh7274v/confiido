@@ -30,9 +30,7 @@ export const verifyFirebaseToken = async (
       if (existingUser) {
         // Link Firebase account to existing user
         existingUser.firebaseUid = decodedToken.uid;
-        if (decodedToken.picture && !existingUser.avatar) {
-          existingUser.avatar = decodedToken.picture;
-        }
+  // Avatar/profile picture logic removed
         existingUser.isVerified = true; // Firebase users are verified
         existingUser.lastLogin = new Date();
         await existingUser.save();
@@ -40,18 +38,52 @@ export const verifyFirebaseToken = async (
       } else {
         // Create new Firebase user
         const nameParts = decodedToken.name?.split(' ') || ['', ''];
-        user = new User({
-          firebaseUid: decodedToken.uid,
-          email: decodedToken.email,
-          name: decodedToken.name,
-          firstName: nameParts[0] || '',
-          lastName: nameParts.slice(1).join(' ') || '',
-          avatar: decodedToken.picture,
-          role: 'user',
-          isVerified: true, // Firebase users are verified
-          isActive: true,
-          lastLogin: new Date()
-        });
+          user = new User({
+            firebaseUid: decodedToken.uid,
+            email: decodedToken.email,
+            name: decodedToken.name,
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || '',
+            // Avatar/profile picture logic removed
+            role: 'user',
+            isVerified: true, // Firebase users are verified
+            isActive: true,
+            lastLogin: new Date(),
+            username: '',
+            password: 'firebase_dummy_password', // Not used for Firebase, but must be at least 8 chars
+            phone: '',
+            phoneNumber: '',
+            whatsappNumber: '',
+            dateOfBirth: null,
+            gender: 'prefer-not-to-say',
+            age: null,
+            category: 'student',
+            profession: '',
+            domain: '',
+            location: {
+              country: '',
+              city: '',
+              timezone: 'UTC'
+            },
+            bio: '',
+            user_id: null,
+            preferences: {
+              notifications: {
+                email: true,
+                push: true,
+                sms: false
+              },
+              privacy: {
+                profileVisibility: 'public',
+                showOnlineStatus: true
+              }
+            },
+            socialLinks: {
+              linkedin: '',
+              twitter: '',
+              website: ''
+            }
+          });
         await user.save();
       }
     } else {

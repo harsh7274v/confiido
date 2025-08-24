@@ -163,6 +163,11 @@ export default function Login() {
                 </Link>
               </div>
             </div>
+            <div className="text-center mt-2">
+              <Link href="/otp" className="text-green-600 hover:underline font-medium text-sm">
+                Login with OTP
+              </Link>
+            </div>
 
             <button
               type="submit"

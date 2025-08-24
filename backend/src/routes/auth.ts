@@ -1,11 +1,12 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import User from '../models/User';
+import OTP from '../models/OTP';
+import { sendOTPEmail } from '../services/mailer';
 import { AppError } from '../middleware/errorHandler';
 import { protect } from '../middleware/auth';
 import { verifyFirebaseToken } from '../middleware/firebaseAuth';
-import User from '../models/User';
 
 const router = express.Router();
 
@@ -14,6 +15,80 @@ const generateToken = (id: string): string => {
   // Simple token generation for development
   return `token_${id}_${Date.now()}`;
 };
+router.post('/request-otp', [
+  body('email').isEmail().withMessage('Please enter a valid email').normalizeEmail(),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { email } = req.body;
+  console.log('OTP request for email:', email);
+  const user = await User.findOne({ email });
+  console.log('User found:', user);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Remove previous OTPs
+    await OTP.deleteMany({ email });
+    // Save OTP
+    await OTP.create({ email, otp, expiresAt });
+    // Send OTP email
+    await sendOTPEmail(email, otp);
+    res.json({ success: true, message: 'OTP sent to email' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/auth/verify-otp
+// @desc    Verify OTP and login
+// @access  Public
+router.post('/verify-otp', [
+  body('email').isEmail().withMessage('Please enter a valid email').normalizeEmail(),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    const { email, otp } = req.body;
+    const otpDoc = await OTP.findOne({ email, otp });
+    if (!otpDoc || otpDoc.expiresAt < new Date()) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+    // OTP valid, delete it
+    await OTP.deleteMany({ email });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    // Generate token
+    const token = generateToken(user._id.toString());
+    res.json({
+      success: true,
+      message: 'OTP verified, login successful',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isExpert: user.isExpert,
+          isVerified: user.isVerified
+        },
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
@@ -84,6 +159,20 @@ router.post('/register', [
       });
     }
 
+    // Generate a unique 4-digit user_id
+    let user_id;
+    let tries = 0;
+    do {
+      user_id = Math.floor(1000 + Math.random() * 9000).toString();
+      // Check uniqueness
+      // eslint-disable-next-line no-await-in-loop
+      var existingId = await User.findOne({ user_id });
+      tries++;
+    } while (existingId && tries < 10);
+    if (existingId) {
+      return res.status(500).json({ success: false, error: 'Could not generate unique user_id. Please try again.' });
+    }
+
     // Prepare user data
     const userData: any = {
       email,
@@ -95,7 +184,9 @@ router.post('/register', [
       gender,
       isVerified: false,
       isActive: true,
-      role: 'user'
+      role: 'user',
+      user_id
+  // Avatar/profile picture logic removed
     };
 
     // Add additional profile data if provided
@@ -393,4 +484,4 @@ router.post('/reset-password', [
   }
 });
 
-export default router; 
+export default router;

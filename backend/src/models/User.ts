@@ -3,13 +3,17 @@ import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
   firebaseUid?: string;
+  user_id?: string; // Unique 4-digit user ID
+  username?: string;
   email: string;
   password?: string;
   firstName: string;
   lastName: string;
   name?: string; // For Firebase display name
-  avatar?: string;
+  // avatar/profile picture field removed
   phone?: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'non-binary' | 'prefer-not-to-say';
   age?: number;
@@ -49,6 +53,41 @@ export interface IUser extends Document {
 }
 
 const userSchema = new Schema<IUser>({
+  username: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Username cannot exceed 100 characters'],
+    default: null
+  },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+  profession: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Profession cannot exceed 100 characters'],
+    default: null
+  },
+  whatsappNumber: {
+    type: String,
+    trim: true,
+    maxlength: [20, 'WhatsApp number cannot exceed 20 characters'],
+    default: null
+  },
+  phoneNumber: {
+    type: String,
+    trim: true,
+    maxlength: [20, 'Phone number cannot exceed 20 characters'],
+    default: null
+  },
+  user_id: {
+    type: String,
+    unique: true,
+    minlength: 4,
+    maxlength: 4,
+    sparse: true // allow null for legacy users
+  },
   firebaseUid: {
     type: String,
     sparse: true, // Allow null/undefined values, but enforce uniqueness when present
@@ -77,7 +116,7 @@ const userSchema = new Schema<IUser>({
       return !this.name;
     },
     trim: true,
-    maxlength: [50, 'First name cannot exceed 50 characters']
+    maxlength: [50, 'First name cannot exceed 50 characters'],
   },
   lastName: {
     type: String,
@@ -86,23 +125,16 @@ const userSchema = new Schema<IUser>({
       return !this.name;
     },
     trim: true,
-    maxlength: [50, 'Last name cannot exceed 50 characters']
+    maxlength: [50, 'Last name cannot exceed 50 characters'],
   },
   name: {
     type: String,
     trim: true,
     maxlength: [100, 'Name cannot exceed 100 characters']
   },
-  avatar: {
-    type: String,
-    default: null
-  },
   phone: {
     type: String,
     trim: true
-  },
-  dateOfBirth: {
-    type: Date
   },
   gender: {
     type: String,
@@ -117,11 +149,6 @@ const userSchema = new Schema<IUser>({
     type: String,
     enum: ['student', 'working_professional'],
     trim: true
-  },
-  profession: {
-    type: String,
-    trim: true,
-    maxlength: [100, 'Profession cannot exceed 100 characters']
   },
   domain: {
     type: String,
@@ -239,4 +266,4 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model<IUser>('User', userSchema); 
+export default mongoose.model<IUser>('User', userSchema);
