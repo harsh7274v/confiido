@@ -109,6 +109,8 @@ app.use('/api/digital-products', digitalProductRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+import transactionsRoutes from './routes/transactions';
+app.use('/api/transactions', transactionsRoutes);
 
 // Error handling middleware
 app.use(notFound);

@@ -67,7 +67,7 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 animate-fadeIn" style={{ background: 'transparent' }}>
+        <div className="fixed inset-0 flex items-center justify-center z-50 animate-fadeIn pb-20 lg:pb-0" style={{ background: 'transparent' }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md sm:max-w-md relative p-4 sm:p-10 transition-all duration-300 overflow-hidden" style={{ maxHeight: '90vh' }}>
                 <button
                     className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-xl"

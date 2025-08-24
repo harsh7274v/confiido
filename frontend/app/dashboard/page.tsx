@@ -6,7 +6,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
-import MentorModal from '../components/ui/MentorModal';
+import TransactionsPage from '../transactions/page';
+import Sidebar from '../components/Sidebar';
 import {
   ArrowRight,
   CheckCircle2,
@@ -32,9 +33,17 @@ import {
   Zap,
   X,
 } from 'lucide-react';
-import { type DashboardData, type Goal, type SetupStep } from '../services/dashboardApi';
+import { type DashboardData, type SetupStep } from '../services/dashboardApi';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+
+// Define Goal type locally
+interface Goal {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: Date;
+}
 
 export default function DashboardPage() {
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
@@ -49,59 +58,11 @@ export default function DashboardPage() {
   const [showMessageToast, setShowMessageToast] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
-  const [transactionTab, setTransactionTab] = useState<'success' | 'failed'>('success');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions'>('dashboard');
 
-  // Sample transaction data
-  const successfulTransactions = [
-    {
-      id: '1',
-      title: 'Session Payment',
-      amount: 2500,
-      date: 'Today, 2:30 PM',
-      status: 'success'
-    },
-    {
-      id: '2',
-      title: 'Course Enrollment',
-      amount: 5000,
-      date: 'Yesterday, 10:15 AM',
-      status: 'success'
-    },
-    {
-      id: '3',
-      title: 'Consultation Fee',
-      amount: 1800,
-      date: '2 days ago, 4:45 PM',
-      status: 'success'
-    }
-  ];
 
-  const failedTransactions = [
-    {
-      id: '4',
-      title: 'Premium Course Payment',
-      amount: 8000,
-      date: 'Today, 11:20 AM',
-      status: 'failed',
-      reason: 'Insufficient funds'
-    },
-    {
-      id: '5',
-      title: 'Mentor Session Booking',
-      amount: 3000,
-      date: 'Yesterday, 3:15 PM',
-      status: 'failed',
-      reason: 'Card declined'
-    },
-    {
-      id: '6',
-      title: 'Workshop Registration',
-      amount: 1500,
-      date: '3 days ago, 9:30 AM',
-      status: 'failed',
-      reason: 'Network timeout'
-    }
-  ];
+
+
 
   // Mentor data
   const mentors = [
@@ -244,6 +205,11 @@ export default function DashboardPage() {
     fetchProfileData();
   }, [user]);
 
+  const handleProfileClick = () => {
+    setShowProfilePopup(true);
+    setCurrentView('dashboard');
+  };
+
   const handleSaveProfile = async (profile: ProfileData) => {
     // Check if we have any form of authentication
     const storedToken = localStorage.getItem('token');
@@ -293,6 +259,7 @@ export default function DashboardPage() {
   const handleMentorClick = (mentor: any) => {
     setSelectedMentor(mentor);
     setIsMentorModalOpen(true);
+    setCurrentView('dashboard');
   };
 
   const handleCloseMentorModal = () => {
@@ -389,7 +356,24 @@ export default function DashboardPage() {
         if (!isMounted) return;
         setData(mockData);
         setSetupSteps(mockData.setupSteps);
-        setGoals(mockData.goals);
+        
+        // Load goals from localStorage
+        const savedGoals = localStorage.getItem('userGoals');
+        if (savedGoals) {
+          try {
+            const parsedGoals = JSON.parse(savedGoals).map((goal: any) => ({
+              ...goal,
+              createdAt: new Date(goal.createdAt)
+            }));
+            setGoals(parsedGoals);
+          } catch (e) {
+            console.error('Error parsing saved goals:', e);
+            setGoals(mockData.goals);
+          }
+        } else {
+          setGoals(mockData.goals);
+        }
+        
         setError(null);
       } catch (e: any) {
         if (!isMounted) return;
@@ -424,15 +408,22 @@ export default function DashboardPage() {
     if (!newGoal.trim()) return;
     try {
       setSaving(true);
-      // TODO: Connect to backend when auth is properly set up
-      // const created = await dashboardApi.createGoal(newGoal.trim());
       const newGoalObj: Goal = {
         id: Date.now().toString(),
         text: newGoal.trim(),
         completed: false,
         createdAt: new Date()
       };
-      setGoals(prev => [newGoalObj, ...prev]);
+      
+      const updatedGoals = [newGoalObj, ...goals];
+      setGoals(updatedGoals);
+      
+      // Save to localStorage
+      localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
+        ...goal,
+        createdAt: goal.createdAt.toISOString()
+      }))));
+      
       setNewGoal('');
     } catch (e) {
       console.error(e);
@@ -443,9 +434,14 @@ export default function DashboardPage() {
 
   async function toggleGoal(goal: Goal) {
     try {
-      // TODO: Connect to backend when auth is properly set up
-      // const updated = await dashboardApi.updateGoal(goal.id, { completed: !goal.completed });
-      setGoals(prev => prev.map(g => g.id === goal.id ? { ...g, completed: !g.completed } : g));
+      const updatedGoals = goals.map(g => g.id === goal.id ? { ...g, completed: !g.completed } : g);
+      setGoals(updatedGoals);
+      
+      // Save to localStorage
+      localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
+        ...goal,
+        createdAt: goal.createdAt.toISOString()
+      }))));
     } catch (e) {
       console.error(e);
     }
@@ -453,13 +449,45 @@ export default function DashboardPage() {
 
   async function deleteGoal(goal: Goal) {
     try {
-      // TODO: Connect to backend when auth is properly set up
-      // await dashboardApi.deleteGoal(goal.id);
-      setGoals(prev => prev.filter(g => g.id !== goal.id));
+      const updatedGoals = goals.filter(g => g.id !== goal.id);
+      setGoals(updatedGoals);
+      
+      // Save to localStorage
+      localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
+        ...goal,
+        createdAt: goal.createdAt.toISOString()
+      }))));
     } catch (e) {
       console.error(e);
     }
   }
+
+  // Function to scroll to goals section
+  const scrollToGoals = () => {
+    setCurrentView('dashboard');
+    const goalsSection = document.getElementById('goals-section');
+    if (goalsSection) {
+      goalsSection.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      
+      // Add highlight effect
+      goalsSection.classList.add('ring-4', 'ring-purple-300', 'ring-opacity-50');
+      setTimeout(() => {
+        goalsSection.classList.remove('ring-4', 'ring-purple-300', 'ring-opacity-50');
+      }, 2000);
+    }
+  };
+
+  // Function to scroll to top of dashboard
+  const scrollToTop = () => {
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
+    setCurrentView('dashboard');
+  };
 
   // Show 'User' as default if no username is set, otherwise use username from users collection
   const userDisplayName = profileData?.username && profileData.username.trim() !== ''
@@ -489,33 +517,58 @@ export default function DashboardPage() {
         )}
       </>
     )}
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <div className="flex">
-        <main className="flex-1">
-            {/* Modern Header */}
-            <section className="relative overflow-hidden bg-gradient-to-r from-gray-50 to-gray-100 py-10 sm:py-5">
-              <div className="mx-auto max-w-2xl px-6 py-6 flex items-center justify-between bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 transition-all duration-500 hover:shadow-3xl">
-                <div className="flex flex-col items-start space-y-2">
+    <div className="min-h-screen bg-[#f5f5f5] grid-pattern">
+      <div className="flex h-full">
+        {/* Sidebar */}
+                <Sidebar
+          userName={userDisplayName}
+          onProfileClick={handleProfileClick}
+          onGoalsClick={() => scrollToGoals()}
+          onHomeClick={() => scrollToTop()}
+          onTransactionsClick={() => setCurrentView('transactions')}
+        />
+        
+        {/* Main content */}
+        <main className="flex-1 lg:ml-0 grid-pattern">
+          {currentView === 'transactions' ? (
+            <div className="w-full">
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back to Dashboard
+                </button>
+              </div>
+              <TransactionsPage />
+            </div>
+          ) : (
+            <>
+              {/* Modern Header */}
+              <section className="relative overflow-hidden bg-gray-100 py-6 sm:py-10 grid-pattern">
+              <div className="mx-auto max-w-2xl px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                <div className="flex flex-col items-start space-y-2 mb-4 sm:mb-0">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl shadow-lg">
+                    <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
                       <User className="h-5 w-5 text-white" />
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800 tracking-tight">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight">
                       Welcome back, <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
                     </h2>
                   </div>
-                  <span className="text-sm text-gray-600 font-medium ml-12">Ready to accelerate your career journey?</span>
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12">Ready to accelerate your career journey?</span>
                 </div>
-                <div className="ml-4">
+                <div className="self-end sm:ml-4">
                   <button
                     type="button"
                     className="focus:outline-none group"
-                    onClick={() => {
-                      setShowProfilePopup(true);
-                    }}
+                    onClick={handleProfileClick}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-300 shadow-2xl group-hover:scale-110 group-hover:shadow-3xl group-hover:border-gray-400 transition-all duration-300">
-                      <img src="https://api.dicebear.com/7.x/initials/svg?seed=User" alt="Default Profile" className="w-full h-full object-cover rounded-2xl" />
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-300 shadow-xl sm:shadow-2xl group-hover:scale-110 group-hover:shadow-2xl sm:group-hover:shadow-3xl group-hover:border-gray-400 transition-all duration-300">
+                      <img src="https://api.dicebear.com/7.x/initials/svg?seed=User" alt="Default Profile" className="w-full h-full object-cover rounded-xl sm:rounded-2xl" />
                     </div>
                   </button>
                 </div>
@@ -523,92 +576,92 @@ export default function DashboardPage() {
             </section>
 
             {/* Stats and Quick Actions */}
-            <section className="py-4">
-              <div className="max-w-7xl mx-auto px-2 lg:px-8 flex flex-col lg:flex-row gap-8 items-start">
-                {/* Left: Career Journey Cards */}
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Next in Your Career Journey</h2>
-                  <p className="text-gray-600 mb-8">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
-                  <div className="flex flex-col gap-6 items-start">
+            <section className="py-4 sm:py-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
+                {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
+                <div className="flex-1 order-2 lg:order-1">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Next in Your Career Journey</h2>
+                  <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
+                  <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-[220px] flex flex-col gap-3">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
+                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
                           <ChevronDown className="w-4 h-4 text-gray-400" />
                         </div>
-                        <span className="text-3xl">💡</span>
+                        <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-lg font-semibold text-gray-900">Not sure what direction to take?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2">Book a career exploration session</button>
+                      <div className="text-base sm:text-lg font-semibold text-gray-900">Not sure what direction to take?</div>
+                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Book a career exploration session</button>
                     </div>
                     {/* Card 2 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-[220px] flex flex-col gap-3 ml-10">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10">
                       <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
+                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
                           <ChevronDown className="w-4 h-4 text-gray-400" />
                         </div>
-                        <span className="text-3xl">🚲</span>
+                        <span className="text-2xl sm:text-3xl">🚲</span>
                       </div>
-                      <div className="text-lg font-semibold text-gray-900">Need help creating a strong first resume?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2">Resume review for freshers</button>
+                      <div className="text-base sm:text-lg font-semibold text-gray-900">Need help creating a strong first resume?</div>
+                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Resume review for freshers</button>
                     </div>
                     {/* Card 3 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-[220px] flex flex-col gap-3">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
+                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
                           <ChevronDown className="w-4 h-4 text-gray-400" />
                         </div>
-                        <span className="text-3xl">💡</span>
+                        <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-lg font-semibold text-gray-900">Applied to a few jobs but no response?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2">Audit your job strategy</button>
+                      <div className="text-base sm:text-lg font-semibold text-gray-900">Applied to a few jobs but no response?</div>
+                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Audit your job strategy</button>
                     </div>
                   </div>
                 </div>
-                {/* Right: Quick Actions */}
-                <div className="flex flex-col gap-8 items-end w-full lg:w-auto">
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-3xl p-8 shadow-2xl border border-gray-200/50 min-w-[400px] max-w-[500px] w-full transition-all duration-500 hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-8">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl shadow-lg flex-shrink-0">
-                        <Zap className="h-6 w-6 text-white" />
+                {/* Mobile: Career Journey Second, Desktop: Quick Actions Second */}
+                <div className="flex flex-col gap-8 items-end w-full lg:w-auto order-1 lg:order-2">
+                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 w-full max-w-none sm:min-w-[400px] sm:max-w-[500px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-xl font-bold text-gray-800">Quick Actions</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Quick Actions</h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6">
                       <button
                         type="button"
-                        className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none min-w-[180px]"
+                        className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none w-full"
                         onClick={() => setShowBookSessionPopup(true)}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Calendar className="h-6 w-6 text-white" />
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-center shadow-lg flex-shrink-0">
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="font-bold text-gray-900 mb-1 text-sm">Book a session</p>
                             <p className="text-xs text-gray-600">Find a coach and schedule</p>
                           </div>
-                          <ArrowRight className="h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
                         </div>
                       </button>
 
                       <button
                         type="button"
-                        className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none min-w-[180px]"
+                        className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none w-full"
                         onClick={() => setShowMessageToast(true)}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center shadow-lg flex-shrink-0">
-                            <MessageSquare className="h-6 w-6 text-white" />
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-center shadow-lg flex-shrink-0">
+                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="font-bold text-gray-900 mb-1 text-sm">Open messages</p>
                             <p className="text-xs text-gray-600">Chat with your coach</p>
                           </div>
-                          <ArrowRight className="h-5 w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
                         </div>
                       </button>
                     </div>
@@ -633,14 +686,14 @@ export default function DashboardPage() {
                     </div>
                   )}
                   {/* Find Your Mentor Section */}
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-3xl p-8 shadow-2xl border border-gray-200/50 mt-6 w-full min-w-[400px] max-w-[500px] transition-all duration-500 hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-8">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl shadow-lg flex-shrink-0">
-                        <Users className="h-6 w-6 text-white" />
+                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 mt-6 w-full max-w-none sm:min-w-[400px] sm:max-w-[500px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                        <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-xl font-bold text-gray-800">Find Your Mentor</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Find Your Mentor</h2>
                     </div>
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       {mentors.map((mentor) => (
                         <div 
                           key={mentor.id}
@@ -648,18 +701,19 @@ export default function DashboardPage() {
                           onClick={() => {
                             setSelectedMentor(mentor);
                             setShowProfilePopup(true);
+                            setCurrentView('dashboard');
                           }}
                         >
                           <div className="relative mb-3">
                             <img 
                               src={mentor.image} 
                               alt={mentor.name} 
-                              className="w-24 h-24 object-cover rounded-2xl border-2 border-gray-200 group-hover:border-gray-400 group-hover:shadow-xl transition-all duration-300 flex-shrink-0" 
+                              className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl sm:rounded-2xl border-2 border-gray-200 group-hover:border-gray-400 group-hover:shadow-xl transition-all duration-300 flex-shrink-0" 
                             />
-                            <div className="absolute inset-0 bg-gray-600 bg-opacity-0 group-hover:bg-opacity-10 rounded-2xl transition-all duration-300 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gray-600 bg-opacity-0 group-hover:bg-opacity-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center">
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <div className="bg-white rounded-full p-2 shadow-lg">
-                                  <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
@@ -680,26 +734,26 @@ export default function DashboardPage() {
             </section>
 
             {/* Main content */}
-            <section className="py-8 pb-16">
-              <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="py-6 sm:py-8 pb-24 lg:pb-16">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                   {/* Sessions box */}
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-3xl p-8 shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[700px] transition-all duration-500 hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl shadow-lg flex-shrink-0">
-                        <Calendar className="h-6 w-6 text-white" />
+                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-xl font-bold text-gray-800">Sessions</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Sessions</h2>
                     </div>
-                    <div className="flex flex-row gap-4 mb-6 w-full">
+                    <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
                       <button
-                        className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all duration-300 focus:outline-none ${sessionTab === 'upcoming' ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         onClick={() => setSessionTab('upcoming')}
                       >
                         Upcoming
                       </button>
                       <button
-                        className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all duration-300 focus:outline-none ${sessionTab === 'completed' ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         onClick={() => setSessionTab('completed')}
                       >
                         Completed
@@ -746,83 +800,97 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Transactions box */}
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-3xl p-8 shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[700px] transition-all duration-500 hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl shadow-lg flex-shrink-0">
-                        <DollarSign className="h-6 w-6 text-white" />
+                  {/* Goals box */}
+                  <div id="goals-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                        <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-xl font-bold text-gray-800">Transactions</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Goals</h2>
                     </div>
-                    <div className="flex flex-row gap-4 mb-6 w-full">
-                      <button
-                        className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all duration-300 focus:outline-none ${transactionTab === 'success' ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
-                        onClick={() => setTransactionTab('success')}
-                      >
-                        Success
-                      </button>
-                      <button
-                        className={`flex-1 px-4 py-3 rounded-2xl font-semibold transition-all duration-300 focus:outline-none ${transactionTab === 'failed' ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
-                        onClick={() => setTransactionTab('failed')}
-                      >
-                        Failed
-                      </button>
+                    
+                    {/* Add Goal Input */}
+                    <div className="w-full mb-4 sm:mb-6">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newGoal}
+                          onChange={(e) => setNewGoal(e.target.value)}
+                          placeholder="Enter your goal..."
+                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:border-purple-500 focus:outline-none transition-all duration-300 text-sm sm:text-base"
+                          onKeyPress={(e) => e.key === 'Enter' && addGoal()}
+                        />
+                        <button
+                          onClick={addGoal}
+                          disabled={saving || !newGoal.trim()}
+                          className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 text-white rounded-xl sm:rounded-2xl font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
+                        >
+                          {saving ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Goals List */}
                     <div className="w-full flex-1 overflow-y-auto">
-                      <div className="space-y-4">
-                        {transactionTab === 'success' ? (
-                          // Successful transactions
-                          successfulTransactions.map((transaction) => (
-                            <div key={transaction.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
+                      {goals.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Target className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                          <div className="text-gray-500 text-lg">No goals yet</div>
+                          <p className="text-gray-400 mt-2">Add your first goal to get started!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 sm:space-y-4">
+                          {goals.map((goal) => (
+                            <div key={goal.id} className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
                               <div className="flex items-center justify-between">
-                                <div>
-                                  <h3 className="font-bold text-gray-900 text-base mb-1">{transaction.title}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{transaction.date}</span>
+                                <div className="flex items-center gap-3 flex-1">
+                                  <button
+                                    onClick={() => toggleGoal(goal)}
+                                    className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
+                                      goal.completed
+                                        ? 'bg-green-500 border-green-500 text-white'
+                                        : 'border-gray-300 hover:border-purple-500'
+                                    }`}
+                                  >
+                                    {goal.completed && (
+                                      <svg className="w-3 h-3 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className={`font-medium text-gray-900 text-sm sm:text-base ${
+                                      goal.completed ? 'line-through text-gray-500' : ''
+                                    }`}>
+                                      {goal.text}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Added {goal.createdAt.toLocaleDateString()}
+                                    </p>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-green-600">₹{transaction.amount.toLocaleString()}</div>
-                                  <div className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                                    Success
-                                  </div>
-                                </div>
+                                <button
+                                  onClick={() => deleteGoal(goal)}
+                                  className="ml-2 p-1 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                  title="Delete goal"
+                                >
+                                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
-                          ))
-                        ) : (
-                          // Failed transactions
-                          failedTransactions.map((transaction) => (
-                            <div key={transaction.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h3 className="font-bold text-gray-900 text-base mb-1">{transaction.title}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{transaction.date}</span>
-                                  </div>
-                                  <div className="text-xs text-red-600 mt-1">
-                                    Reason: {transaction.reason}
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-lg font-bold text-red-600">₹{transaction.amount.toLocaleString()}</div>
-                                  <div className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                                    Failed
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </section>
-          </main>
+            </>
+          )}
+        </main>
         </div>
       </div>
     </div>

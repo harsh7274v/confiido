@@ -3,6 +3,7 @@ import { body, param, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
 import PaymentAccount from '../models/PaymentAccount';
 import Expert from '../models/Expert';
+import Transaction from '../models/Transaction';
 
 const router = express.Router();
 
@@ -400,6 +401,122 @@ router.get('/earnings', protect, async (req, res, next) => {
       success: true,
       data: earnings,
       message: 'Earnings summary - 100% of payments go directly to you'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/payments/transactions
+// @desc    Get user's transaction history
+// @access  Private
+router.get('/transactions', protect, async (req, res, next) => {
+  try {
+    const { status, type, page = 1, limit = 10 } = req.query;
+    
+    // Build query - filter by both MongoDB userId and user_id
+    const query: any = { 
+      userId: req.user.id,
+      user_id: req.user.user_id // Also filter by the 4-digit user_id
+    };
+    if (status) query.status = status;
+    if (type) query.type = type;
+    
+    // Pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    // Get transactions
+    const transactions = await Transaction.find(query)
+      .populate('expertId', 'firstName lastName email profession')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+    
+    // Get total count
+    const total = await Transaction.countDocuments(query);
+    
+    // Get summary stats
+    const summary = await Transaction.aggregate([
+      { 
+        $match: { 
+          userId: req.user.id,
+          user_id: req.user.user_id 
+        } 
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' }
+        }
+      }
+    ]);
+    
+    // Calculate stats from the transactions array for better accuracy
+    const completedTransactions = transactions.filter(t => t.status === 'completed');
+    const failedTransactions = transactions.filter(t => t.status === 'failed');
+    const pendingTransactions = transactions.filter(t => t.status === 'pending');
+    const totalSpent = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
+    
+    const stats = {
+      total: total,
+      completed: completedTransactions.length,
+      failed: failedTransactions.length,
+      pending: pendingTransactions.length,
+      totalSpent: totalSpent
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        transactions,
+        stats,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      },
+      message: 'Transactions retrieved successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/payments/transactions/:id
+// @desc    Get specific transaction details
+// @access  Private
+router.get('/transactions/:id', protect, [
+  param('id').isMongoId().withMessage('Valid transaction ID is required')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+    
+    const transaction = await Transaction.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+      user_id: req.user.user_id
+    }).populate('expertId', 'firstName lastName email profession');
+    
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: transaction,
+      message: 'Transaction details retrieved successfully'
     });
   } catch (error) {
     next(error);

@@ -10,7 +10,9 @@
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "seed": "ts-node src/scripts/seedDashboardData.ts"
+    "seed": "ts-node src/scripts/seedDashboardData.ts",
+    "seed:transactions": "ts-node src/scripts/seedTransactionData.ts",
+    "token": "ts-node src/scripts/generateTestToken.ts"
   },
   "keywords": [
     "expert",
