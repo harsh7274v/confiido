@@ -48,13 +48,13 @@ export default function Home() {
   const experts = [
     {
       id: 1,
-      name: "Sarah Chen",
-      title: "Product Strategy Consultant",
-      company: "Google",
+      name: "Animesh Pandit",
+      title: "Senior Consultant",
+      company: "Sanofi",
       expertise: "Product Strategy, Go-to-Market",
       rating: 4.9,
       reviews: 127,
-      price: "$150",
+      price: "Rs500",
       duration: "30 min",
       avatar: "SC",
       verified: true
