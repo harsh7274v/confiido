@@ -14,7 +14,12 @@ import {
 
 const router = express.Router();
 
-// Apply authentication middleware to all dashboard routes
+// Test endpoint without authentication
+router.get('/ping', (req, res) => {
+  res.json({ success: true, message: 'Dashboard route is accessible' });
+});
+
+// Apply authentication middleware to protected dashboard routes
 router.use(protect);
 
 // Get dashboard data

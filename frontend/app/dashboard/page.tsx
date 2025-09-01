@@ -7,6 +7,8 @@ import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
 import TransactionsPage from '../transactions/page';
+import ContactPage from '../components/ContactPage';
+import RewardsPage from '../components/RewardsPage';
 import Sidebar from '../components/Sidebar';
 import {
   ArrowRight,
@@ -58,7 +60,7 @@ export default function DashboardPage() {
   const [showMessageToast, setShowMessageToast] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards'>('dashboard');
 
 
 
@@ -208,6 +210,10 @@ export default function DashboardPage() {
   const handleProfileClick = () => {
     setShowProfilePopup(true);
     setCurrentView('dashboard');
+  };
+
+  const handleContactClick = () => {
+    setCurrentView('contact');
   };
 
   const handleSaveProfile = async (profile: ProfileData) => {
@@ -462,22 +468,26 @@ export default function DashboardPage() {
     }
   }
 
-  // Function to scroll to goals section
-  const scrollToGoals = () => {
+  // Function to scroll to sessions section
+  const scrollToSessions = () => {
     setCurrentView('dashboard');
-    const goalsSection = document.getElementById('goals-section');
-    if (goalsSection) {
-      goalsSection.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
-      });
-      
-      // Add highlight effect
-      goalsSection.classList.add('ring-4', 'ring-purple-300', 'ring-opacity-50');
-      setTimeout(() => {
-        goalsSection.classList.remove('ring-4', 'ring-purple-300', 'ring-opacity-50');
-      }, 2000);
-    }
+    
+    // Use setTimeout to ensure the dashboard view is rendered before scrolling
+    setTimeout(() => {
+      const sessionsSection = document.getElementById('sessions-section');
+      if (sessionsSection) {
+        sessionsSection.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // Add highlight effect
+        sessionsSection.classList.add('ring-4', 'ring-purple-300', 'ring-opacity-50');
+        setTimeout(() => {
+          sessionsSection.classList.remove('ring-4', 'ring-purple-300', 'ring-opacity-50');
+        }, 2000);
+      }
+    }, 100); // Small delay to ensure view transition is complete
   };
 
   // Function to scroll to top of dashboard
@@ -523,33 +533,32 @@ export default function DashboardPage() {
                 <Sidebar
           userName={userDisplayName}
           onProfileClick={handleProfileClick}
-          onGoalsClick={() => scrollToGoals()}
+          onSessionsClick={() => scrollToSessions()}
           onHomeClick={() => scrollToTop()}
           onTransactionsClick={() => setCurrentView('transactions')}
+          onContactClick={handleContactClick}
+          onRewardsClick={() => setCurrentView('rewards')}
         />
         
         {/* Main content */}
         <main className="flex-1 lg:ml-0 grid-pattern">
           {currentView === 'transactions' ? (
             <div className="w-full">
-              <div className="flex items-center justify-between mb-6">
-                <button
-                  onClick={() => setCurrentView('dashboard')}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Back to Dashboard
-                </button>
-              </div>
               <TransactionsPage />
+            </div>
+          ) : currentView === 'contact' ? (
+            <div className="w-full">
+              <ContactPage />
+            </div>
+          ) : currentView === 'rewards' ? (
+            <div className="w-full">
+              <RewardsPage />
             </div>
           ) : (
             <>
               {/* Modern Header */}
               <section className="relative overflow-hidden bg-gray-100 py-6 sm:py-10 grid-pattern">
-              <div className="mx-auto max-w-2xl px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-gray-200/50 transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+              <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl px-6 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-4 border-purple-300 transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                 <div className="flex flex-col items-start space-y-2 mb-4 sm:mb-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
@@ -738,7 +747,7 @@ export default function DashboardPage() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                   {/* Sessions box */}
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                  <div id="sessions-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                     <div className="flex items-center gap-3 mb-4 sm:mb-6">
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />

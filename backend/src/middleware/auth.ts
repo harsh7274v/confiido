@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler';
 import User from '../models/User';
+import Reward from '../models/Reward';
 import { auth } from '../config/firebase';
 
 // Extend Express Request interface to include user
@@ -64,6 +65,30 @@ export const protect = async (
         });
         await user.save();
         console.log('Mock user created successfully');
+        
+        // Create initial rewards for the new mock user
+        try {
+          await Reward.create({
+            userId: user._id,
+            user_id: user.user_id || 'MOCK', // Include user_id if available, or placeholder
+            points: 250,
+            totalEarned: 250,
+            totalSpent: 0,
+            history: [
+              {
+                type: 'earned',
+                description: 'Welcome bonus for new mock user',
+                points: 250,
+                status: 'completed',
+                date: new Date(),
+              },
+            ],
+          });
+          console.log(`✅ Rewards created for new mock user: ${user.email} (${user.user_id || 'MOCK'})`);
+        } catch (rewardError) {
+          console.error('Failed to create rewards for new mock user:', rewardError);
+          // Don't fail auth if rewards creation fails
+        }
       } else {
         // Update last login for existing mock user
         user.lastLogin = new Date();
@@ -107,6 +132,30 @@ export const protect = async (
               lastLogin: new Date()
             });
             await user.save();
+            
+            // Create initial rewards for the new Firebase user
+            try {
+              await Reward.create({
+                userId: user._id,
+                user_id: user.user_id || 'FIREBASE', // Include user_id if available, or placeholder
+                points: 250,
+                totalEarned: 250,
+                totalSpent: 0,
+                history: [
+                  {
+                    type: 'earned',
+                    description: 'Welcome bonus for new Firebase user',
+                    points: 250,
+                    status: 'completed',
+                    date: new Date(),
+                  },
+                ],
+              });
+              console.log(`✅ Rewards created for new Firebase user: ${user.email} (${user.user_id || 'FIREBASE'})`);
+            } catch (rewardError) {
+              console.error('Failed to create rewards for new Firebase user:', rewardError);
+              // Don't fail auth if rewards creation fails
+            }
           }
         } else {
           // Update last login for existing Firebase user
@@ -219,6 +268,30 @@ export const optionalAuth = async (
           lastLogin: new Date()
         });
         await user.save();
+        
+        // Create initial rewards for the new mock user in optionalAuth
+        try {
+          await Reward.create({
+            userId: user._id,
+            user_id: user.user_id || 'MOCK', // Include user_id if available, or placeholder
+            points: 250,
+            totalEarned: 250,
+            totalSpent: 0,
+            history: [
+              {
+                type: 'earned',
+                description: 'Welcome bonus for new mock user (optionalAuth)',
+                points: 250,
+                status: 'completed',
+                date: new Date(),
+              },
+            ],
+          });
+          console.log(`✅ Rewards created for new mock user (optionalAuth): ${user.email} (${user.user_id || 'MOCK'})`);
+        } catch (rewardError) {
+          console.error('Failed to create rewards for new mock user (optionalAuth):', rewardError);
+          // Don't fail auth if rewards creation fails
+        }
       } else {
         // Ensure existing mock user has user_id
         // await ensureUserId(user); // This line is removed as per the edit hint

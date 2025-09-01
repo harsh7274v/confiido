@@ -9,30 +9,35 @@ import {
   CreditCard, 
   Mail,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 
 interface SidebarProps {
   userName?: string;
   onProfileClick?: () => void;
-  onGoalsClick?: () => void;
+  onSessionsClick?: () => void;
   onHomeClick?: () => void;
   onTransactionsClick?: () => void;
+  onContactClick?: () => void;
+  onRewardsClick?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   userName = "Aakash",
   onProfileClick,
-  onGoalsClick,
+  onSessionsClick,
   onHomeClick,
-  onTransactionsClick
+  onTransactionsClick,
+  onContactClick,
+  onRewardsClick
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState('profile');
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home, path: '/dashboard' },
-    { id: 'goals', label: 'Goals', icon: Target, path: '/goals' },
+    { id: 'sessions', label: 'Sessions', icon: Calendar, path: '/sessions' },
     { id: 'rewards', label: 'Rewards', icon: Gift, path: '/rewards' },
     { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
     { id: 'transactions', label: 'Transactions', icon: CreditCard, path: '/transactions' },
@@ -56,14 +61,24 @@ const Sidebar: React.FC<SidebarProps> = ({
       onProfileClick();
     }
     
-    // Handle goals click to scroll to goals section
-    if (itemId === 'goals' && onGoalsClick) {
-      onGoalsClick();
+    // Handle sessions click to scroll to sessions section
+    if (itemId === 'sessions' && onSessionsClick) {
+      onSessionsClick();
     }
     
     // Handle transactions click to show transactions view
     if (itemId === 'transactions' && onTransactionsClick) {
       onTransactionsClick();
+    }
+    
+    // Handle contact click to navigate to contact page
+    if (itemId === 'contact' && onContactClick) {
+      onContactClick();
+    }
+    
+    // Handle rewards click to show rewards view
+    if (itemId === 'rewards' && onRewardsClick) {
+      onRewardsClick();
     }
   };
 
@@ -127,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
         <div className="flex justify-around items-center py-2">
-          {navigationItems.map((item) => {
+          {navigationItems.slice(0, 5).map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
             

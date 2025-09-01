@@ -3,12 +3,14 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, KeyRound, Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const OTPPage = () => {
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -50,7 +52,17 @@ const OTPPage = () => {
       if (data.success && data.data?.token) {
         // Save token (localStorage or cookie)
         localStorage.setItem("token", data.data.token);
-        router.push("/dashboard");
+        
+        // Show redirecting spinner
+        setRedirecting(true);
+        
+        // Check user role and redirect accordingly
+        const userRole = data.data.user?.role;
+        if (userRole === "expert") {
+          router.push("/mentor/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
       } else {
         setError(data.error || "Invalid OTP");
       }
@@ -99,6 +111,12 @@ const OTPPage = () => {
               </div>
             )}
           </form>
+        ) : redirecting ? (
+          <LoadingSpinner 
+            size="lg" 
+            text="Redirecting to your dashboard..." 
+            className="py-8"
+          />
         ) : (
           <form onSubmit={verifyOTP} className="space-y-5">
             <div className="relative">

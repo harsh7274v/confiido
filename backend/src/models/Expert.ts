@@ -7,7 +7,7 @@ export interface IExpert extends Document {
   expertise: string[];
   description: string;
   hourlyRate: number;
-  currency: string;
+  currency: 'INR';
   availability: {
     monday: { start: string; end: string; available: boolean };
     tuesday: { start: string; end: string; available: boolean };
@@ -97,12 +97,12 @@ const expertSchema = new Schema<IExpert>({
   hourlyRate: {
     type: Number,
     required: [true, 'Hourly rate is required'],
-    min: [10, 'Hourly rate must be at least $10']
+    min: [10, 'Hourly rate must be at least ₹10']
   },
   currency: {
     type: String,
-    default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
+    default: 'INR',
+    enum: ['INR']
   },
   availability: {
     monday: {
@@ -155,7 +155,7 @@ const expertSchema = new Schema<IExpert>({
     price: {
       type: Number,
       required: true,
-      min: [5, 'Session price must be at least $5']
+      min: [5, 'Session price must be at least ₹5']
     },
     description: {
       type: String,

@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ITransaction extends Document {
-  userId: mongoose.Types.ObjectId;
+  user_id: string;
   expertId?: mongoose.Types.ObjectId;
   type: 'booking' | 'course' | 'webinar' | 'bundle' | 'digital_product' | 'priority_dm';
   itemId: mongoose.Types.ObjectId;
@@ -29,9 +29,8 @@ export interface ITransaction extends Document {
 }
 
 const transactionSchema = new Schema<ITransaction>({
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
+  user_id: {
+    type: String,
     required: true
   },
   expertId: {

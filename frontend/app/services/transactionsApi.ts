@@ -7,7 +7,6 @@ export interface Transaction {
   status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'refunded';
   mentor_name: string;
   service: string;
-  userId: string;
   expertId?: {
     _id: string;
     firstName: string;
@@ -79,8 +78,8 @@ class TransactionsApi {
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-  // Use new endpoint for user-specific transactions
-  const url = `${API_BASE_URL}/transactions/user${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  // Use correct endpoint for user-specific transactions
+  const url = `${API_BASE_URL}/api/transactions/user${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       console.log('Making request to:', url);
       console.log('Auth headers:', this.getAuthHeaders());
@@ -99,9 +98,9 @@ class TransactionsApi {
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
-      console.log('Response data:', data);
-      return data.data;
+  const data = await response.json();
+  console.log('Response data:', data);
+  return data;
     } catch (error) {
       console.error('Error fetching transactions:', error);
       throw error;
@@ -129,4 +128,3 @@ class TransactionsApi {
 }
 
 export const transactionsApi = new TransactionsApi();
-export type { Transaction, TransactionStats, TransactionResponse };

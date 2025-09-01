@@ -3,6 +3,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IBooking extends Document {
   clientId: mongoose.Types.ObjectId;
   expertId: mongoose.Types.ObjectId;
+  clientUserId: string; // 4-digit user_id for the client
+  expertUserId: string; // 4-digit user_id for the expert/mentor
+  clientEmail: string; // Client's email address
+  expertEmail: string; // Expert's email address
   sessionType: 'video' | 'audio' | 'chat' | 'in-person';
   duration: number; // in minutes
   scheduledDate: Date;
@@ -33,6 +37,26 @@ const bookingSchema = new Schema<IBooking>({
     type: Schema.Types.ObjectId,
     ref: 'Expert',
     required: true
+  },
+  clientUserId: {
+    type: String,
+    required: true,
+    match: [/^\d{4}$/, 'Client user_id must be a 4-digit number']
+  },
+  expertUserId: {
+    type: String,
+    required: true,
+    match: [/^\d{4}$/, 'Expert user_id must be a 4-digit number']
+  },
+  clientEmail: {
+    type: String,
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
+  },
+  expertEmail: {
+    type: String,
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
   },
   sessionType: {
     type: String,
@@ -70,8 +94,8 @@ const bookingSchema = new Schema<IBooking>({
   },
   currency: {
     type: String,
-    default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'CAD', 'AUD']
+    default: 'INR',
+    enum: ['INR']
   },
   paymentStatus: {
     type: String,

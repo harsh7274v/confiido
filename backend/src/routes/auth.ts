@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import OTP from '../models/OTP';
+import Reward from '../models/Reward';
 import { sendOTPEmail } from '../services/mailer';
 import { AppError } from '../middleware/errorHandler';
 import { protect } from '../middleware/auth';
@@ -79,6 +80,7 @@ router.post('/verify-otp', [
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role,
           isExpert: user.isExpert,
           isVerified: user.isVerified
         },
@@ -203,6 +205,30 @@ router.post('/register', [
     // Create user - password will be automatically hashed by pre-save middleware
     const user = await User.create(userData);
 
+    // Create initial rewards for the new user
+    try {
+      await Reward.create({
+        userId: user._id,
+        user_id: user.user_id, // Include the 4-digit unique user_id
+        points: 250,
+        totalEarned: 250,
+        totalSpent: 0,
+        history: [
+          {
+            type: 'earned',
+            description: 'Welcome bonus for new user registration',
+            points: 250,
+            status: 'completed',
+            date: new Date(),
+          },
+        ],
+      });
+      console.log(`✅ Rewards created for new user: ${user.email} (${user.user_id})`);
+    } catch (rewardError) {
+      console.error('Failed to create rewards for new user:', rewardError);
+      // Don't fail registration if rewards creation fails
+    }
+
     // Generate token
     const token = generateToken(user._id.toString());
 
@@ -295,6 +321,7 @@ router.post('/login', [
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role,
           isExpert: user.isExpert,
           isVerified: user.isVerified
         },

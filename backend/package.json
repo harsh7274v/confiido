@@ -12,7 +12,19 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "seed": "ts-node src/scripts/seedDashboardData.ts",
     "seed:transactions": "ts-node src/scripts/seedTransactionData.ts",
-    "token": "ts-node src/scripts/generateTestToken.ts"
+    "token": "ts-node src/scripts/generateTestToken.ts",
+    "migrate:rewards": "ts-node src/scripts/migrateRewardsUserId.ts",
+    "fix:rewards-schema": "ts-node src/scripts/fixRewardsSchema.ts",
+    "test:rewards-schema": "ts-node src/scripts/testRewardsSchema.ts",
+    "test:db-connection": "ts-node src/scripts/testDatabaseConnection.ts",
+    "test:reward-model": "ts-node src/scripts/testRewardModel.ts",
+    "complete:rewards-fix": "ts-node src/scripts/completeRewardsFix.ts",
+    "create:missing-rewards": "ts-node src/scripts/createMissingRewards.ts",
+    "explore:database": "ts-node src/scripts/exploreDatabase.ts",
+    "fix:cloud-database": "ts-node src/scripts/fixCloudDatabase.ts",
+    "insert:megha": "ts-node src/scripts/insertUserMegha.ts",
+    "reset:megha": "ts-node src/scripts/resetMeghaPassword.ts",
+    "debug:megha": "ts-node src/scripts/debugCheckMegha.ts"
   },
   "keywords": [
     "expert",

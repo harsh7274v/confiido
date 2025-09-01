@@ -6,6 +6,7 @@ export interface IUser extends Document {
   user_id?: string; // Unique 4-digit user ID
   username?: string;
   email: string;
+  mentor_email?: string;
   password?: string;
   firstName: string;
   lastName: string;
@@ -100,6 +101,12 @@ const userSchema = new Schema<IUser>({
     lowercase: true,
     trim: true,
     match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  },
+  mentor_email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: null
   },
   password: {
     type: String,

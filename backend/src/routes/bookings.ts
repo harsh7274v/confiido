@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
 import Booking from '../models/Booking';
 import Expert from '../models/Expert';
+import User from '../models/User';
 
 const router = express.Router();
 
@@ -49,13 +50,84 @@ router.post('/', protect, [
     } = req.body;
 
     // Check if expert exists and is available
-    const expert = await Expert.findById(expertId);
+    // The expertId sent from frontend is the MENTOR's User ID (not the authenticated user's ID)
+    let expert = await Expert.findOne({ userId: expertId });
+    
     if (!expert) {
-      return res.status(404).json({
-        success: false,
-        error: 'Expert not found'
-      });
+      // Get mentor user details to create basic expert profile
+      const mentorUser = await User.findById(expertId);
+      if (!mentorUser) {
+        return res.status(404).json({
+          success: false,
+          error: 'Mentor not found'
+        });
+      }
+      
+      // Create basic expert document for the mentor
+      const basicExpertData = {
+        userId: expertId, // This is the mentor's User ID
+        title: `${mentorUser.firstName} ${mentorUser.lastName}`,
+        company: 'Independent Consultant',
+        expertise: ['Career Guidance', 'Professional Development'],
+        description: `Experienced professional offering career guidance and mentorship services.`,
+        hourlyRate: 50,
+        currency: 'INR',
+        availability: {
+          monday: { start: '09:00', end: '17:00', available: true },
+          tuesday: { start: '09:00', end: '17:00', available: true },
+          wednesday: { start: '09:00', end: '17:00', available: true },
+          thursday: { start: '09:00', end: '17:00', available: true },
+          friday: { start: '09:00', end: '17:00', available: true },
+          saturday: { start: '10:00', end: '16:00', available: false },
+          sunday: { start: '10:00', end: '16:00', available: false }
+        },
+        sessionTypes: [
+          {
+            type: 'video',
+            duration: 30,
+            price: 25,
+            description: '30-minute video consultation'
+          },
+          {
+            type: 'video',
+            duration: 60,
+            price: 50,
+            description: '1-hour video consultation'
+          },
+          {
+            type: 'chat',
+            duration: 30,
+            price: 20,
+            description: '30-minute chat consultation'
+          }
+        ],
+        languages: ['English', 'Hindi'],
+        rating: 4.5,
+        totalReviews: 0,
+        totalSessions: 0,
+        totalEarnings: 0,
+        isFeatured: true,
+        isAvailable: true,
+        verificationStatus: 'verified'
+      };
+      
+      try {
+        expert = await Expert.create(basicExpertData);
+      } catch (createError) {
+        console.error('Failed to create expert document:', createError);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to create expert profile'
+        });
+      }
     }
+    
+    console.log('✅ [BOOKING] Expert found:', {
+      expertId: expert._id,
+      userId: expert.userId,
+      title: expert.title,
+      isAvailable: expert.isAvailable
+    });
 
     if (!expert.isAvailable) {
       return res.status(400).json({
@@ -104,18 +176,47 @@ router.post('/', protect, [
       });
     }
 
-    const booking = await Booking.create({
-      clientId: req.user._id,
-      expertId,
+    // Get client and expert user details
+    // clientUser = authenticated user (the one making the booking)
+    // expertUser = selected mentor (the one being booked)
+    const clientUser = await User.findById(req.user._id);
+    const expertUser = await User.findById(expert.userId);
+    
+    if (!clientUser || !expertUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User information not found'
+      });
+    }
+
+    // Validate that client and expert are different users
+    if (clientUser._id.toString() === expertUser._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        error: 'You cannot book a session with yourself'
+      });
+    }
+
+    const bookingData = {
+      clientId: req.user._id,                    // Authenticated user's ObjectId
+      expertId: expert._id,                      // Expert document's ObjectId
+      clientUserId: clientUser.user_id || '0000', // Authenticated user's 4-digit ID
+      expertUserId: expertUser.user_id || '0000', // Selected mentor's 4-digit ID
+      clientEmail: clientUser.email,             // Authenticated user's email
+      expertEmail: expertUser.email,             // Selected mentor's email
       sessionType,
       duration,
       scheduledDate: new Date(scheduledDate),
       startTime,
       endTime,
       price,
-      currency: expert.currency,
+      currency: 'INR',
       notes
-    });
+    };
+
+
+
+    const booking = await Booking.create(bookingData);
 
     res.status(201).json({
       success: true,

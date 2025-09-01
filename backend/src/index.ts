@@ -1,3 +1,4 @@
+// Catch-all debug route for troubleshooting
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -31,12 +32,20 @@ import webinarRoutes from './routes/webinars';
 import bundleRoutes from './routes/bundles';
 import digitalProductRoutes from './routes/digitalProducts';
 import analyticsRoutes from './routes/analytics';
+import availabilityRoutes from './routes/availability';
 import calendarRoutes from './routes/calendar';
+import rewardsRoutes from './routes/rewards';
 import dashboardRoutes from './routes/dashboard';
 
 const app = express();
 const server = createServer(app);
-const PORT = process.env['PORT'] || 5000;
+const PORT = process.env['PORT'] || 5003;
+
+// Catch-all debug route for troubleshooting
+app.use((req, res, next) => {
+  console.log('[DEBUG] Incoming request:', req.method, req.originalUrl);
+  next();
+});
 
 // Initialize Socket.IO service
 const socketService = new SocketService(server);
@@ -107,12 +116,14 @@ app.use('/api/webinars', webinarRoutes);
 app.use('/api/bundles', bundleRoutes);
 app.use('/api/digital-products', digitalProductRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/availability', availabilityRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 import transactionsRoutes from './routes/transactions';
 app.use('/api/transactions', transactionsRoutes);
+app.use('/api/rewards', rewardsRoutes);
 
-// Error handling middleware
+// Error handling middleware (must be last)
 app.use(notFound);
 app.use(errorHandler);
 

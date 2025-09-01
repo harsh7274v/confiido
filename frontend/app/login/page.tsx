@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export default function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
 
   const [error, setError] = useState('');
@@ -56,8 +58,16 @@ export default function Login() {
         localStorage.setItem('token', data.data.token);
       }
 
-      // Redirect to dashboard on successful login
-      router.push('/dashboard');
+      // Show redirecting spinner
+      setRedirecting(true);
+
+      // Check user role and redirect accordingly
+      const userRole = data.data.user?.role;
+      if (userRole === "expert") {
+        router.push("/mentor/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error: any) {
       setError(error.message || 'Login failed. Please try again.');
     } finally {
@@ -94,7 +104,14 @@ export default function Login() {
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {redirecting ? (
+            <LoadingSpinner 
+              size="lg" 
+              text="Redirecting to your dashboard..." 
+              className="py-8"
+            />
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address *
@@ -172,11 +189,19 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
+          )}
 
           {/* Divider */}
           <div className="mt-6 mb-6">

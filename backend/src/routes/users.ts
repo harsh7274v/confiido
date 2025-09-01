@@ -3,8 +3,69 @@ import { body, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
 import User from '../models/User';
 import UserData from '../models/UserData';
+import Availability from '../models/Availability'; // Added import for Availability
+
 
 const router = express.Router();
+
+// ... existing code ...
+
+// @route   GET /api/users/experts
+// @desc    Get all expert users with their availability data
+// @access  Public
+router.get('/experts', async (req, res, next) => {
+  try {
+    // Find all users with role 'expert'
+    const expertUsers = await User.find({ 
+      role: 'expert',
+      isActive: true 
+    }).select('firstName lastName email user_id role isVerified');
+
+    // Get availability data for each expert
+    const expertsWithAvailability = await Promise.all(
+      expertUsers.map(async (user) => {
+        // Find availability data using user_id
+        const availability = await Availability.findOne({ 
+          user_id: user.user_id 
+        });
+
+        return {
+          _id: user._id,
+          userId: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email
+          },
+          user_id: user.user_id,
+          title: `${user.firstName} ${user.lastName}`,
+          company: 'Independent Consultant',
+          expertise: ['Career Guidance', 'Professional Development'],
+          description: `Experienced professional offering career guidance and mentorship services.`,
+          hourlyRate: 50,
+          currency: 'USD',
+          rating: 4.5,
+          totalReviews: 0,
+          isAvailable: availability ? availability.availabilityPeriods.some(p => p.isActive) : false,
+          verificationStatus: user.isVerified ? 'verified' : 'pending',
+          isFeatured: true,
+          hasAvailability: !!availability
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: { 
+        experts: expertsWithAvailability,
+        total: expertsWithAvailability.length
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching expert users:', error);
+    next(error);
+  }
+});
 
 // Test endpoint to verify backend is working
 router.get('/test', (req, res) => {

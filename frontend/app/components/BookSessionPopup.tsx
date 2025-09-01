@@ -1,45 +1,217 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Select, SelectItem } from "./ui/Select";
-
-// Generate time slots from 6 AM to 11 PM in 15-minute intervals
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = 6; hour <= 23; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const displayTime = `${hour > 12 ? hour - 12 : hour}:${minute.toString().padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
-      slots.push({ value: time, label: displayTime });
-    }
-  }
-  return slots;
-};
-
-const timeSlots = generateTimeSlots();
+import { availabilityApi } from '../services/availabilityApi';
+import { expertsApi, Expert } from '../services/expertsApi';
+import { bookingApi, BookingRequest } from '../services/bookingApi';
 
 const services = [
-  'Career Guidance',
-  'Resume Review',
-  'Interview Prep',
-  'Skill Development',
-];
-const durations = ['30 min', '60 min', '90 min'];
-const mentors = [
-  'Priya Sharma',
-  'Rahul Verma',
-  'Anjali Patel',
+  { name: '1:1 Career Guidance', duration: '30 min' },
+  { name: 'Mock Interview', duration: '60 min' },
+  { name: 'Resume Review', duration: '30 min' },
+  { name: 'Public Speaking', duration: '60 min' },
 ];
 
 const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [service, setService] = useState('');
-  const [duration, setDuration] = useState('');
-  const [mentor, setMentor] = useState('');
+  const [service, setService] = useState<string | undefined>(undefined);
+  const [mentor, setMentor] = useState<string | undefined>(undefined);
   const [date, setDate] = useState('');
-  const [fromTime, setFromTime] = useState('');
-  const [toTime, setToTime] = useState('');
+  const [fromTime, setFromTime] = useState<string | undefined>(undefined);
+  const [toTime, setToTime] = useState<string | undefined>(undefined);
+  const [availableSlots, setAvailableSlots] = useState<Array<{ time: string; displayTime: string; available: boolean }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mentors, setMentors] = useState<Expert[]>([]);
+  const [mentorsLoading, setMentorsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Get the duration for the selected service
+  const getSelectedServiceDuration = () => {
+    const selectedService = services.find(s => s.name === service);
+    return selectedService ? selectedService.duration : '';
+  };
+
+  // Fetch mentors on component mount
+  useEffect(() => {
+    fetchMentors();
+  }, []);
+
+  // Fetch available slots when mentor or date changes
+  useEffect(() => {
+    if (mentor && date) {
+      fetchAvailableSlots();
+    } else {
+      setAvailableSlots([]);
+      setFromTime(undefined);
+      setToTime(undefined);
+    }
+  }, [mentor, date]);
+
+  const fetchMentors = async () => {
+    setMentorsLoading(true);
+    try {
+      const response = await expertsApi.getFeaturedExperts();
+      if (response.success) {
+        setMentors(response.data.experts);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching mentors:', error);
+    } finally {
+      setMentorsLoading(false);
+    }
+  };
+
+  const fetchAvailableSlots = async () => {
+    if (!mentor || !date) return;
+    const selectedMentor = mentors.find(m => `${m.userId.firstName} ${m.userId.lastName}` === mentor);
+    if (!selectedMentor) {
+      setError('Mentor not found');
+      setAvailableSlots([]);
+      return;
+    }
+    const mentorUserId = selectedMentor.user_id;
+    console.log('🔍 Fetching slots for mentor:', mentor, 'User ID:', mentorUserId);
+    try {
+      const response = await availabilityApi.getMentorSlotsForDateByUserId(mentorUserId, date);
+      if (response.success) {
+        setAvailableSlots(response.data.availableSlots);
+        console.log('✅ Available slots fetched:', response.data.availableSlots);
+      } else {
+        setError('Failed to fetch available slots');
+        setAvailableSlots([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching available slots:', error);
+      setError('Failed to fetch available slots. Please try again.');
+      setAvailableSlots([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate time slots for the "To" dropdown based on selected "From" time
+  const generateToTimeSlots = () => {
+    if (!fromTime || !availableSlots.length) return [];
+    
+    const fromTimeIndex = availableSlots.findIndex(slot => slot.time === fromTime);
+    if (fromTimeIndex === -1) return [];
+    
+    // Get slots after the selected "from" time
+    const remainingSlots = availableSlots.slice(fromTimeIndex + 1);
+    
+    // Filter out slots that would result in invalid durations
+    const validSlots = remainingSlots.filter(slot => {
+      const fromTimeObj = new Date(`2000-01-01T${fromTime}:00`);
+      const toTimeObj = new Date(`2000-01-01T${slot.time}:00`);
+      const durationMinutes = (toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60);
+      
+      // Check if duration matches the selected service
+      const serviceDuration = getSelectedServiceDuration();
+      if (serviceDuration === '30 min') {
+        return durationMinutes >= 30;
+      } else if (serviceDuration === '60 min') {
+        return durationMinutes >= 60;
+      }
+      return true;
+    });
+    
+    return validSlots;
+  };
+
+  const toTimeSlots = generateToTimeSlots();
+
+  // Handle booking submission
+  const handleBookingSubmit = async () => {
+    if (!service || !mentor || !date || !fromTime || !toTime) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      // Find the selected mentor's expert ID
+      const selectedMentor = mentors.find(m => `${m.userId.firstName} ${m.userId.lastName}` === mentor);
+      
+      if (!selectedMentor) {
+        setError('Mentor not found');
+        return;
+      }
+
+
+
+      // Calculate duration in minutes
+      const fromTimeObj = new Date(`2000-01-01T${fromTime}:00`);
+      const toTimeObj = new Date(`2000-01-01T${toTime}:00`);
+      const durationMinutes = Math.round((toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60));
+
+      // Determine session type based on service
+      let sessionType: 'video' | 'audio' | 'chat' | 'in-person' = 'video';
+      if (service.includes('Mock Interview')) {
+        sessionType = 'video';
+      } else if (service.includes('Resume Review')) {
+        sessionType = 'chat';
+      } else if (service.includes('Public Speaking')) {
+        sessionType = 'video';
+      } else {
+        sessionType = 'video'; // Default to video
+      }
+
+      // Prepare booking data
+      // Note: selectedMentor._id is the User ID, which is what the backend expects
+      const bookingData: BookingRequest = {
+        expertId: selectedMentor._id, // This is the User ID
+        sessionType,
+        duration: durationMinutes,
+        scheduledDate: date,
+        startTime: fromTime,
+        notes: `Service: ${service}`
+      };
+
+
+
+      // Create the booking
+      const response = await bookingApi.createBooking(bookingData);
+      
+      if (response.success) {
+        setBookingSuccess(true);
+        
+        // Close the popup after a short delay
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error creating booking:', error);
+      setError(error.response?.data?.error || error.response?.data?.message || 'Failed to create booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show success message
+  if (bookingSuccess) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-md">
+        <div className="relative w-full max-w-sm animate-popup-in bg-white rounded-2xl shadow-2xl p-8 text-center">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-green-600 mb-4">Booking Successful!</h2>
+          <p className="text-gray-600 mb-6">Your session has been booked successfully. You will receive a confirmation email shortly.</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-md">
-  <div className="relative w-full max-w-sm animate-popup-in" style={{ maxWidth: '40vw', width: '80%', minWidth: '0' }}>
+      <div className="relative w-full max-w-sm animate-popup-in" style={{ maxWidth: '40vw', width: '80%', minWidth: '0' }}>
         {/* Accent Bar */}
         <div className="absolute top-0 left-0 w-full h-2 bg-[#e0e0e0] rounded-t-2xl z-10" />
         <div className="bg-[#f5f5f5] rounded-2xl shadow-2xl flex overflow-hidden border border-[#e0e0e0]" style={{ maxHeight: '90vh' }}>
@@ -59,59 +231,100 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <div className="flex flex-col gap-4 mt-6">
               <div>
                 <label className="block text-sm font-medium text-black mb-1">Select the Service</label>
-                <Select value={service} onValueChange={setService}>
+                <Select value={service} onValueChange={setService} placeholder="Select a service">
                   {services.map(s => (
-                    <SelectItem key={s} value={s} className="text-base">{s}</SelectItem>
+                    <SelectItem key={s.name} value={s.name} className="text-base">{s.name}</SelectItem>
                   ))}
                 </Select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-black mb-1">Choose the Duration</label>
-                <Select value={duration} onValueChange={setDuration}>
-                  {durations.map(d => (
-                    <SelectItem key={d} value={d} className="text-base">{d}</SelectItem>
-                  ))}
-                </Select>
-              </div>
+              {service && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <span className="text-sm font-medium text-blue-800">Duration: {getSelectedServiceDuration()}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-black mb-1">Select Mentor</label>
-                <Select value={mentor} onValueChange={setMentor}>
+                <Select value={mentor} onValueChange={setMentor} placeholder={mentorsLoading ? 'Loading mentors...' : 'Select a mentor'}>
                   {mentors.map(m => (
-                    <SelectItem key={m} value={m} className="text-base">{m}</SelectItem>
+                    <SelectItem key={m._id} value={`${m.userId.firstName} ${m.userId.lastName}`} className="text-base">
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{m.userId.firstName} {m.userId.lastName}</span>
+                        <span className="text-xs text-gray-600">{m.title}</span>
+                        <span className="text-xs text-gray-500">{m.expertise.join(', ')}</span>
+                        <span className={`text-xs ${m.hasAvailability ? 'text-green-600' : 'text-orange-600'}`}>
+                          {m.hasAvailability ? '✓ Available' : '⚠ No availability set'}
+                        </span>
+                      </div>
+                    </SelectItem>
                   ))}
                 </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-black mb-1">Select Date</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-[#e0e0e0] bg-white text-black font-semibold" />
+                <input 
+                  type="date" 
+                  value={date} 
+                  onChange={e => setDate(e.target.value)} 
+                  className="w-full px-4 py-2 rounded-lg border border-[#e0e0e0] bg-white text-black font-semibold" 
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-black mb-1">Book a Slot</label>
-                                 <div className="grid grid-cols-2 gap-4">
-                   <div>
-                     <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-                     <Select value={fromTime} onValueChange={setFromTime} placeholder="Select start time">
-                       {timeSlots.map(slot => (
-                         <SelectItem key={slot.value} value={slot.value} className="text-base">
-                           {slot.label}
-                         </SelectItem>
-                       ))}
-                     </Select>
-                   </div>
-                   <div>
-                     <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                     <Select value={toTime} onValueChange={setToTime} placeholder="Select end time">
-                       {timeSlots.map(slot => (
-                         <SelectItem key={slot.value} value={slot.value} className="text-base">
-                           {slot.label}
-                         </SelectItem>
-                       ))}
-                     </Select>
-                   </div>
-                 </div>
-              </div>
+              
+              {/* Show available slots info */}
+              {mentor && date && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  {loading ? (
+                    <span className="text-sm text-gray-600">Loading available slots...</span>
+                  ) : error ? (
+                    <span className="text-sm text-red-600">{error}</span>
+                  ) : availableSlots.length > 0 ? (
+                    <span className="text-sm text-green-600">
+                      {availableSlots.length} time slots available on {new Date(date).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-orange-600">No availability found for this date</span>
+                  )}
+                </div>
+              )}
+
+              {availableSlots.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Book a Slot</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+                      <Select value={fromTime} onValueChange={setFromTime} placeholder="Select start time">
+                        {availableSlots.map(slot => (
+                          <SelectItem key={slot.time} value={slot.time} className="text-base">
+                            {slot.displayTime}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+                      <Select value={toTime} onValueChange={setToTime} placeholder="Select end time">
+                        {toTimeSlots.map(slot => (
+                          <SelectItem key={slot.time} value={slot.time} className="text-base">
+                            {slot.displayTime}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <button className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow hover:bg-blue-700 transition text-lg">Book Now</button>
+            <button 
+              onClick={handleBookingSubmit}
+              className={`mt-6 px-6 py-3 rounded-lg font-semibold shadow transition text-lg ${
+                service && mentor && date && fromTime && toTime && !isSubmitting
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
+              disabled={!service || !mentor || !date || !fromTime || !toTime || isSubmitting}
+            >
+              {isSubmitting ? 'Creating Booking...' : 'Book Now'}
+            </button>
           </div>
         </div>
       </div>
