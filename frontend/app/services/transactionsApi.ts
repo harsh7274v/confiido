@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003';
 
 export interface Transaction {
   _id: string;
@@ -122,6 +122,27 @@ class TransactionsApi {
       return data.data;
     } catch (error) {
       console.error('Error fetching transaction:', error);
+      throw error;
+    }
+  }
+
+  async completeTransaction(id: string, paymentMethodId?: string): Promise<Transaction> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/transactions/${id}/complete`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ paymentMethodId })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (error) {
+      console.error('Error completing transaction:', error);
       throw error;
     }
   }

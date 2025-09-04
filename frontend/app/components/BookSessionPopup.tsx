@@ -20,6 +20,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [availableSlots, setAvailableSlots] = useState<Array<{ time: string; displayTime: string; available: boolean }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [mentors, setMentors] = useState<Expert[]>([]);
   const [mentorsLoading, setMentorsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +30,15 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const getSelectedServiceDuration = () => {
     const selectedService = services.find(s => s.name === service);
     return selectedService ? selectedService.duration : '';
+  };
+
+  // Get the duration in minutes for the selected service
+  const getSelectedServiceDurationMinutes = () => {
+    const selectedService = services.find(s => s.name === service);
+    if (selectedService) {
+      return selectedService.duration === '30 min' ? 30 : 60;
+    }
+    return 0;
   };
 
   // Fetch mentors on component mount
@@ -45,7 +55,30 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       setFromTime(undefined);
       setToTime(undefined);
     }
+    // Clear any previous errors and info when selection changes
+    setError('');
+    setInfo('');
   }, [mentor, date]);
+
+  // Clear error when service changes
+  useEffect(() => {
+    setError('');
+    setInfo('');
+    setFromTime(undefined);
+    setToTime(undefined);
+    // Clear toTimeSlots when service changes
+    setToTimeSlots([]);
+    // Show info message about service change
+    if (service) {
+      setInfo(`Service changed to ${service}. Please reselect your time slots.`);
+    }
+  }, [service]);
+
+  // Clear error when time selections change
+  useEffect(() => {
+    setError('');
+    setInfo('');
+  }, [fromTime, toTime]);
 
   const fetchMentors = async () => {
     setMentorsLoading(true);
@@ -91,13 +124,20 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   // Generate time slots for the "To" dropdown based on selected "From" time
   const generateToTimeSlots = () => {
-    if (!fromTime || !availableSlots.length) return [];
+    if (!fromTime || !availableSlots.length || !service) {
+      console.log('❌ generateToTimeSlots: Missing dependencies', { fromTime, availableSlotsLength: availableSlots.length, service });
+      return [];
+    }
     
     const fromTimeIndex = availableSlots.findIndex(slot => slot.time === fromTime);
-    if (fromTimeIndex === -1) return [];
+    if (fromTimeIndex === -1) {
+      console.log('❌ generateToTimeSlots: fromTime not found in availableSlots', { fromTime, availableSlots });
+      return [];
+    }
     
     // Get slots after the selected "from" time
     const remainingSlots = availableSlots.slice(fromTimeIndex + 1);
+    console.log('🔍 generateToTimeSlots: remainingSlots', remainingSlots);
     
     // Filter out slots that would result in invalid durations
     const validSlots = remainingSlots.filter(slot => {
@@ -105,26 +145,54 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const toTimeObj = new Date(`2000-01-01T${slot.time}:00`);
       const durationMinutes = (toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60);
       
-      // Check if duration matches the selected service
-      const serviceDuration = getSelectedServiceDuration();
-      if (serviceDuration === '30 min') {
-        return durationMinutes >= 30;
-      } else if (serviceDuration === '60 min') {
-        return durationMinutes >= 60;
-      }
-      return true;
+      // Check if duration exactly matches the selected service
+      const serviceDurationMinutes = getSelectedServiceDurationMinutes();
+      const isValid = durationMinutes === serviceDurationMinutes;
+      console.log(`⏱️ Slot ${fromTime} to ${slot.time}: ${durationMinutes}min, expected: ${serviceDurationMinutes}min, valid: ${isValid}`);
+      return isValid;
     });
     
+    console.log('✅ generateToTimeSlots: validSlots', validSlots);
     return validSlots;
   };
 
-  const toTimeSlots = generateToTimeSlots();
+  // Use useEffect to recalculate toTimeSlots when dependencies change
+  const [toTimeSlots, setToTimeSlots] = useState<Array<{ time: string; displayTime: string; available: boolean }>>([]);
+
+  useEffect(() => {
+    console.log('🔄 useEffect: Recalculating toTimeSlots', { fromTime, availableSlotsLength: availableSlots.length, service });
+    const slots = generateToTimeSlots();
+    setToTimeSlots(slots);
+    console.log('✅ useEffect: Updated toTimeSlots', slots);
+  }, [fromTime, availableSlots, service]);
 
   // Handle booking submission
   const handleBookingSubmit = async () => {
     if (!service || !mentor || !date || !fromTime || !toTime) {
       setError('Please fill in all required fields');
       return;
+    }
+
+    // Validate slot duration matches service duration
+    const fromTimeObj = new Date(`2000-01-01T${fromTime}:00`);
+    const toTimeObj = new Date(`2000-01-01T${toTime}:00`);
+    const durationMinutes = Math.round((toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60));
+    
+    // Check if "To" time is after "From" time
+    if (durationMinutes <= 0) {
+      setError('Please check slot duration. The end time must be after the start time.');
+      return;
+    }
+    
+    const selectedService = services.find(s => s.name === service);
+    if (selectedService) {
+      const serviceDurationMinutes = selectedService.duration === '30 min' ? 30 : 60;
+      
+      if (durationMinutes !== serviceDurationMinutes) {
+        const expectedDuration = getSelectedServiceDuration();
+        setError(`Please check slot duration. The selected time slot (${durationMinutes} min) must match the service duration (${expectedDuration}).`);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -141,10 +209,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 
 
-      // Calculate duration in minutes
-      const fromTimeObj = new Date(`2000-01-01T${fromTime}:00`);
-      const toTimeObj = new Date(`2000-01-01T${toTime}:00`);
-      const durationMinutes = Math.round((toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60));
+      // Duration is already calculated above for validation
 
       // Determine session type based on service
       let sessionType: 'video' | 'audio' | 'chat' | 'in-person' = 'video';
@@ -289,6 +354,13 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               {availableSlots.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Book a Slot</label>
+                  {service && (
+                    <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <span className="text-xs text-blue-700">
+                        ⏱️ Select a {getSelectedServiceDuration()} time slot
+                      </span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
@@ -302,18 +374,43 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                      <Select value={toTime} onValueChange={setToTime} placeholder="Select end time">
-                        {toTimeSlots.map(slot => (
-                          <SelectItem key={slot.time} value={slot.time} className="text-base">
-                            {slot.displayTime}
-                          </SelectItem>
-                        ))}
-                      </Select>
+                      {toTimeSlots.length > 0 ? (
+                        <Select value={toTime} onValueChange={setToTime} placeholder="Select end time">
+                          {toTimeSlots.map(slot => (
+                            <SelectItem key={slot.time} value={slot.time} className="text-base">
+                              {slot.displayTime}
+                            </SelectItem>
+                          ))}
+                        </Select>
+                      ) : fromTime ? (
+                        <div className="px-3 py-2 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-lg">
+                          No valid {getSelectedServiceDuration()} slots available from {fromTime}
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg">
+                          Select start time first
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
             </div>
+            
+            {/* Info Display */}
+            {info && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm text-blue-600 font-medium">{info}</span>
+              </div>
+            )}
+            
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <span className="text-sm text-red-600 font-medium">{error}</span>
+              </div>
+            )}
+            
             <button 
               onClick={handleBookingSubmit}
               className={`mt-6 px-6 py-3 rounded-lg font-semibold shadow transition text-lg ${
@@ -437,3 +534,4 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 };
 
 export default BookSessionPopup;
+

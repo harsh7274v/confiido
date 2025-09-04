@@ -1,11 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IBooking extends Document {
-  clientId: mongoose.Types.ObjectId;
+export interface ISession {
+  sessionId: mongoose.Types.ObjectId;
   expertId: mongoose.Types.ObjectId;
-  clientUserId: string; // 4-digit user_id for the client
   expertUserId: string; // 4-digit user_id for the expert/mentor
-  clientEmail: string; // Client's email address
   expertEmail: string; // Expert's email address
   sessionType: 'video' | 'audio' | 'chat' | 'in-person';
   duration: number; // in minutes
@@ -23,35 +21,33 @@ export interface IBooking extends Document {
   cancelledBy?: 'client' | 'expert' | 'system';
   cancellationTime?: Date;
   refundAmount?: number;
+}
+
+export interface IBooking extends Document {
+  clientId: mongoose.Types.ObjectId;
+  clientUserId: string; // 4-digit user_id for the client
+  clientEmail: string; // Client's email address
+  sessions: ISession[]; // Array of sessions
+  totalSessions: number; // Total number of sessions
+  totalSpent: number; // Total amount spent across all sessions
   createdAt: Date;
   updatedAt: Date;
 }
 
-const bookingSchema = new Schema<IBooking>({
-  clientId: {
+const sessionSchema = new Schema<ISession>({
+  sessionId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    auto: true
   },
   expertId: {
     type: Schema.Types.ObjectId,
     ref: 'Expert',
     required: true
   },
-  clientUserId: {
-    type: String,
-    required: true,
-    match: [/^\d{4}$/, 'Client user_id must be a 4-digit number']
-  },
   expertUserId: {
     type: String,
     required: true,
     match: [/^\d{4}$/, 'Expert user_id must be a 4-digit number']
-  },
-  clientEmail: {
-    type: String,
-    required: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
   },
   expertEmail: {
     type: String,
@@ -129,16 +125,51 @@ const bookingSchema = new Schema<IBooking>({
     type: Number,
     min: [0, 'Refund amount cannot be negative']
   }
+});
+
+const bookingSchema = new Schema<IBooking>({
+  clientId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  clientUserId: {
+    type: String,
+    required: true,
+    match: [/^\d{4}$/, 'Client user_id must be a 4-digit number']
+  },
+  clientEmail: {
+    type: String,
+    required: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address']
+  },
+  sessions: [sessionSchema],
+  totalSessions: {
+    type: Number,
+    default: 0
+  },
+  totalSpent: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true
 });
 
 // Indexes for better query performance
 bookingSchema.index({ clientId: 1 });
-bookingSchema.index({ expertId: 1 });
-bookingSchema.index({ status: 1 });
-bookingSchema.index({ scheduledDate: 1 });
-bookingSchema.index({ paymentStatus: 1 });
+bookingSchema.index({ clientUserId: 1 });
+bookingSchema.index({ 'sessions.expertId': 1 });
+bookingSchema.index({ 'sessions.status': 1 });
+bookingSchema.index({ 'sessions.scheduledDate': 1 });
+bookingSchema.index({ 'sessions.paymentStatus': 1 });
 bookingSchema.index({ createdAt: -1 });
+
+// Pre-save middleware to update totalSessions and totalSpent
+bookingSchema.pre('save', function(next) {
+  this.totalSessions = this.sessions.length;
+  this.totalSpent = this.sessions.reduce((total, session) => total + (session.price || 0), 0);
+  next();
+});
 
 export default mongoose.model<IBooking>('Booking', bookingSchema); 

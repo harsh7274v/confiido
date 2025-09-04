@@ -9,6 +9,7 @@ import BookSessionPopup from '../components/BookSessionPopup';
 import TransactionsPage from '../transactions/page';
 import ContactPage from '../components/ContactPage';
 import RewardsPage from '../components/RewardsPage';
+import PaymentsPage from '../components/PaymentsPage';
 import Sidebar from '../components/Sidebar';
 import {
   ArrowRight,
@@ -60,7 +61,7 @@ export default function DashboardPage() {
   const [showMessageToast, setShowMessageToast] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
 
 
 
@@ -538,6 +539,7 @@ export default function DashboardPage() {
           onTransactionsClick={() => setCurrentView('transactions')}
           onContactClick={handleContactClick}
           onRewardsClick={() => setCurrentView('rewards')}
+          onPaymentsClick={() => setCurrentView('payments')}
         />
         
         {/* Main content */}
@@ -553,6 +555,10 @@ export default function DashboardPage() {
           ) : currentView === 'rewards' ? (
             <div className="w-full">
               <RewardsPage />
+            </div>
+          ) : currentView === 'payments' ? (
+            <div className="w-full">
+              <PaymentsPage />
             </div>
           ) : (
             <>

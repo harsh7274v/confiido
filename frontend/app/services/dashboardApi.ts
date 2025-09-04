@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003';
 
 interface DashboardData {
   user: {
@@ -94,7 +94,7 @@ class DashboardApi {
 
   async getDashboardData(): Promise<DashboardData> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -113,7 +113,7 @@ class DashboardApi {
 
   async updateUserProfile(profileData: UserProfile): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/profile`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/profile`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(profileData),
@@ -133,7 +133,7 @@ class DashboardApi {
 
   async updateUserSettings(settingsData: UserSettings): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/settings`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/settings`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(settingsData),
@@ -153,7 +153,7 @@ class DashboardApi {
 
   async createGoal(text: string): Promise<Goal> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/goals`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/goals`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ text }),
@@ -173,7 +173,7 @@ class DashboardApi {
 
   async updateGoal(goalId: string, updates: { text?: string; completed?: boolean }): Promise<Goal> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/goals/${goalId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/goals/${goalId}`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(updates),
@@ -193,7 +193,7 @@ class DashboardApi {
 
   async deleteGoal(goalId: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/goals/${goalId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/goals/${goalId}`, {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
       });
@@ -209,7 +209,7 @@ class DashboardApi {
 
   async getGoals(): Promise<Goal[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/goals`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/goals`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -228,7 +228,7 @@ class DashboardApi {
 
   async getSetupSteps(): Promise<SetupStep[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/setup-steps`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/setup-steps`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -247,7 +247,7 @@ class DashboardApi {
 
   async updateSetupSteps(steps: Array<{ id: string; completed: boolean }>): Promise<SetupStep[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/dashboard/setup-steps`, {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard/setup-steps`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ steps }),

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import { Goal } from '../models/Goal';
 import { SetupStep } from '../models/SetupStep';
-import Booking from '../models/Booking';
+import Booking, { ISession } from '../models/Booking';
 import { Message } from '../models/Message';
 
 interface DashboardData {
@@ -78,21 +78,24 @@ export const getDashboardData = async (req: Request, res: Response) => {
 
     if (user.isExpert) {
       // Expert stats
-      const bookings = await Booking.find({ expertId: userId });
-      const completedBookings = bookings.filter(b => b.status === 'completed');
-      const pendingBookings = bookings.filter(b => b.status === 'pending');
+      const bookings = await Booking.find({ 'sessions.expertId': userId });
+      
+      // Get all sessions for this expert from all bookings
+      const allSessions = bookings.flatMap(booking => booking.sessions);
+      const completedSessions = allSessions.filter(s => s.status === 'completed');
+      const pendingSessions = allSessions.filter(s => s.status === 'pending');
 
-      const totalEarnings = completedBookings.reduce((sum, booking) => sum + (booking.price || 0), 0);
+      const totalEarnings = completedSessions.reduce((sum, session) => sum + (session.price || 0), 0);
       const thisMonth = new Date();
       thisMonth.setDate(1);
-      const thisMonthEarnings = completedBookings
-        .filter(b => b.createdAt && new Date(b.createdAt) >= thisMonth)
-        .reduce((sum, booking) => sum + (booking.price || 0), 0);
+      const thisMonthEarnings = completedSessions
+        .filter(s => s.scheduledDate && new Date(s.scheduledDate) >= thisMonth)
+        .reduce((sum, session) => sum + (session.price || 0), 0);
 
       stats = {
-        totalBookings: bookings.length,
-        completedBookings: completedBookings.length,
-        pendingBookings: pendingBookings.length,
+        totalBookings: allSessions.length,
+        completedBookings: completedSessions.length,
+        pendingBookings: pendingSessions.length,
         totalEarnings,
         thisMonthEarnings,
         averageRating: 0, // TODO: Calculate from reviews
@@ -100,54 +103,66 @@ export const getDashboardData = async (req: Request, res: Response) => {
       };
 
       // Recent activity for experts
-      const recentBookings = await Booking.find({ expertId: userId })
-        .populate('clientId', 'name')
+      const recentBookings = await Booking.find({ 'sessions.expertId': userId })
+        .populate('clientId', 'firstName lastName')
+        .populate('sessions.expertId', 'title')
         .sort({ createdAt: -1 })
         .limit(5);
 
-      recentActivity = recentBookings.map(booking => ({
-        id: booking._id.toString(),
-        type: 'booking_received',
-        title: `New booking from Client`,
-        description: 'Consultation session',
-        time: booking.createdAt.toISOString(),
-        amount: booking.price
-      }));
+      recentActivity = recentBookings.map(booking => {
+        const expertSession = booking.sessions.find(s => s.expertId.toString() === userId.toString());
+        const client = booking.clientId as any; // Type assertion for populated field
+        return {
+          id: booking._id.toString(),
+          type: 'booking_received',
+          title: `New booking from ${client?.firstName || ''} ${client?.lastName || ''}`,
+          description: 'Consultation session',
+          time: booking.createdAt.toISOString(),
+          amount: expertSession?.price || 0
+        };
+      });
     } else {
       // Seeker stats
       const bookings = await Booking.find({ clientId: userId });
-      const completedBookings = bookings.filter(b => b.status === 'completed');
-      const pendingBookings = bookings.filter(b => b.status === 'pending');
+      
+      // Get all sessions for this client from all bookings
+      const allSessions = bookings.flatMap(booking => booking.sessions);
+      const completedSessions = allSessions.filter(s => s.status === 'completed');
+      const pendingSessions = allSessions.filter(s => s.status === 'pending');
 
-      const totalSpent = completedBookings.reduce((sum, booking) => sum + (booking.price || 0), 0);
+      const totalSpent = completedSessions.reduce((sum, session) => sum + (session.price || 0), 0);
       const thisMonth = new Date();
       thisMonth.setDate(1);
-      const thisMonthSpent = completedBookings
-        .filter(b => b.createdAt && new Date(b.createdAt) >= thisMonth)
-        .reduce((sum, booking) => sum + (booking.price || 0), 0);
+      const thisMonthSpent = completedSessions
+        .filter(s => s.scheduledDate && new Date(s.scheduledDate) >= thisMonth)
+        .reduce((sum, session) => sum + (session.price || 0), 0);
 
       stats = {
-        totalBookings: bookings.length,
-        completedBookings: completedBookings.length,
-        pendingBookings: pendingBookings.length,
+        totalBookings: allSessions.length,
+        completedBookings: completedSessions.length,
+        pendingBookings: pendingSessions.length,
         totalSpent,
         thisMonthSpent
       };
 
       // Recent activity for seekers
       const recentBookings = await Booking.find({ clientId: userId })
-        .populate('expertId', 'name')
+        .populate('sessions.expertId', 'title')
         .sort({ createdAt: -1 })
         .limit(5);
 
-      recentActivity = recentBookings.map(booking => ({
-        id: booking._id.toString(),
-        type: 'session_booked',
-        title: `Booked session with Expert`,
-        description: 'Consultation session',
-        time: booking.createdAt.toISOString(),
-        amount: booking.price
-      }));
+      recentActivity = recentBookings.map(booking => {
+        const clientSession = booking.sessions[0]; // Client has one session per booking
+        const expert = clientSession?.expertId as any; // Type assertion for populated field
+        return {
+          id: booking._id.toString(),
+          type: 'session_booked',
+          title: `Booked session with ${expert?.title || 'Expert'}`,
+          description: 'Consultation session',
+          time: booking.createdAt.toISOString(),
+          amount: clientSession?.price || 0
+        };
+      });
     }
 
     // Get inspiration profiles (for experts)

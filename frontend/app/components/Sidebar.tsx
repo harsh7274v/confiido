@@ -10,7 +10,8 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  Wallet
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ interface SidebarProps {
   onTransactionsClick?: () => void;
   onContactClick?: () => void;
   onRewardsClick?: () => void;
+  onPaymentsClick?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -30,7 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onHomeClick,
   onTransactionsClick,
   onContactClick,
-  onRewardsClick
+  onRewardsClick,
+  onPaymentsClick
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState('profile');
@@ -38,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Home, path: '/dashboard' },
     { id: 'sessions', label: 'Sessions', icon: Calendar, path: '/sessions' },
+    { id: 'payments', label: 'Payments', icon: Wallet, path: '/payments' },
     { id: 'rewards', label: 'Rewards', icon: Gift, path: '/rewards' },
     { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
     { id: 'transactions', label: 'Transactions', icon: CreditCard, path: '/transactions' },
@@ -79,6 +83,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     // Handle rewards click to show rewards view
     if (itemId === 'rewards' && onRewardsClick) {
       onRewardsClick();
+    }
+    
+    // Handle payments click to show payments view
+    if (itemId === 'payments' && onPaymentsClick) {
+      onPaymentsClick();
     }
   };
 

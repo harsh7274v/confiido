@@ -39,7 +39,7 @@ router.get('/experts', async (req, res, next) => {
           },
           user_id: user.user_id,
           title: `${user.firstName} ${user.lastName}`,
-          company: 'Independent Consultant',
+          company: 'Professional Mentor',
           expertise: ['Career Guidance', 'Professional Development'],
           description: `Experienced professional offering career guidance and mentorship services.`,
           hourlyRate: 50,

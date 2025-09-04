@@ -1,14 +1,15 @@
-import express from 'express';
+ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
-import Booking from '../models/Booking';
+import Booking, { ISession } from '../models/Booking';
 import Expert from '../models/Expert';
 import User from '../models/User';
+import mongoose, { Types } from 'mongoose';
 
 const router = express.Router();
 
 // @route   POST /api/bookings
-// @desc    Create a new booking
+// @desc    Create a new booking or add session to existing booking
 // @access  Private
 router.post('/', protect, [
   body('expertId')
@@ -67,7 +68,7 @@ router.post('/', protect, [
       const basicExpertData = {
         userId: expertId, // This is the mentor's User ID
         title: `${mentorUser.firstName} ${mentorUser.lastName}`,
-        company: 'Independent Consultant',
+        company: 'Professional Mentor',
         expertise: ['Career Guidance', 'Professional Development'],
         description: `Experienced professional offering career guidance and mentorship services.`,
         hourlyRate: 50,
@@ -156,20 +157,21 @@ router.post('/', protect, [
 
     const price = sessionTypeConfig.price;
 
-    // Check for booking conflicts
-    const conflictingBooking = await Booking.findOne({
-      expertId,
-      scheduledDate: new Date(scheduledDate),
-      status: { $in: ['pending', 'confirmed'] },
+    // Check for booking conflicts in existing sessions
+    const existingBooking = await Booking.findOne({
+      clientId: req.user._id,
+      'sessions.expertId': expert._id,
+      'sessions.scheduledDate': new Date(scheduledDate),
+      'sessions.status': { $in: ['pending', 'confirmed'] },
       $or: [
         {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime }
+          'sessions.startTime': { $lt: endTime },
+          'sessions.endTime': { $gt: startTime }
         }
       ]
     });
 
-    if (conflictingBooking) {
+    if (existingBooking) {
       return res.status(400).json({
         success: false,
         error: 'This time slot is already booked'
@@ -197,13 +199,12 @@ router.post('/', protect, [
       });
     }
 
-    const bookingData = {
-      clientId: req.user._id,                    // Authenticated user's ObjectId
-      expertId: expert._id,                      // Expert document's ObjectId
-      clientUserId: clientUser.user_id || '0000', // Authenticated user's 4-digit ID
-      expertUserId: expertUser.user_id || '0000', // Selected mentor's 4-digit ID
-      clientEmail: clientUser.email,             // Authenticated user's email
-      expertEmail: expertUser.email,             // Selected mentor's email
+    // Create new session data
+    const newSession: ISession = {
+      sessionId: new Types.ObjectId(),
+      expertId: expert._id as mongoose.Types.ObjectId,
+      expertUserId: expertUser.user_id || '0000',
+      expertEmail: expertUser.email,
       sessionType,
       duration,
       scheduledDate: new Date(scheduledDate),
@@ -211,17 +212,51 @@ router.post('/', protect, [
       endTime,
       price,
       currency: 'INR',
-      notes
+      notes,
+      status: 'pending',
+      paymentStatus: 'pending'
     };
 
-
-
-    const booking = await Booking.create(bookingData);
+    // Try to find existing booking document for this client
+    let booking = await Booking.findOne({ clientId: req.user._id });
+    
+    if (booking) {
+      // Add new session to existing booking
+      booking.sessions.push(newSession);
+      await booking.save();
+      
+      console.log('✅ [BOOKING] Session added to existing booking:', {
+        bookingId: booking._id,
+        sessionId: newSession.sessionId,
+        totalSessions: booking.totalSessions,
+        totalSpent: booking.totalSpent
+      });
+    } else {
+      // Create new booking document with first session
+      const bookingData = {
+        clientId: req.user._id,
+        clientUserId: clientUser.user_id || '0000',
+        clientEmail: clientUser.email,
+        sessions: [newSession]
+      };
+      
+      booking = await Booking.create(bookingData);
+      
+      console.log('✅ [BOOKING] New booking created:', {
+        bookingId: booking._id,
+        sessionId: newSession.sessionId,
+        totalSessions: booking.totalSessions,
+        totalSpent: booking.totalSpent
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Booking created successfully',
-      data: { booking }
+      message: 'Session booked successfully',
+      data: { 
+        booking,
+        session: newSession
+      }
     });
   } catch (error) {
     next(error);
@@ -238,27 +273,27 @@ router.get('/', protect, async (req, res, next) => {
     const filter: any = {
       $or: [
         { clientId: req.user._id },
-        { expertId: req.user._id }
+        { 'sessions.expertId': req.user._id }
       ]
     };
 
     if (status) {
-      filter.status = status;
+      filter['sessions.status'] = status;
     }
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     const bookings = await Booking.find(filter)
       .populate('clientId', 'firstName lastName email')
-      .populate('expertId', 'title company')
+      .populate('sessions.expertId', 'title company')
       .populate({
-        path: 'expertId',
+        path: 'sessions.expertId',
         populate: {
           path: 'userId',
           select: 'firstName lastName email avatar'
         }
       })
-      .sort({ scheduledDate: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit as string));
 
@@ -284,13 +319,104 @@ router.get('/', protect, async (req, res, next) => {
 // @route   GET /api/bookings/:id
 // @desc    Get booking by ID
 // @access  Private
+
+// @route   GET /api/bookings/user
+// @desc    Get user's payment data from bookings (for payments page)
+// @access  Private
+router.get('/user', protect, async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
+    const user_id = req.user.user_id; // Get the 4-digit user_id
+
+    // Find bookings for this user
+    const filter: any = {
+      clientUserId: user_id
+    };
+
+    if (status) {
+      filter['sessions.status'] = status;
+    }
+
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    // Get bookings for this user
+    const bookings = await Booking.find(filter)
+      .populate('clientId', 'firstName lastName email')
+      .populate('sessions.expertId', 'title company')
+      .populate({
+        path: 'sessions.expertId',
+        populate: {
+          path: 'userId',
+          select: 'firstName lastName email avatar'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit as string));
+
+    const total = await Booking.countDocuments(filter);
+
+    // Get total counts across all bookings for this user
+    const allBookings = await Booking.find({ clientUserId: user_id });
+    let totalPaid = 0;
+    let totalPending = 0;
+    let totalFailed = 0;
+    let totalRefunded = 0;
+    let grandTotalSpent = 0;
+
+    // Calculate stats from sessions in booking documents
+    for (const booking of allBookings) {
+      for (const session of booking.sessions) {
+        switch (session.paymentStatus) {
+          case 'paid':
+            totalPaid++;
+            grandTotalSpent += session.price || 0;
+            break;
+          case 'pending':
+            totalPending++;
+            break;
+          case 'failed':
+            totalFailed++;
+            break;
+          case 'refunded':
+            totalRefunded++;
+            break;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        bookings,
+        stats: { 
+          total, 
+          paid: totalPaid, 
+          pending: totalPending, 
+          failed: totalFailed, 
+          refunded: totalRefunded, 
+          totalSpent: grandTotalSpent 
+        },
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total,
+          pages: Math.ceil(total / parseInt(limit as string))
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/:id', protect, async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate('clientId', 'firstName lastName email phone')
-      .populate('expertId', 'title company')
+      .populate('sessions.expertId', 'title company')
       .populate({
-        path: 'expertId',
+        path: 'sessions.expertId',
         populate: {
           path: 'userId',
           select: 'firstName lastName email avatar phone'
@@ -306,7 +432,7 @@ router.get('/:id', protect, async (req, res, next) => {
 
     // Check if user is authorized to view this booking
     if (booking.clientId.toString() !== req.user._id.toString() && 
-        booking.expertId.toString() !== req.user._id.toString()) {
+        !booking.sessions.some(session => session.expertId.toString() === req.user._id.toString())) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to view this booking'
@@ -327,6 +453,15 @@ router.get('/:id', protect, async (req, res, next) => {
 // @access  Private
 router.put('/:id/confirm', protect, async (req, res, next) => {
   try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session ID is required'
+      });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -336,28 +471,37 @@ router.put('/:id/confirm', protect, async (req, res, next) => {
       });
     }
 
-    // Check if user is the expert for this booking
-    if (booking.expertId.toString() !== req.user._id.toString()) {
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if user is the expert for this session
+    if (session.expertId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to confirm this booking'
+        error: 'Not authorized to confirm this session'
       });
     }
 
-    if (booking.status !== 'pending') {
+    if (session.status !== 'pending') {
       return res.status(400).json({
         success: false,
-        error: 'Booking cannot be confirmed'
+        error: 'Session cannot be confirmed'
       });
     }
 
-    booking.status = 'confirmed';
+    session.status = 'confirmed';
     await booking.save();
 
     res.json({
       success: true,
-      message: 'Booking confirmed successfully',
-      data: { booking }
+      message: 'Session confirmed successfully',
+      data: { booking, session }
     });
   } catch (error) {
     next(error);
@@ -368,6 +512,9 @@ router.put('/:id/confirm', protect, async (req, res, next) => {
 // @desc    Cancel booking
 // @access  Private
 router.put('/:id/cancel', protect, [
+  body('sessionId')
+    .notEmpty()
+    .withMessage('Session ID is required'),
   body('reason')
     .optional()
     .isLength({ max: 500 })
@@ -382,6 +529,7 @@ router.put('/:id/cancel', protect, [
       });
     }
 
+    const { sessionId, reason } = req.body;
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -391,32 +539,41 @@ router.put('/:id/cancel', protect, [
       });
     }
 
-    // Check if user is authorized to cancel this booking
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if user is authorized to cancel this session
     if (booking.clientId.toString() !== req.user._id.toString() && 
-        booking.expertId.toString() !== req.user._id.toString()) {
+        session.expertId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to cancel this booking'
+        error: 'Not authorized to cancel this session'
       });
     }
 
-    if (booking.status === 'cancelled' || booking.status === 'completed') {
+    if (session.status === 'cancelled' || session.status === 'completed') {
       return res.status(400).json({
         success: false,
-        error: 'Booking cannot be cancelled'
+        error: 'Session cannot be cancelled'
       });
     }
 
-    booking.status = 'cancelled';
-    booking.cancellationReason = req.body.reason;
-    booking.cancelledBy = booking.clientId.toString() === req.user._id.toString() ? 'client' : 'expert';
-    booking.cancellationTime = new Date();
+    session.status = 'cancelled';
+    session.cancellationReason = reason;
+    session.cancelledBy = booking.clientId.toString() === req.user._id.toString() ? 'client' : 'expert';
+    session.cancellationTime = new Date();
     await booking.save();
 
     res.json({
       success: true,
-      message: 'Booking cancelled successfully',
-      data: { booking }
+      message: 'Session cancelled successfully',
+      data: { booking, session }
     });
   } catch (error) {
     next(error);
@@ -428,6 +585,15 @@ router.put('/:id/cancel', protect, [
 // @access  Private
 router.put('/:id/complete', protect, async (req, res, next) => {
   try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session ID is required'
+      });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -437,28 +603,37 @@ router.put('/:id/complete', protect, async (req, res, next) => {
       });
     }
 
-    // Check if user is the expert for this booking
-    if (booking.expertId.toString() !== req.user._id.toString()) {
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if user is the expert for this session
+    if (session.expertId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
-        error: 'Not authorized to complete this booking'
+        error: 'Not authorized to complete this session'
       });
     }
 
-    if (booking.status !== 'confirmed') {
+    if (session.status !== 'confirmed') {
       return res.status(400).json({
         success: false,
-        error: 'Booking cannot be completed'
+        error: 'Session cannot be completed'
       });
     }
 
-    booking.status = 'completed';
+    session.status = 'completed';
     await booking.save();
 
     res.json({
       success: true,
-      message: 'Booking marked as completed',
-      data: { booking }
+      message: 'Session marked as completed',
+      data: { booking, session }
     });
   } catch (error) {
     next(error);
