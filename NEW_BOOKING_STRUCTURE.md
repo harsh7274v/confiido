@@ -152,3 +152,4 @@ The new structure maintains backward compatibility for:
 
 However, new bookings will use the new structure, so the frontend should be updated accordingly.
 
+

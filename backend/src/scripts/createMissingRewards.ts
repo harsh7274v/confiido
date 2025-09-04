@@ -39,14 +39,14 @@ async function createMissingRewards() {
         await Reward.create({
           userId: user._id,
           user_id: user.user_id || 'EXISTING', // Include user_id if available, or placeholder
-          points: 250,
-          totalEarned: 250,
+          points: 0,
+          totalEarned: 0,
           totalSpent: 0,
           history: [
             {
               type: 'earned',
               description: 'Welcome bonus for existing user',
-              points: 250,
+              points: 0,
               status: 'completed',
               date: new Date(),
             },

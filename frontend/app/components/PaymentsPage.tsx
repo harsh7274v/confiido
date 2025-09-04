@@ -26,6 +26,7 @@ import {
 import { paymentsApi, Payment, PaymentStats } from '../services/paymentsApi';
 import { transactionsApi } from '../services/transactionsApi';
 import { useAuth } from '../contexts/AuthContext';
+import CompleteTransactionPopup from './CompleteTransactionPopup';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -36,6 +37,8 @@ export default function PaymentsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [expandedPayments, setExpandedPayments] = useState<Set<string>>(new Set());
   const [completingTransactions, setCompletingTransactions] = useState<Set<string>>(new Set());
+  const [showTransactionPopup, setShowTransactionPopup] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -364,43 +367,36 @@ export default function PaymentsPage() {
     setExpandedPayments(newExpanded);
   };
 
-  const handleCompleteTransaction = async (paymentId: string) => {
-    try {
-      setCompletingTransactions(prev => new Set(prev).add(paymentId));
-      
-      // For demo purposes, we'll simulate the API call
-      // In a real app, you would call: await transactionsApi.completeTransaction(paymentId);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update the payment status locally
-      setPayments(prev => prev.map(payment => 
-        payment._id === paymentId 
-          ? { ...payment, status: 'completed', paymentStatus: 'paid' }
-          : payment
-      ));
-      
-      // Update stats
-      if (stats) {
-        setStats(prev => prev ? {
-          ...prev,
-          pending: prev.pending - 1,
-          paid: prev.paid + 1,
-          totalSpent: prev.totalSpent + (payments.find(p => p._id === paymentId)?.price || 0)
-        } : null);
-      }
-      
-    } catch (error) {
-      console.error('Error completing transaction:', error);
-      // You could add a toast notification here
-    } finally {
-      setCompletingTransactions(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(paymentId);
-        return newSet;
-      });
+  const handleCompleteTransaction = (paymentId: string) => {
+    const payment = payments.find(p => p._id === paymentId);
+    if (payment) {
+      setSelectedPayment(payment);
+      setShowTransactionPopup(true);
     }
+  };
+
+  const handlePaymentSuccess = (paymentId: string, loyaltyPointsUsed: number) => {
+    // Update the payment status locally
+    setPayments(prev => prev.map(payment => 
+      payment._id === paymentId 
+        ? { ...payment, status: 'completed', paymentStatus: 'paid' }
+        : payment
+    ));
+    
+    // Update stats
+    if (stats) {
+      const payment = payments.find(p => p._id === paymentId);
+      const finalAmount = payment ? payment.price - loyaltyPointsUsed : 0;
+      setStats(prev => prev ? {
+        ...prev,
+        pending: prev.pending - 1,
+        paid: prev.paid + 1,
+        totalSpent: prev.totalSpent + finalAmount
+      } : null);
+    }
+    
+    // Show success message
+    alert(`Payment successful! ${loyaltyPointsUsed > 0 ? `Used ${loyaltyPointsUsed} loyalty points. ` : ''}Session completed.`);
   };
 
   // Use all payments without filtering
@@ -700,6 +696,17 @@ export default function PaymentsPage() {
             </nav>
           </div>
         )}
+
+        {/* Complete Transaction Popup */}
+        <CompleteTransactionPopup
+          isOpen={showTransactionPopup}
+          onClose={() => {
+            setShowTransactionPopup(false);
+            setSelectedPayment(null);
+          }}
+          payment={selectedPayment}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       </div>
     </div>
   );

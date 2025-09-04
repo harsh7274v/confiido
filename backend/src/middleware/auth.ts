@@ -138,14 +138,14 @@ export const protect = async (
               await Reward.create({
                 userId: user._id,
                 user_id: user.user_id || 'FIREBASE', // Include user_id if available, or placeholder
-                points: 250,
-                totalEarned: 250,
+                points: 0,
+                totalEarned: 0,
                 totalSpent: 0,
                 history: [
                   {
                     type: 'earned',
                     description: 'Welcome bonus for new Firebase user',
-                    points: 250,
+                    points: 0,
                     status: 'completed',
                     date: new Date(),
                   },
@@ -274,14 +274,14 @@ export const optionalAuth = async (
           await Reward.create({
             userId: user._id,
             user_id: user.user_id || 'MOCK', // Include user_id if available, or placeholder
-            points: 250,
-            totalEarned: 250,
+            points: 0,
+            totalEarned: 0,
             totalSpent: 0,
             history: [
               {
                 type: 'earned',
                 description: 'Welcome bonus for new mock user (optionalAuth)',
-                points: 250,
+                points: 0,
                 status: 'completed',
                 date: new Date(),
               },

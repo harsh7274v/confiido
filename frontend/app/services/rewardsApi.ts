@@ -16,6 +16,7 @@ export interface RewardAccount {
   totalEarned: number;
   totalSpent: number;
   history: RewardActivity[];
+  newUserRewardRedeemed: boolean;
 }
 
 class RewardsApi {
@@ -39,17 +40,50 @@ class RewardsApi {
     return data.data;
   }
 
-  async redeem(points: number, description?: string): Promise<RewardAccount> {
+  async redeem(points: number, description?: string, rewardId?: string): Promise<RewardAccount> {
+    console.log('Making redeem API call to:', `${API_BASE_URL}/api/rewards/redeem`);
+    console.log('Request body:', { points, description, rewardId });
+    console.log('Headers:', this.getAuthHeaders());
+    
     const response = await fetch(`${API_BASE_URL}/api/rewards/redeem`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ points, description }),
+      body: JSON.stringify({ points, description, rewardId }),
     });
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
     if (!response.ok) {
       const text = await response.text();
+      console.error('Redeem API error response:', text);
       throw new Error(text || `Failed to redeem: ${response.status}`);
     }
     const data = await response.json();
+    console.log('Redeem API success response:', data);
+    return data.data;
+  }
+
+  async deductForPayment(points: number, description?: string, sessionId?: string, expertName?: string): Promise<RewardAccount> {
+    console.log('Making payment deduction API call to:', `${API_BASE_URL}/api/rewards/deduct-payment`);
+    console.log('Request body:', { points, description, sessionId, expertName });
+    
+    const response = await fetch(`${API_BASE_URL}/api/rewards/deduct-payment`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ points, description, sessionId, expertName }),
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Payment deduction API error response:', text);
+      throw new Error(text || `Failed to deduct points: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Payment deduction API success response:', data);
     return data.data;
   }
 }

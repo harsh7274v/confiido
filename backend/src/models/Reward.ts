@@ -15,6 +15,7 @@ export interface IReward extends Document {
   totalEarned: number;
   totalSpent: number;
   history: IRewardActivity[];
+  newUserRewardRedeemed: boolean; // Track if new user reward has been redeemed
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +35,7 @@ const RewardSchema = new Schema<IReward>({
   totalEarned: { type: Number, required: true, default: 0 },
   totalSpent: { type: Number, required: true, default: 0 },
   history: { type: [RewardActivitySchema], default: [] },
+  newUserRewardRedeemed: { type: Boolean, required: true, default: false },
 }, { timestamps: true });
 
 // Force fresh model compilation by deleting old model first

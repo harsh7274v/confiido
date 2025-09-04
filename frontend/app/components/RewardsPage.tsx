@@ -33,6 +33,7 @@ export default function RewardsPage() {
   const [totalEarned, setTotalEarned] = useState(0);
   const [totalSpent, setTotalSpent] = useState(0);
   const [recentActivity, setRecentActivity] = useState<Array<{ id?: string; type: 'earned' | 'spent'; description: string; points: number; date: Date; status: 'completed' | 'pending' | 'failed'; }>>([]);
+  const [newUserRewardRedeemed, setNewUserRewardRedeemed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +49,7 @@ export default function RewardsPage() {
         setLoyaltyPoints(account.points);
         setTotalEarned(account.totalEarned);
         setTotalSpent(account.totalSpent);
+        setNewUserRewardRedeemed(account.newUserRewardRedeemed);
         setRecentActivity(
           (account.history || []).map((h) => ({
             ...h,
@@ -70,57 +72,12 @@ export default function RewardsPage() {
   const rewards: Reward[] = [
     {
       id: '1',
-      title: '10% Session Discount',
-      description: 'Get 10% off on your next coaching session',
-      pointsRequired: 100,
-      category: 'discount',
-      isAvailable: loyaltyPoints >= 100,
-      icon: Gift
-    },
-    {
-      id: '2',
-      title: 'Free Resume Review',
-      description: 'Get a professional resume review session',
-      pointsRequired: 150,
+      title: 'New User Welcome Bonus',
+      description: 'Welcome bonus for new users - one time only!',
+      pointsRequired: 250,
       category: 'freebie',
-      isAvailable: loyaltyPoints >= 150,
+      isAvailable: !newUserRewardRedeemed, // Always available unless already redeemed
       icon: Star
-    },
-    {
-      id: '3',
-      title: 'Priority Support',
-      description: 'Get priority customer support for 30 days',
-      pointsRequired: 200,
-      category: 'upgrade',
-      isAvailable: loyaltyPoints >= 200,
-      icon: Zap
-    },
-    {
-      id: '4',
-      title: 'Exclusive Webinar Access',
-      description: 'Access to exclusive career development webinars',
-      pointsRequired: 300,
-      category: 'exclusive',
-      isAvailable: loyaltyPoints >= 300,
-      icon: Award
-    },
-    {
-      id: '5',
-      title: '20% Course Discount',
-      description: 'Get 20% off on any premium course',
-      pointsRequired: 400,
-      category: 'discount',
-      isAvailable: loyaltyPoints >= 400,
-      icon: Trophy
-    },
-    {
-      id: '6',
-      title: '1-on-1 Career Strategy Session',
-      description: 'Free 30-minute career strategy consultation',
-      pointsRequired: 500,
-      category: 'freebie',
-      isAvailable: loyaltyPoints >= 500,
-      icon: Target
     }
   ];
 
@@ -155,16 +112,35 @@ export default function RewardsPage() {
   };
 
   const handleRedeemReward = async (reward: Reward) => {
-    if (loyaltyPoints < reward.pointsRequired) return;
+    console.log('Redeem button clicked for reward:', reward);
+    console.log('Current loyalty points:', loyaltyPoints);
+    console.log('Points required:', reward.pointsRequired);
+    
+    // For new user reward (ID '1'), allow redemption even if user doesn't have enough points
+    // because it ADDS points rather than spending them
+    if (reward.id !== '1' && loyaltyPoints < reward.pointsRequired) {
+      console.log('Insufficient points for regular reward');
+      return;
+    }
     try {
       setLoading(true);
-      const account = await rewardsApi.redeem(reward.pointsRequired, `Redeemed: ${reward.title}`);
+      console.log('Calling rewardsApi.redeem with:', { points: reward.pointsRequired, description: `Redeemed: ${reward.title}`, rewardId: reward.id });
+      const account = await rewardsApi.redeem(reward.pointsRequired, `Redeemed: ${reward.title}`, reward.id);
+      console.log('Redeem successful, new account data:', account);
       setLoyaltyPoints(account.points);
       setTotalSpent(account.totalSpent);
       setTotalEarned(account.totalEarned);
+      setNewUserRewardRedeemed(account.newUserRewardRedeemed);
       setRecentActivity((account.history || []).map((h) => ({ ...h, date: new Date(h.date) })));
-      alert(`Successfully redeemed: ${reward.title}`);
+      
+      // Show specific message for new user reward
+      if (reward.id === '1') {
+        alert(`🎉 Welcome! You've successfully claimed your ${reward.title} and earned 250 points!`);
+      } else {
+        alert(`Successfully redeemed: ${reward.title}`);
+      }
     } catch (e: any) {
+      console.error('Error redeeming reward:', e);
       setError(e.message || 'Failed to redeem');
     } finally {
       setLoading(false);
@@ -319,14 +295,24 @@ export default function RewardsPage() {
                       
                       <button
                         onClick={() => handleRedeemReward(reward)}
-                        disabled={!reward.isAvailable}
+                        disabled={!reward.isAvailable || (reward.id !== '1' && loyaltyPoints < reward.pointsRequired)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                          reward.isAvailable
+                          reward.isAvailable && (reward.id === '1' || loyaltyPoints >= reward.pointsRequired)
                             ? 'bg-purple-600 text-white hover:bg-purple-700'
                             : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         }`}
                       >
-                        {reward.isAvailable ? (
+                        {reward.id === '1' && newUserRewardRedeemed ? (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            Already Redeemed
+                          </>
+                        ) : reward.id === '1' ? (
+                          <>
+                            <Gift className="h-4 w-4" />
+                            Redeem
+                          </>
+                        ) : reward.isAvailable ? (
                           <>
                             <Gift className="h-4 w-4" />
                             Redeem

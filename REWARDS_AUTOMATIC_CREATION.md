@@ -10,8 +10,8 @@ The rewards system has been updated to automatically create reward accounts for 
 - When a new user registers via traditional signup
 - **Automatically creates** a reward account with:
   - `userId`: References the user's `_id` (ObjectId)
-  - `points`: 250 (welcome bonus)
-  - `totalEarned`: 250
+  - `points`: 0 (no welcome bonus)
+  - `totalEarned`: 0
   - `totalSpent`: 0
   - `history`: Welcome bonus transaction
 
@@ -59,13 +59,13 @@ The rewards system has been updated to automatically create reward accounts for 
 await Reward.create({
   userId: user._id,        // User's MongoDB ObjectId
   user_id: user.user_id,   // User's 4-digit unique ID
-  points: 250,             // Welcome bonus
-  totalEarned: 250,
+  points: 0,               // No welcome bonus
+  totalEarned: 0,
   totalSpent: 0,
   history: [{
     type: 'earned',
     description: 'Welcome bonus for new user',
-    points: 250,
+    points: 0,
     status: 'completed',
     date: new Date()
   }]
@@ -101,7 +101,7 @@ To test the new system:
 
 1. **Register a new user** via `/api/auth/register`
 2. **Check database** - should see reward document with `userId` field
-3. **Access rewards page** - should see 250 points immediately
+3. **Access rewards page** - should see 0 points initially
 4. **Verify references** - `userId` should match user's `_id`
 
 ## Future Enhancements

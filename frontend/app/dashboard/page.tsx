@@ -158,7 +158,12 @@ export default function DashboardPage() {
     async function fetchSessions() {
       // Check if we have any form of authentication
       const storedToken = localStorage.getItem('token');
-      if (!user && !storedToken) return;
+      
+      // For development/testing: if no auth, set a mock token
+      if (!user && !storedToken) {
+        console.log('No authentication found, using mock token for development');
+        localStorage.setItem('token', 'mock_token_test');
+      }
       
       setSessionsLoading(true);
       setSessionsError(null);
