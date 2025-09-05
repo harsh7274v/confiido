@@ -43,6 +43,9 @@ export interface BackendBooking {
     cancelledBy?: 'client' | 'expert' | 'system';
     cancellationTime?: string;
     refundAmount?: number;
+    // Timeout fields for 5-minute booking timeout
+    timeoutAt?: string;
+    timeoutStatus?: 'active' | 'expired' | 'completed';
   }>;
   totalSessions: number;
   totalSpent: number;
@@ -84,6 +87,9 @@ export interface Payment {
   cancelledBy?: 'client' | 'expert' | 'system';
   cancellationTime?: Date;
   refundAmount?: number;
+  // Timeout fields for 5-minute booking timeout
+  timeoutAt?: Date;
+  timeoutStatus?: 'active' | 'expired' | 'completed';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -181,6 +187,9 @@ class PaymentsApi {
                 cancelledBy: session.cancelledBy,
                 cancellationTime: session.cancellationTime ? new Date(session.cancellationTime) : undefined,
                 refundAmount: session.refundAmount,
+                // Timeout fields
+                timeoutAt: session.timeoutAt ? new Date(session.timeoutAt) : undefined,
+                timeoutStatus: session.timeoutStatus,
                 createdAt: new Date(booking.createdAt),
                 updatedAt: new Date(booking.updatedAt)
               });

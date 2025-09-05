@@ -10,20 +10,7 @@ async function updateAvatars() {
     useUnifiedTopology: true,
   } as any);
 
-  const users = await User.find({
-    $or: [
-      { avatar: { $exists: false } },
-      { avatar: null },
-      { avatar: '' },
-      { avatar: { $regex: INITIALS_REGEX } }
-    ]
-  });
-
-  for (const user of users) {
-    user.avatar = DEFAULT_AVATAR;
-    await user.save();
-    console.log(`Updated avatar for user: ${user.email}`);
-  }
+  console.log('Avatar field has been removed from User model. No updates needed.');
 
   console.log('Avatar update complete.');
   await mongoose.disconnect();

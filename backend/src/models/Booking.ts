@@ -21,6 +21,13 @@ export interface ISession {
   cancelledBy?: 'client' | 'expert' | 'system';
   cancellationTime?: Date;
   refundAmount?: number;
+  // Timeout fields for 5-minute booking timeout
+  timeoutAt?: Date; // When the booking will expire
+  timeoutStatus?: 'active' | 'expired' | 'completed'; // Timeout tracking status
+  // Payment completion fields
+  paymentCompletedAt?: Date; // When the payment was completed
+  loyaltyPointsUsed?: number; // Number of loyalty points used
+  finalAmount?: number; // Final amount after loyalty points deduction
 }
 
 export interface IBooking extends Document {
@@ -124,6 +131,31 @@ const sessionSchema = new Schema<ISession>({
   refundAmount: {
     type: Number,
     min: [0, 'Refund amount cannot be negative']
+  },
+  // Timeout fields for 5-minute booking timeout
+  timeoutAt: {
+    type: Date,
+    default: function() {
+      // Set timeout to 5 minutes from now
+      return new Date(Date.now() + 5 * 60 * 1000);
+    }
+  },
+  timeoutStatus: {
+    type: String,
+    enum: ['active', 'expired', 'completed'],
+    default: 'active'
+  },
+  // Payment completion fields
+  paymentCompletedAt: {
+    type: Date
+  },
+  loyaltyPointsUsed: {
+    type: Number,
+    min: [0, 'Loyalty points used cannot be negative']
+  },
+  finalAmount: {
+    type: Number,
+    min: [0, 'Final amount cannot be negative']
   }
 });
 

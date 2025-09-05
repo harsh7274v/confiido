@@ -21,14 +21,29 @@ import {
   Hash,
   CheckCircle2,
   Loader2,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { paymentsApi, Payment, PaymentStats } from '../services/paymentsApi';
 import { transactionsApi } from '../services/transactionsApi';
+import { timeoutApi } from '../services/timeoutApi';
+import bookingApi from '../services/bookingApi';
 import { useAuth } from '../contexts/AuthContext';
 import CompleteTransactionPopup from './CompleteTransactionPopup';
+import { useTimeout } from '../contexts/TimeoutContext';
 
 export default function PaymentsPage() {
+  // Generate unique instance ID for debugging
+  const instanceId = React.useMemo(() => Math.random().toString(36).substr(2, 9), []);
+  
+  // Log component mount
+  React.useEffect(() => {
+    console.log(`🚀 [PAYMENTS-${instanceId}] Component mounted`);
+    return () => {
+      console.log(`🛑 [PAYMENTS-${instanceId}] Component unmounted`);
+    };
+  }, [instanceId]);
+  
   const [payments, setPayments] = useState<Payment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,11 +54,270 @@ export default function PaymentsPage() {
   const [completingTransactions, setCompletingTransactions] = useState<Set<string>>(new Set());
   const [showTransactionPopup, setShowTransactionPopup] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user } = useAuth();
+  
+  // Use the timeout context
+  const { 
+    timeouts, 
+    addTimeout, 
+    updateTimeoutStatus, 
+    removeTimeout, 
+    getTimeout, 
+    formatCountdown, 
+    isExpired,
+    isInitialized 
+  } = useTimeout();
+
+  // Track sessions we've already handled expiry for (prevent duplicate backend calls)
+  const [handledExpiry, setHandledExpiry] = useState<Set<string>>(new Set());
+
+  // Retry helper to ensure backend is eventually updated (handles minor clock drift)
+  const cancelExpiredWithRetry = async (bookingId: string, sessionId: string, attempts = 5, delayMs = 2000) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem9('token') : null;
+    if (!token && !user) {
+      throw new Error('UNAUTHENTICATED');
+    }
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        await timeoutApi.cancelExpiredSession(bookingId, sessionId);
+        return;
+      } catch (err: any) {
+        const msg = typeof err?.message === 'string' ? err.message : '';
+        if (msg.includes('400') && (msg.includes('not in pending status') || msg.includes('not in pending') || msg.includes('not expired'))) {
+          // Surface as a special error so caller can fallback
+          throw new Error('NOT_EXPIRED_OR_NOT_PENDING');
+        }
+        if (attempt === attempts) {
+          throw err;
+        }
+        await new Promise(res => setTimeout(res, delayMs * attempt));
+      }
+    }
+    throw new Error('CANCEL_EXPIRED_RETRIES_EXHAUSTED');
+  };
+
+  // Load handled expiry keys from localStorage so refresh won't restart timers
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('handled_expiry_sessions');
+      if (stored) {
+        const parsed: string[] = JSON.parse(stored);
+        setHandledExpiry(new Set(parsed));
+      }
+    } catch (e) {
+      console.error('Failed to load handled expiry sessions:', e);
+    }
+  }, []);
+
+  // Persist handled expiry keys whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('handled_expiry_sessions', JSON.stringify(Array.from(handledExpiry)));
+    } catch (e) {
+      console.error('Failed to persist handled expiry sessions:', e);
+    }
+  }, [handledExpiry]);
+
+  // Helper: determine expiry using server-provided timeoutAt (robust after refresh)
+  const isExpiredByServerTime = (payment: Payment) => {
+    if (!payment.timeoutAt) return false;
+    // Consider expired if now is past timeoutAt and not completed
+    try {
+      const timeoutAtDate = payment.timeoutAt instanceof Date ? payment.timeoutAt : new Date(payment.timeoutAt as unknown as string);
+      const isExpired = timeoutAtDate.getTime() <= Date.now();
+      console.log(`🔍 [PAYMENTS] Checking server expiry for ${payment._id}:`, {
+        timeoutAt: timeoutAtDate.toISOString(),
+        now: new Date().toISOString(),
+        isExpired,
+        status: payment.status,
+        paymentStatus: payment.paymentStatus
+      });
+      return isExpired;
+    } catch (error) {
+      console.error('Error checking server expiry:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     fetchPayments();
   }, [currentPage]);
+
+  // Initialize timeouts for pending bookings without resetting existing ones
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    payments.forEach(payment => {
+      // Only start timers for pending payments that are not completed/paid
+      if (payment.paymentStatus === 'pending' && 
+          payment.status === 'pending' && 
+          payment.timeoutAt && 
+          payment.timeoutStatus === 'active') {
+        const key = `${payment.bookingId}_${payment._id}`;
+        
+        // Check if already expired by server time
+        if (isExpiredByServerTime(payment)) {
+          console.log(`⏰ [PAYMENTS] Session ${payment._id} is already expired by server time, marking as handled`);
+          // Mark as handled to prevent timer restart
+          setHandledExpiry(prev => new Set([...prev, key]));
+          // Update UI immediately
+          setPayments(prev => prev.map(p => p._id === payment._id ? {
+            ...p,
+            paymentStatus: 'failed',
+            status: 'cancelled',
+            timeoutStatus: 'expired'
+          } : p));
+          return;
+        }
+        
+        // Check if already handled
+        if (handledExpiry.has(key)) {
+          console.log(`⏰ [PAYMENTS] Session ${payment._id} already handled, skipping timer`);
+          return;
+        }
+        
+        const existing = getTimeout(payment.bookingId, payment._id);
+        if (!existing) {
+          console.log(`⏰ [PAYMENTS] Starting timer for session ${payment._id}`);
+          addTimeout(
+            payment.bookingId,
+            payment._id,
+            payment.timeoutAt.toISOString()
+          );
+        }
+      } else if (payment.paymentStatus === 'paid' || payment.status === 'completed') {
+        // Remove any existing timeout for completed/paid sessions
+        const key = `${payment.bookingId}_${payment._id}`;
+        const existing = getTimeout(payment.bookingId, payment._id);
+        if (existing) {
+          console.log(`⏰ [PAYMENTS] Removing timeout for completed/paid session ${payment._id}`);
+          removeTimeout(payment.bookingId, payment._id);
+          setHandledExpiry(prev => new Set([...prev, key]));
+        }
+      }
+    });
+  }, [payments, isInitialized, addTimeout, removeTimeout, handledExpiry, getTimeout]);
+
+  // When a session expires, update frontend state and notify backend once
+  useEffect(() => {
+    if (!isInitialized || payments.length === 0) return;
+
+    const newlyExpired: string[] = [];
+
+    payments.forEach(payment => {
+      // Only process expiry for pending payments that are not completed/paid
+      if (payment.paymentStatus === 'pending' && payment.status === 'pending') {
+        const expired = isExpired(payment.bookingId, payment._id) || isExpiredByServerTime(payment) || payment.timeoutStatus === 'expired';
+        const key = `${payment.bookingId}_${payment._id}`;
+        
+        console.log(`🔍 [PAYMENTS] Checking expiry for ${payment._id}:`, {
+          isExpiredByTimer: isExpired(payment.bookingId, payment._id),
+          isExpiredByServer: isExpiredByServerTime(payment),
+          timeoutStatus: payment.timeoutStatus,
+          overallExpired: expired,
+          alreadyHandled: handledExpiry.has(key)
+        });
+        
+        if (expired && !handledExpiry.has(key)) {
+          console.log(`⏰ [PAYMENTS] Session ${payment._id} has expired, processing...`);
+          newlyExpired.push(key);
+          
+          // Optimistically update UI: mark as expired/failed and timeoutStatus
+          setPayments(prev => prev.map(p => p._id === payment._id ? {
+            ...p,
+            paymentStatus: 'failed',
+            status: 'cancelled',
+            timeoutStatus: 'expired'
+          } : p));
+
+          // Update local timeout context: mark expired and remove timer
+          updateTimeoutStatus(payment.bookingId, payment._id, 'expired');
+          removeTimeout(payment.bookingId, payment._id);
+
+          // Fire backend update to cancel the expired session
+          if (payment.timeoutStatus !== 'expired') {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            if (token || user) {
+              console.log(`📡 [PAYMENTS] Calling backend to cancel expired session ${payment._id}`);
+              // Call the backend to cancel the expired session using the new endpoint
+              bookingApi.cancelExpiredSession(payment.bookingId, payment._id)
+                .then((response) => {
+                  console.log('✅ [PAYMENTS] Successfully cancelled expired session:', response);
+                  // Refetch payments to get updated status from backend
+                  setTimeout(() => fetchPayments(), 1000); // Small delay to ensure backend has processed
+                })
+                .catch((error) => {
+                  console.error('❌ [PAYMENTS] Failed to cancel expired session:', error);
+                  console.error('Error details:', error.response?.data || error.message);
+                  // Even if backend call fails, keep the frontend state updated
+                  // The backend timeout service will eventually catch this
+                });
+            } else {
+              console.warn('⚠️ [PAYMENTS] No authentication token available for backend call');
+            }
+          } else {
+            console.log(`⏰ [PAYMENTS] Session ${payment._id} already marked as expired in backend`);
+          }
+        }
+      }
+    });
+
+    if (newlyExpired.length > 0) {
+      console.log(`📝 [PAYMENTS] Marking ${newlyExpired.length} sessions as handled`);
+      setHandledExpiry(prev => {
+        const next = new Set(prev);
+        newlyExpired.forEach(k => next.add(k));
+        return next;
+      });
+    }
+  }, [timeouts, isInitialized, payments, handledExpiry, isExpired, removeTimeout, updateTimeoutStatus, user]);
+
+  // Periodically refetch payments to reflect backend status changes (normalize pending->failed when cancelled)
+  useEffect(() => {
+    console.log(`🔄 [PAYMENTS-${instanceId}] Setting up 5-minute auto-refresh interval`);
+    const interval = setInterval(() => {
+      console.log(`🔄 [PAYMENTS-${instanceId}] Auto-refreshing payments (5-minute interval)`);
+      fetchPayments();
+    }, 300000); // 5 minutes = 300,000 milliseconds
+    return () => {
+      console.log(`🔄 [PAYMENTS-${instanceId}] Clearing auto-refresh interval`);
+      clearInterval(interval);
+    };
+  }, [instanceId]);
+
+  // Add a function to manually refresh payments (useful for testing)
+  const refreshPayments = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchPayments();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Debug function to check timeout status (useful for testing)
+  const debugTimeoutStatus = () => {
+    console.log('🔍 [DEBUG] Current timeout status:');
+    console.log('  Handled expiry sessions:', Array.from(handledExpiry));
+    console.log('  Active timeouts:', Object.keys(timeouts));
+    console.log('  Payments with pending status:', payments.filter(p => p.paymentStatus === 'pending').map(p => ({
+      id: p._id,
+      bookingId: p.bookingId,
+      status: p.status,
+      paymentStatus: p.paymentStatus,
+      timeoutAt: p.timeoutAt,
+      timeoutStatus: p.timeoutStatus
+    })));
+  };
+
+  // Expose debug function to window for testing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).debugTimeoutStatus = debugTimeoutStatus;
+      (window as any).refreshPayments = refreshPayments;
+    }
+  }, [debugTimeoutStatus, refreshPayments]);
 
   // Show mock data on mount if no authentication
   useEffect(() => {
@@ -58,6 +332,7 @@ export default function PaymentsPage() {
   }, [user, payments.length, loading]);
 
   const fetchPayments = async () => {
+    console.log(`📡 [PAYMENTS-${instanceId}] fetchPayments called at:`, new Date().toISOString());
     try {
       setLoading(true);
       setError(null);
@@ -73,7 +348,13 @@ export default function PaymentsPage() {
         limit: 10
       };
       const response = await paymentsApi.getPayments(params);
-      setPayments(response.bookings);
+      const normalized = response.bookings.map(p => {
+        if (p.status === 'cancelled' && p.paymentStatus === 'pending') {
+          return { ...p, paymentStatus: 'failed' as const };
+        }
+        return p;
+      });
+      setPayments(normalized);
       setStats(response.stats);
       setTotalPages(response.pagination.pages);
     } catch (err: any) {
@@ -375,24 +656,97 @@ export default function PaymentsPage() {
     }
   };
 
-  const handlePaymentSuccess = (paymentId: string, loyaltyPointsUsed: number) => {
-    // Update the payment status locally
-    setPayments(prev => prev.map(payment => 
-      payment._id === paymentId 
-        ? { ...payment, status: 'completed', paymentStatus: 'paid' }
-        : payment
+  const handlePaymentSuccess = async (paymentId: string, loyaltyPointsUsed: number, paymentMethod?: string) => {
+    console.log(`💳 [PAYMENTS-${instanceId}] Payment success for session ${paymentId}:`, {
+      loyaltyPointsUsed,
+      paymentMethod
+    });
+
+    // Find the payment to get booking ID
+    const payment = payments.find(p => p._id === paymentId);
+    if (!payment) {
+      console.error('❌ [PAYMENTS] Payment not found for ID:', paymentId);
+      return;
+    }
+
+    // Optimistically update the frontend state
+    setPayments(prev => prev.map(p => 
+      p._id === paymentId 
+        ? { ...p, status: 'completed', paymentStatus: 'paid' }
+        : p
     ));
     
     // Update stats
     if (stats) {
-      const payment = payments.find(p => p._id === paymentId);
-      const finalAmount = payment ? payment.price - loyaltyPointsUsed : 0;
+      const finalAmount = payment.price - loyaltyPointsUsed;
       setStats(prev => prev ? {
         ...prev,
         pending: prev.pending - 1,
         paid: prev.paid + 1,
         totalSpent: prev.totalSpent + finalAmount
       } : null);
+    }
+
+    // Remove the timeout from the timeout context since payment is completed
+    console.log(`⏰ [PAYMENTS-${instanceId}] Removing timeout for completed payment ${paymentId}`);
+    removeTimeout(payment.bookingId, paymentId);
+    
+    // Mark this session as handled to prevent timer restart
+    const key = `${payment.bookingId}_${paymentId}`;
+    setHandledExpiry(prev => new Set([...prev, key]));
+
+    // Call backend to update payment status
+    try {
+      console.log(`📡 [PAYMENTS-${instanceId}] Calling backend to complete payment for session ${paymentId}`);
+      const response = await bookingApi.completePayment(
+        payment.bookingId, 
+        paymentId, 
+        paymentMethod || 'online', 
+        loyaltyPointsUsed
+      );
+      
+      console.log('✅ [PAYMENTS] Backend payment completion successful:', response);
+      
+      // Refetch payments to ensure data consistency
+      setTimeout(() => fetchPayments(), 1000);
+      
+    } catch (error: any) {
+      console.error('❌ [PAYMENTS] Backend payment completion failed:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      
+      // Revert frontend state on backend failure
+      setPayments(prev => prev.map(p => 
+        p._id === paymentId 
+          ? { ...p, status: 'pending', paymentStatus: 'pending' }
+          : p
+      ));
+      
+      // Revert stats
+      if (stats) {
+        setStats(prev => prev ? {
+          ...prev,
+          pending: prev.pending + 1,
+          paid: prev.paid - 1,
+          totalSpent: prev.totalSpent - (payment.price - loyaltyPointsUsed)
+        } : null);
+      }
+      
+      // Re-add the timeout since payment failed
+      console.log(`⏰ [PAYMENTS-${instanceId}] Re-adding timeout for failed payment ${paymentId}`);
+      if (payment.timeoutAt) {
+        addTimeout(payment.bookingId, paymentId, payment.timeoutAt.toISOString());
+      }
+      
+      // Remove from handled expiry since payment failed
+      setHandledExpiry(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      
+      // Show error message
+      alert('Payment completion failed. Please try again or contact support.');
+      return;
     }
     
     // Show success message
@@ -419,16 +773,31 @@ export default function PaymentsPage() {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Modern Header */}
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 sm:gap-4 mb-4">
-            <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
-              <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+          <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
+                <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  Booking Status
+                </h1>
+                <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Track and manage all your session bookings</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Booking Status
-              </h1>
-              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Track and manage all your session bookings</p>
-            </div>
+            
+            {/* Refresh Button */}
+            <button
+              onClick={refreshPayments}
+              disabled={isRefreshing || loading}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+              title="Refresh bookings"
+            >
+              <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline text-sm font-medium text-gray-700">
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -454,6 +823,8 @@ export default function PaymentsPage() {
                 const isExpanded = expandedPayments.has(payment._id);
               const isCompleting = completingTransactions.has(payment._id);
               const isPending = payment.paymentStatus === 'pending';
+              const timeout = getTimeout(payment.bookingId, payment._id);
+              const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
               
                 return (
                 <div key={payment._id} className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden">
@@ -502,6 +873,13 @@ export default function PaymentsPage() {
                                 ID: {payment.expertUserId}
                               </span>
                             )}
+                            {/* Countdown Timer for Pending Payments */}
+                            {hasActiveCountdown && (
+                              <span className="flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                                <span>⏰ {formatCountdown(timeout?.countdown || 0)}</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -512,10 +890,17 @@ export default function PaymentsPage() {
                           <p className="text-xl sm:text-2xl font-bold text-gray-900">
                             {formatCurrency(payment.price, payment.currency)}
                           </p>
+                          {isExpired(payment.bookingId, payment._id) ? (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              <XCircle className="w-4 h-4 text-red-500" />
+                              <span className="ml-1">expired</span>
+                            </span>
+                          ) : (
                           <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(payment.paymentStatus)}`}>
                             {getPaymentStatusIcon(payment.paymentStatus)}
                             <span className="ml-1 capitalize">{payment.paymentStatus}</span>
                           </span>
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -557,6 +942,24 @@ export default function PaymentsPage() {
                     {/* Expanded Details */}
                     {isExpanded && (
                     <div className="border-t border-gray-100 bg-gray-50 p-4 sm:p-6">
+                      {/* Countdown Timer Section */}
+                      {hasActiveCountdown && (
+                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                          <div className="flex items-center justify-center gap-3 mb-3">
+                            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
+                            <span className="text-lg font-semibold text-yellow-800">Payment Timeout</span>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-3xl font-bold text-yellow-700 mb-2">
+                              {formatCountdown(timeout?.countdown || 0)}
+                            </div>
+                            <p className="text-sm text-yellow-600">
+                              Complete payment within this time or booking will be automatically cancelled
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                         <div className="space-y-3 sm:space-y-4">
                           <h4 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">

@@ -5,8 +5,17 @@ import Booking, { ISession } from '../models/Booking';
 import Expert from '../models/Expert';
 import User from '../models/User';
 import mongoose, { Types } from 'mongoose';
+import SocketService from '../services/socketService';
 
 const router = express.Router();
+
+// Socket service instance (will be set by the main server)
+let socketService: SocketService | null = null;
+
+// Function to set socket service (called from main server)
+export const setSocketService = (service: SocketService) => {
+  socketService = service;
+};
 
 // @route   POST /api/bookings
 // @desc    Create a new booking or add session to existing booking
@@ -214,7 +223,10 @@ router.post('/', protect, [
       currency: 'INR',
       notes,
       status: 'pending',
-      paymentStatus: 'pending'
+      paymentStatus: 'pending',
+      // Set 5-minute timeout for pending bookings
+      timeoutAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
+      timeoutStatus: 'active'
     };
 
     // Try to find existing booking document for this client
@@ -248,6 +260,20 @@ router.post('/', protect, [
         totalSessions: booking.totalSessions,
         totalSpent: booking.totalSpent
       });
+    }
+
+    // Emit socket event for new booking
+    if (socketService) {
+      socketService.emitBookingStatusUpdate(
+        booking._id.toString(),
+        newSession.sessionId.toString(),
+        'pending',
+        {
+          session: newSession,
+          booking: booking,
+          message: 'New booking created with 5-minute payment timeout'
+        }
+      );
     }
 
     res.status(201).json({
@@ -628,11 +654,447 @@ router.put('/:id/complete', protect, async (req, res, next) => {
     }
 
     session.status = 'completed';
+    session.timeoutStatus = 'completed'; // Mark timeout as completed
     await booking.save();
 
     res.json({
       success: true,
       message: 'Session marked as completed',
+      data: { booking, session }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/bookings/:id/cancel-expired
+// @desc    Cancel expired pending bookings (system endpoint)
+// @access  Private
+router.put('/:id/cancel-expired', protect, async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session ID is required'
+      });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if session is expired and still pending
+    const now = new Date();
+    if (session.timeoutAt && session.timeoutAt <= now && session.status === 'pending') {
+      session.status = 'cancelled';
+      session.timeoutStatus = 'expired';
+      session.cancellationReason = 'Booking expired after 5 minutes';
+      session.cancelledBy = 'system';
+      session.cancellationTime = now;
+      
+      await booking.save();
+
+      res.json({
+        success: true,
+        message: 'Expired booking cancelled successfully',
+        data: { booking, session }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Session is not expired or not in pending status'
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/bookings/expired/check
+// @desc    Check and cancel all expired pending bookings
+// @access  Private (Admin/System)
+router.get('/expired/check', protect, async (req, res, next) => {
+  try {
+    const now = new Date();
+    
+    // Find all bookings with expired pending sessions (exclude completed/paid sessions)
+    const bookings = await Booking.find({
+      'sessions.status': 'pending',
+      'sessions.paymentStatus': 'pending',
+      'sessions.timeoutAt': { $lte: now },
+      'sessions.timeoutStatus': 'active'
+    });
+
+    let cancelledCount = 0;
+    const cancelledSessions = [];
+
+    for (const booking of bookings) {
+      for (const session of booking.sessions) {
+        if (session.status === 'pending' && 
+            session.paymentStatus === 'pending' &&
+            session.timeoutAt && 
+            session.timeoutAt <= now && 
+            session.timeoutStatus === 'active') {
+          
+          session.status = 'cancelled';
+          session.timeoutStatus = 'expired';
+          session.cancellationReason = 'Booking expired after 5 minutes';
+          session.cancelledBy = 'system';
+          session.cancellationTime = now;
+          
+          cancelledCount++;
+          cancelledSessions.push({
+            bookingId: booking._id,
+            sessionId: session.sessionId,
+            expertId: session.expertId,
+            clientId: booking.clientId
+          });
+        }
+      }
+      
+      await booking.save();
+    }
+
+    res.json({
+      success: true,
+      message: `Cancelled ${cancelledCount} expired bookings`,
+      data: {
+        cancelledCount,
+        cancelledSessions
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/bookings/timeout/sync
+// @desc    Sync frontend timeout state with backend
+// @access  Private
+router.post('/timeout/sync', protect, async (req, res, next) => {
+  try {
+    const { timeouts } = req.body;
+    
+    if (!Array.isArray(timeouts)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Timeouts array is required'
+      });
+    }
+
+    const now = new Date();
+    const expiredSessions = [];
+
+    for (const timeout of timeouts) {
+      const { bookingId, sessionId, timeoutAt } = timeout;
+      
+      const booking = await Booking.findById(bookingId);
+      if (!booking) continue;
+
+      const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+      if (!session) continue;
+
+      // Check if session has expired
+      const timeoutDate = new Date(timeoutAt);
+      if (timeoutDate <= now && session.status === 'pending') {
+        session.status = 'cancelled';
+        session.timeoutStatus = 'expired';
+        session.cancellationReason = 'Booking expired after 5 minutes';
+        session.cancelledBy = 'system';
+        session.cancellationTime = now;
+        
+        expiredSessions.push({
+          bookingId: booking._id.toString(),
+          sessionId: session.sessionId.toString(),
+          status: 'cancelled',
+          reason: 'Booking expired after 5 minutes'
+        });
+      }
+    }
+
+    // Save all updated bookings
+    if (expiredSessions.length > 0) {
+      await Promise.all(
+        expiredSessions.map(async (expiredSession) => {
+          const booking = await Booking.findById(expiredSession.bookingId);
+          if (booking) {
+            await booking.save();
+          }
+        })
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Synced ${timeouts.length} timeouts, ${expiredSessions.length} sessions expired`,
+      data: {
+        expiredSessions
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/bookings/timeout/status
+// @desc    Get timeout status for specific sessions
+// @access  Private
+router.post('/timeout/status', protect, async (req, res, next) => {
+  try {
+    const { sessionIds } = req.body;
+    
+    if (!Array.isArray(sessionIds)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session IDs array is required'
+      });
+    }
+
+    const now = new Date();
+    const sessionStatuses = [];
+
+    for (const sessionId of sessionIds) {
+      const booking = await Booking.findOne({
+        'sessions.sessionId': sessionId
+      });
+
+      if (booking) {
+        const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+        if (session) {
+          const isExpired = session.timeoutAt && session.timeoutAt <= now && session.status === 'pending';
+          
+          sessionStatuses.push({
+            sessionId,
+            bookingId: booking._id.toString(),
+            status: isExpired ? 'expired' : session.status,
+            timeoutAt: session.timeoutAt,
+            timeoutStatus: session.timeoutStatus
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        sessionStatuses
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/bookings/:id/cancel-expired-session
+// @desc    Cancel an expired session (called by frontend when timer expires)
+// @access  Private
+router.put('/:id/cancel-expired-session', protect, async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session ID is required'
+      });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if user is authorized to cancel this session (must be the client)
+    if (booking.clientId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to cancel this session'
+      });
+    }
+
+    // Check if session is expired and still pending
+    const now = new Date();
+    if (session.timeoutAt && session.timeoutAt <= now && session.status === 'pending') {
+      session.status = 'cancelled';
+      session.timeoutStatus = 'expired';
+      session.cancellationReason = 'Booking expired after timeout';
+      session.cancelledBy = 'client';
+      session.cancellationTime = now;
+      
+      await booking.save();
+
+      // Emit socket event for real-time updates
+      if (socketService) {
+        socketService.emitBookingStatusUpdate(
+          booking._id.toString(),
+          session.sessionId.toString(),
+          'cancelled',
+          {
+            reason: 'Booking expired after timeout',
+            cancelledBy: 'client',
+            cancellationTime: now
+          }
+        );
+      }
+
+      console.log('✅ [BOOKING] Expired session cancelled by client:', {
+        bookingId: booking._id,
+        sessionId: session.sessionId,
+        clientUserId: booking.clientUserId,
+        expertUserId: session.expertUserId
+      });
+
+      res.json({
+        success: true,
+        message: 'Expired session cancelled successfully',
+        data: { booking, session }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Session is not expired or not in pending status'
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/bookings/:id/complete-payment
+// @desc    Mark session as paid and completed (called after successful payment)
+// @access  Private
+router.put('/:id/complete-payment', protect, [
+  body('sessionId')
+    .notEmpty()
+    .withMessage('Session ID is required'),
+  body('paymentMethod')
+    .optional()
+    .isString()
+    .withMessage('Payment method must be a string'),
+  body('loyaltyPointsUsed')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Loyalty points used must be a non-negative integer')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { sessionId, paymentMethod, loyaltyPointsUsed } = req.body;
+    
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    // Find the specific session
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    // Check if user is authorized to complete payment for this session (must be the client)
+    if (booking.clientId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to complete payment for this session'
+      });
+    }
+
+    // Check if session is in pending status
+    if (session.status !== 'pending' || session.paymentStatus !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: 'Session is not in pending status'
+      });
+    }
+
+    // Update session status to completed and paid
+    session.status = 'completed';
+    session.paymentStatus = 'paid';
+    session.timeoutStatus = 'completed';
+    session.paymentMethod = paymentMethod || 'online';
+    session.paymentCompletedAt = new Date();
+    
+    // Store loyalty points information if provided
+    if (loyaltyPointsUsed && loyaltyPointsUsed > 0) {
+      session.loyaltyPointsUsed = loyaltyPointsUsed;
+      session.finalAmount = session.price - loyaltyPointsUsed;
+    } else {
+      session.finalAmount = session.price;
+    }
+    
+    await booking.save();
+
+    // Emit socket event for real-time updates
+    if (socketService) {
+      socketService.emitBookingStatusUpdate(
+        booking._id.toString(),
+        session.sessionId.toString(),
+        'completed',
+        {
+          paymentStatus: 'paid',
+          paymentMethod: session.paymentMethod,
+          paymentCompletedAt: session.paymentCompletedAt,
+          loyaltyPointsUsed: session.loyaltyPointsUsed,
+          finalAmount: session.finalAmount
+        }
+      );
+    }
+
+    console.log('✅ [BOOKING] Payment completed successfully:', {
+      bookingId: booking._id,
+      sessionId: session.sessionId,
+      clientUserId: booking.clientUserId,
+      expertUserId: session.expertUserId,
+      finalAmount: session.finalAmount,
+      loyaltyPointsUsed: session.loyaltyPointsUsed
+    });
+
+    res.json({
+      success: true,
+      message: 'Payment completed successfully',
       data: { booking, session }
     });
   } catch (error) {

@@ -10,16 +10,7 @@ async function updateRewardsSchema() {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/confiido');
     console.log('Connected to database');
     
-    // Find all reward documents that don't have claimedBonuses field
-    const rewards = await Reward.find({ claimedBonuses: { $exists: false } });
-    console.log(`Found ${rewards.length} rewards without claimedBonuses field`);
-    
-    // Update each reward to include claimedBonuses field
-    for (const reward of rewards) {
-      reward.claimedBonuses = [];
-      await reward.save();
-      console.log(`Updated reward for user ${reward.userId}`);
-    }
+    console.log('claimedBonuses field does not exist in Reward model. No updates needed.');
     
     console.log('Successfully updated all rewards with claimedBonuses field');
     

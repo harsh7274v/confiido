@@ -3,6 +3,7 @@ import { Select, SelectItem } from "./ui/Select";
 import { availabilityApi } from '../services/availabilityApi';
 import { expertsApi, Expert } from '../services/expertsApi';
 import { bookingApi, BookingRequest } from '../services/bookingApi';
+import { useTimeout } from '../contexts/TimeoutContext';
 
 const services = [
   { name: '1:1 Career Guidance', duration: '30 min' },
@@ -25,6 +26,10 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [mentorsLoading, setMentorsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingData, setBookingData] = useState<any>(null);
+  
+  // Use the timeout context
+  const { addTimeout, formatCountdown } = useTimeout();
 
   // Get the duration for the selected service
   const getSelectedServiceDuration = () => {
@@ -166,6 +171,8 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     console.log('✅ useEffect: Updated toTimeSlots', slots);
   }, [fromTime, availableSlots, service]);
 
+
+
   // Handle booking submission
   const handleBookingSubmit = async () => {
     if (!service || !mentor || !date || !fromTime || !toTime) {
@@ -240,7 +247,17 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const response = await bookingApi.createBooking(bookingData);
       
       if (response.success) {
+        setBookingData(response.data);
         setBookingSuccess(true);
+        
+        // Add timeout to localStorage for persistence
+        if (response.data.booking && response.data.session) {
+          addTimeout(
+            response.data.booking._id,
+            response.data.session.sessionId,
+            response.data.session.timeoutAt
+          );
+        }
         
         // Close the popup after a short delay
         setTimeout(() => {
@@ -262,7 +279,19 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="relative w-full max-w-sm animate-popup-in bg-white rounded-2xl shadow-2xl p-8 text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-green-600 mb-4">Booking Successful!</h2>
-          <p className="text-gray-600 mb-6">Your session has been booked successfully. You will receive a confirmation email shortly.</p>
+          <p className="text-gray-600 mb-4">Your session has been booked successfully. You will receive a confirmation email shortly.</p>
+          
+          {/* Payment Reminder */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-yellow-800">Payment Required</span>
+            </div>
+            <p className="text-sm text-yellow-600">
+              Please complete payment within 5 minutes to confirm your booking
+            </p>
+          </div>
+          
           <button
             onClick={onClose}
             className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"

@@ -44,7 +44,7 @@ class BookingApi {
   }
 
   // Create a new booking
-  async createBooking(bookingData: BookingRequest): Promise<{ success: boolean; data: { booking: Booking } }> {
+  async createBooking(bookingData: BookingRequest): Promise<{ success: boolean; data: { booking: Booking; session: any } }> {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/bookings`, bookingData, {
         headers: this.getAuthHeaders()
@@ -120,6 +120,49 @@ class BookingApi {
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error cancelling booking:', error);
+      throw error;
+    }
+  }
+
+  // Cancel a specific session within a booking (backend expects sessionId)
+  async cancelSession(bookingId: string, sessionId: string, reason?: string): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/bookings/${bookingId}/cancel`, { sessionId, reason }, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error cancelling session:', error);
+      throw error;
+    }
+  }
+
+  // Cancel an expired session (called when timer expires)
+  async cancelExpiredSession(bookingId: string, sessionId: string): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/bookings/${bookingId}/cancel-expired-session`, { sessionId }, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error cancelling expired session:', error);
+      throw error;
+    }
+  }
+
+  // Complete payment for a session (called after successful payment)
+  async completePayment(bookingId: string, sessionId: string, paymentMethod?: string, loyaltyPointsUsed?: number): Promise<{ success: boolean; message: string; data: any }> {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/bookings/${bookingId}/complete-payment`, { 
+        sessionId, 
+        paymentMethod, 
+        loyaltyPointsUsed 
+      }, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error completing payment:', error);
       throw error;
     }
   }

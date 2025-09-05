@@ -118,6 +118,17 @@ class SocketService {
         await this.handleConversationSettingsUpdate(socket, data);
       });
 
+      // Handle booking status updates
+      socket.on('join_booking_updates', (bookingId: string) => {
+        socket.join(`booking:${bookingId}`);
+        console.log(`User ${socket.userId} joined booking updates for ${bookingId}`);
+      });
+
+      socket.on('leave_booking_updates', (bookingId: string) => {
+        socket.leave(`booking:${bookingId}`);
+        console.log(`User ${socket.userId} left booking updates for ${bookingId}`);
+      });
+
       // Handle disconnect
       socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.userId}`);
@@ -410,6 +421,44 @@ class SocketService {
 
   public emitToConversation(conversationId: string, event: string, data: any) {
     this.io.to(`conversation:${conversationId}`).emit(event, data);
+  }
+
+  // Booking-related methods
+  public emitBookingStatusUpdate(bookingId: string, sessionId: string, status: string, data: any) {
+    this.io.to(`booking:${bookingId}`).emit('booking_status_updated', {
+      bookingId,
+      sessionId,
+      status,
+      data,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public emitBookingTimeoutWarning(bookingId: string, sessionId: string, timeLeft: number) {
+    this.io.to(`booking:${bookingId}`).emit('booking_timeout_warning', {
+      bookingId,
+      sessionId,
+      timeLeft,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public emitBookingExpired(bookingId: string, sessionId: string) {
+    this.io.to(`booking:${bookingId}`).emit('booking_expired', {
+      bookingId,
+      sessionId,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public emitPaymentStatusUpdate(bookingId: string, sessionId: string, paymentStatus: string, data: any) {
+    this.io.to(`booking:${bookingId}`).emit('payment_status_updated', {
+      bookingId,
+      sessionId,
+      paymentStatus,
+      data,
+      timestamp: new Date().toISOString()
+    });
   }
 }
 

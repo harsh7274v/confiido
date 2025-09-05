@@ -16,12 +16,13 @@ import { connectDB } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import SocketService from './services/socketService';
+import bookingTimeoutService from './services/bookingTimeoutService';
 
 // Routes
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import expertRoutes from './routes/experts';
-import bookingRoutes from './routes/bookings';
+import bookingRoutes, { setSocketService as setBookingSocketService } from './routes/bookings';
 import messageRoutes from './routes/messages';
 import reviewRoutes from './routes/reviews';
 import paymentRoutes from './routes/payments';
@@ -131,11 +132,22 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+    
+    // Connect socket service with booking timeout service
+    bookingTimeoutService.setSocketService(socketService);
+    
+    // Connect socket service with booking routes
+    setBookingSocketService(socketService);
+    
+    // Start the booking timeout service
+    bookingTimeoutService.start(1); // Check every 1 minute
+    
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env['NODE_ENV']}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🔌 Socket.IO enabled for real-time messaging`);
+      console.log(`⏰ Booking timeout service started (checking every 1 minute)`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -144,5 +156,24 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  bookingTimeoutService.stop();
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 SIGINT received, shutting down gracefully');
+  bookingTimeoutService.stop();
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
 
 export default app;

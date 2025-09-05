@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import { TimeoutProvider } from "./contexts/TimeoutContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +21,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            {children}
-          </div>
+          <TimeoutProvider>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+              {children}
+            </div>
+          </TimeoutProvider>
         </AuthProvider>
       </body>
     </html>
