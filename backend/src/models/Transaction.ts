@@ -93,7 +93,7 @@ const transactionSchema = new Schema<ITransaction>({
 
 // Indexes
 transactionSchema.index({ userId: 1, status: 1 });
-transactionSchema.index({ userId: 1, createdAt: -1 });
+transactionSchema.index({ userId: 1, updatedAt: -1 });
 transactionSchema.index({ expertId: 1, status: 1 });
 transactionSchema.index({ paymentIntentId: 1 });
 transactionSchema.index({ transactionId: 1 });

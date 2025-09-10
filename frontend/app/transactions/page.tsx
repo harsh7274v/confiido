@@ -392,7 +392,7 @@ export default function TransactionsPage() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
                           <span className="text-sm text-gray-900">
-                            {formatDate(transaction.createdAt)}
+                            {formatDate(transaction.updatedAt)}
                           </span>
                         </div>
                       </td>

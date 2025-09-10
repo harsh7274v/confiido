@@ -19,6 +19,14 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [fromTime, setFromTime] = useState<string | undefined>(undefined);
   const [toTime, setToTime] = useState<string | undefined>(undefined);
   const [availableSlots, setAvailableSlots] = useState<Array<{ time: string; displayTime: string; available: boolean }>>([]);
+  const [consecutiveSlots, setConsecutiveSlots] = useState<Array<{ 
+    startTime: string; 
+    endTime: string; 
+    startDisplayTime: string; 
+    endDisplayTime: string; 
+    duration: number; 
+    available: boolean 
+  }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
@@ -41,8 +49,11 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const getSelectedServiceDurationMinutes = () => {
     const selectedService = services.find(s => s.name === service);
     if (selectedService) {
-      return selectedService.duration === '30 min' ? 30 : 60;
+      const duration = selectedService.duration === '30 min' ? 30 : 60;
+      console.log(`🔍 [FRONTEND] Service: ${service}, Duration: ${selectedService.duration}, Minutes: ${duration}`);
+      return duration;
     }
+    console.log(`❌ [FRONTEND] Service not found: ${service}`);
     return 0;
   };
 
@@ -57,6 +68,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       fetchAvailableSlots();
     } else {
       setAvailableSlots([]);
+      setConsecutiveSlots([]);
       setFromTime(undefined);
       setToTime(undefined);
     }
@@ -76,6 +88,10 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     // Show info message about service change
     if (service) {
       setInfo(`Service changed to ${service}. Please reselect your time slots.`);
+      // Fetch consecutive slots for the new service duration
+      if (mentor && date) {
+        fetchAvailableSlots();
+      }
     }
   }, [service]);
 
@@ -105,11 +121,13 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     if (!selectedMentor) {
       setError('Mentor not found');
       setAvailableSlots([]);
+      setConsecutiveSlots([]);
       return;
     }
     const mentorUserId = selectedMentor.user_id;
     console.log('🔍 Fetching slots for mentor:', mentor, 'User ID:', mentorUserId);
     try {
+      // Fetch individual 15-minute slots for display
       const response = await availabilityApi.getMentorSlotsForDateByUserId(mentorUserId, date);
       if (response.success) {
         setAvailableSlots(response.data.availableSlots);
@@ -118,10 +136,26 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setError('Failed to fetch available slots');
         setAvailableSlots([]);
       }
+
+      // If service is selected, also fetch consecutive slots for that duration
+      if (service) {
+        const duration = getSelectedServiceDurationMinutes();
+        console.log(`🔍 [FRONTEND] Fetching consecutive slots for ${duration} minutes`);
+        const consecutiveResponse = await availabilityApi.getConsecutiveSlotsByUserId(mentorUserId, date, duration);
+        if (consecutiveResponse.success) {
+          setConsecutiveSlots(consecutiveResponse.data.consecutiveSlots);
+          console.log('✅ Consecutive slots fetched:', consecutiveResponse.data.consecutiveSlots);
+          console.log(`📊 [FRONTEND] Found ${consecutiveResponse.data.consecutiveSlots.length} consecutive slots for ${duration}min`);
+        } else {
+          console.log('❌ Failed to fetch consecutive slots');
+          setConsecutiveSlots([]);
+        }
+      }
     } catch (error: any) {
       console.error('❌ Error fetching available slots:', error);
       setError('Failed to fetch available slots. Please try again.');
       setAvailableSlots([]);
+      setConsecutiveSlots([]);
     } finally {
       setLoading(false);
     }
@@ -144,8 +178,14 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const remainingSlots = availableSlots.slice(fromTimeIndex + 1);
     console.log('🔍 generateToTimeSlots: remainingSlots', remainingSlots);
     
-    // Filter out slots that would result in invalid durations
+    // Filter out slots that would result in invalid durations AND only include available slots
     const validSlots = remainingSlots.filter(slot => {
+      // First check if the slot is available
+      if (!slot.available) {
+        console.log(`🔒 Slot ${slot.time} is not available (already booked)`);
+        return false;
+      }
+      
       const fromTimeObj = new Date(`2000-01-01T${fromTime}:00`);
       const toTimeObj = new Date(`2000-01-01T${slot.time}:00`);
       const durationMinutes = (toTimeObj.getTime() - fromTimeObj.getTime()) / (1000 * 60);
@@ -177,6 +217,16 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const handleBookingSubmit = async () => {
     if (!service || !mentor || !date || !fromTime || !toTime) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    // Check if selected consecutive slot is still available
+    const selectedConsecutiveSlot = consecutiveSlots.find(slot => 
+      slot.startTime === fromTime && slot.endTime === toTime
+    );
+    
+    if (!selectedConsecutiveSlot) {
+      setError('The selected time slot is no longer available. Please select a different time slot.');
       return;
     }
 
@@ -366,14 +416,36 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               {/* Show available slots info */}
               {mentor && date && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Availability Status</span>
+                    <button
+                      onClick={fetchAvailableSlots}
+                      disabled={loading}
+                      className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Refreshing...' : '🔄 Refresh'}
+                    </button>
+                  </div>
                   {loading ? (
                     <span className="text-sm text-gray-600">Loading available slots...</span>
                   ) : error ? (
                     <span className="text-sm text-red-600">{error}</span>
                   ) : availableSlots.length > 0 ? (
-                    <span className="text-sm text-green-600">
-                      {availableSlots.length} time slots available on {new Date(date).toLocaleDateString()}
-                    </span>
+                    <div className="space-y-1">
+                      <span className="text-sm text-green-600">
+                        ✅ {availableSlots.filter(slot => slot.available).length} individual slots available on {new Date(date).toLocaleDateString()}
+                      </span>
+                      {availableSlots.some(slot => !slot.available) && (
+                        <span className="text-sm text-red-600 block">
+                          🔒 {availableSlots.filter(slot => !slot.available).length} slots already booked
+                        </span>
+                      )}
+                      {service && consecutiveSlots.length > 0 && (
+                        <span className="text-sm text-blue-600 block">
+                          📅 {consecutiveSlots.length} {getSelectedServiceDuration()} slots available
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-sm text-orange-600">No availability found for this date</span>
                   )}
@@ -390,38 +462,45 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       </span>
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-4">
+                  
+                  {/* Show consecutive slots if service is selected */}
+                  {service && consecutiveSlots.length > 0 ? (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-                      <Select value={fromTime} onValueChange={setFromTime} placeholder="Select start time">
-                        {availableSlots.map(slot => (
-                          <SelectItem key={slot.time} value={slot.time} className="text-base">
-                            {slot.displayTime}
-                          </SelectItem>
+                      <label className="block text-xs font-medium text-gray-600 mb-2">Available {getSelectedServiceDuration()} Slots:</label>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                        {consecutiveSlots.map((slot, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setFromTime(slot.startTime);
+                              setToTime(slot.endTime);
+                            }}
+                            className={`p-3 rounded-lg border text-left transition-colors ${
+                              fromTime === slot.startTime && toTime === slot.endTime
+                                ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
+                            }`}
+                          >
+                            <div className="font-medium">{slot.startDisplayTime} - {slot.endDisplayTime}</div>
+                            <div className="text-xs text-gray-500">{slot.duration} minutes</div>
+                          </button>
                         ))}
-                      </Select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                      {toTimeSlots.length > 0 ? (
-                        <Select value={toTime} onValueChange={setToTime} placeholder="Select end time">
-                          {toTimeSlots.map(slot => (
-                            <SelectItem key={slot.time} value={slot.time} className="text-base">
-                              {slot.displayTime}
-                            </SelectItem>
-                          ))}
-                        </Select>
-                      ) : fromTime ? (
-                        <div className="px-3 py-2 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-lg">
-                          No valid {getSelectedServiceDuration()} slots available from {fromTime}
-                        </div>
-                      ) : (
-                        <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg">
-                          Select start time first
-                        </div>
-                      )}
+                  ) : service && consecutiveSlots.length === 0 ? (
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <span className="text-sm text-orange-600">
+                        No {getSelectedServiceDuration()} slots available for this date
+                      </span>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <span className="text-sm text-gray-600">
+                        Please select a service to see available time slots
+                      </span>
+                    </div>
+                  )}
+                  
                 </div>
               )}
             </div>

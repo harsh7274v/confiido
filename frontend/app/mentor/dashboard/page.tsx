@@ -1,17 +1,36 @@
 "use client";
-import React, { useState } from "react";
-import { Calendar, Users, MessageSquare, BookOpen, Settings, BarChart3, LogOut, ChevronUp, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Users, MessageSquare, BookOpen, Settings, BarChart3, LogOut, ChevronUp, ChevronDown, DollarSign } from "lucide-react";
 import AvailabilityManager from "../../components/availability/AvailabilityManager";
+import MentorBookings from "../../components/MentorBookings";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { bookingApi } from "../../services/bookingApi";
 
 type DashboardTab = 'overview' | 'availability' | 'bookings' | 'messages' | 'analytics' | 'settings';
 
 const MentorDashboard = () => {
   const router = useRouter();
+  const { user, loading: userLoading } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showAllTabs, setShowAllTabs] = useState(false);
+  
+  // Overview data state
+  const [overviewData, setOverviewData] = useState({
+    totalSessions: 0,
+    activeStudents: 0,
+    unreadMessages: 0,
+    pendingBookings: 0,
+    totalEarnings: 0,
+    completedSessions: 0,
+    confirmedSessions: 0,
+    cancelledSessions: 0
+  });
+  const [overviewLoading, setOverviewLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -25,6 +44,70 @@ const MentorDashboard = () => {
   // Show first 4 tabs by default, rest are hidden
   const visibleTabs = tabs.slice(0, 4);
   const hiddenTabs = tabs.slice(4);
+
+  // Fetch overview data
+  const fetchOverviewData = async () => {
+    if (!user?.user_id) {
+      setOverviewLoading(false);
+      return;
+    }
+
+    try {
+      setOverviewLoading(true);
+      setOverviewError(null);
+
+      // Fetch mentor bookings data which includes stats
+      const response = await bookingApi.getMentorBookings(user.user_id, 1, 10);
+      
+      if (response.success) {
+        const { stats, bookings } = response.data;
+        
+        // Calculate unique active students from recent bookings
+        const uniqueClients = new Set();
+        bookings.forEach((booking: any) => {
+          if (booking.clientId && booking.clientId._id) {
+            uniqueClients.add(booking.clientId._id);
+          }
+        });
+
+        setOverviewData({
+          totalSessions: stats.totalSessions || 0,
+          activeStudents: uniqueClients.size,
+          unreadMessages: 0, // TODO: Implement when messaging is ready
+          pendingBookings: stats.pendingSessions || 0,
+          totalEarnings: stats.totalEarnings || 0,
+          completedSessions: stats.completedSessions || 0,
+          confirmedSessions: stats.confirmedSessions || 0,
+          cancelledSessions: stats.cancelledSessions || 0
+        });
+
+        // Set recent activity from bookings
+        const recentBookings = bookings.slice(0, 5).map((booking: any) => ({
+          id: booking._id,
+          type: 'booking',
+          title: `New booking from ${booking.clientId?.firstName || 'Student'} ${booking.clientId?.lastName || ''}`,
+          description: `Session scheduled for ${new Date(booking.sessions[0]?.scheduledDate).toLocaleDateString()}`,
+          time: new Date(booking.createdAt).toLocaleDateString(),
+          amount: booking.sessions[0]?.price || 0
+        }));
+        setRecentActivity(recentBookings);
+      } else {
+        throw new Error('Failed to fetch overview data');
+      }
+    } catch (error) {
+      console.error('Error fetching overview data:', error);
+      setOverviewError(error instanceof Error ? error.message : 'Failed to load overview data');
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  // Fetch overview data when user is loaded
+  useEffect(() => {
+    if (user && !userLoading) {
+      fetchOverviewData();
+    }
+  }, [user, userLoading]);
 
   const handleLogout = async () => {
     if (!confirm('Are you sure you want to logout?')) return;
@@ -54,10 +137,30 @@ const MentorDashboard = () => {
     switch (activeTab) {
       case 'availability':
         return <AvailabilityManager />;
+      case 'bookings':
+        return <MentorBookings />;
       case 'overview':
         return (
           <div className="space-y-4 md:space-y-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+            
+            {overviewLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner size="lg" />
+                <span className="ml-3 text-gray-600">Loading overview data...</span>
+              </div>
+            ) : overviewError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600">{overviewError}</p>
+                <button 
+                  onClick={fetchOverviewData}
+                  className="mt-2 text-sm text-red-700 hover:text-red-800 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <>
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
               <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center">
@@ -66,7 +169,7 @@ const MentorDashboard = () => {
                   </div>
                   <div className="ml-2 md:ml-4">
                     <p className="text-xs md:text-sm font-medium text-gray-600">Total Sessions</p>
-                    <p className="text-lg md:text-2xl font-bold text-gray-900">24</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.totalSessions}</p>
                   </div>
                 </div>
               </div>
@@ -78,62 +181,103 @@ const MentorDashboard = () => {
                   </div>
                   <div className="ml-2 md:ml-4">
                     <p className="text-xs md:text-sm font-medium text-gray-600">Active Students</p>
-                    <p className="text-lg md:text-2xl font-bold text-gray-900">12</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.activeStudents}</p>
                   </div>
                 </div>
               </div>
               
               <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <MessageSquare className="h-5 md:h-6 w-5 md:w-6 text-purple-600" />
+                      <div className="p-2 bg-orange-100 rounded-lg">
+                        <BookOpen className="h-5 md:h-6 w-5 md:w-6 text-orange-600" />
                   </div>
                   <div className="ml-2 md:ml-4">
-                    <p className="text-xs md:text-sm font-medium text-gray-600">Unread Messages</p>
-                    <p className="text-lg md:text-2xl font-bold text-gray-900">3</p>
+                        <p className="text-xs md:text-sm font-medium text-gray-600">Pending Bookings</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.pendingBookings}</p>
                   </div>
                 </div>
               </div>
               
               <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
                 <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <BookOpen className="h-5 md:h-6 w-5 md:w-6 text-orange-600" />
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <DollarSign className="h-5 md:h-6 w-5 md:w-6 text-emerald-600" />
                   </div>
                   <div className="ml-2 md:ml-4">
-                    <p className="text-xs md:text-sm font-medium text-gray-600">Pending Bookings</p>
-                    <p className="text-lg md:text-2xl font-bold text-gray-900">5</p>
+                        <p className="text-xs md:text-sm font-medium text-gray-600">Total Earnings</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">₹{overviewData.totalEarnings}</p>
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                {/* Additional stats row */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+                  <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-green-600" />
+                      </div>
+                      <div className="ml-2 md:ml-4">
+                        <p className="text-xs md:text-sm font-medium text-gray-600">Completed</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.completedSessions}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white p-4 md:p-6 rounded-lg border border-gray-200">
-              <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Recent Activity</h3>
-              <div className="space-y-2 md:space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <span className="break-words">New booking request from John Doe</span>
+                  <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-yellow-100 rounded-lg">
+                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-yellow-600" />
+                      </div>
+                      <div className="ml-2 md:ml-4">
+                        <p className="text-xs md:text-sm font-medium text-gray-600">Confirmed</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.confirmedSessions}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-gray-400 text-xs">2 hours ago</span>
+                  
+                  <div className="bg-white p-3 md:p-6 rounded-lg border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-red-600" />
+                      </div>
+                      <div className="ml-2 md:ml-4">
+                        <p className="text-xs md:text-sm font-medium text-gray-600">Cancelled</p>
+                        <p className="text-lg md:text-2xl font-bold text-gray-900">{overviewData.cancelledSessions}</p>
+                      </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <span className="break-words">Session completed with Sarah Smith</span>
                   </div>
-                  <span className="text-gray-400 text-xs">1 day ago</span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-600">
+                
+                <div className="bg-white p-4 md:p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Recent Activity</h3>
+                  <div className="space-y-2 md:space-y-3">
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity, index) => (
+                        <div key={activity.id || index} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0"></div>
-                    <span className="break-words">New message from Mike Johnson</span>
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              activity.type === 'booking' ? 'bg-blue-500' : 
+                              activity.type === 'completed' ? 'bg-green-500' : 'bg-purple-500'
+                            }`}></div>
+                            <span className="break-words">{activity.title}</span>
+                            {activity.amount > 0 && (
+                              <span className="text-emerald-600 font-medium">₹{activity.amount}</span>
+                            )}
+                          </div>
+                          <span className="text-gray-400 text-xs">{activity.time}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>No recent activity</p>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-gray-400 text-xs">2 days ago</span>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         );
       default:

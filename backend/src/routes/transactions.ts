@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Transaction from '../models/Transaction';
+import Booking from '../models/Booking';
 import { protect } from '../middleware/auth';
 import { body, validationResult } from 'express-validator';
 
@@ -16,15 +17,31 @@ router.get('/user', protect, async (req, res, next) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Query transactions by user_id
+    // Query transactions by user_id - for now, sort by createdAt (most recent first)
+    // TODO: Implement session createdTime sorting once we have proper session-transaction relationships
     const [transactions, total] = await Promise.all([
       Transaction.find({ user_id })
+        .sort({ createdAt: -1 }) // Most recent first
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 })
         .lean(),
       Transaction.countDocuments({ user_id })
     ]);
+
+    // Debug: Log transaction sorting info
+    console.log(`[DEBUG] Found ${transactions.length} transactions for user ${user_id}`);
+    if (transactions.length > 0) {
+      console.log('[DEBUG] First transaction:', {
+        id: transactions[0]._id,
+        createdAt: transactions[0].createdAt,
+        type: transactions[0].type
+      });
+      console.log('[DEBUG] Last transaction:', {
+        id: transactions[transactions.length - 1]._id,
+        createdAt: transactions[transactions.length - 1].createdAt,
+        type: transactions[transactions.length - 1].type
+      });
+    }
 
     // Calculate stats
     const completed = await Transaction.countDocuments({ user_id, status: 'completed' });

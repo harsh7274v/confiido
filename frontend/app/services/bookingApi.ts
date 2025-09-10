@@ -166,6 +166,40 @@ class BookingApi {
       throw error;
     }
   }
+
+  // Get mentor's completed and paid bookings
+  async getMentorBookings(mentorId: string, page: number = 1, limit: number = 10): Promise<{ 
+    success: boolean; 
+    data: { 
+      bookings: any[]; 
+      stats: { 
+        totalEarnings: number; 
+        totalSessions: number; 
+        totalBookings: number;
+        completedSessions: number;
+        paidSessions: number;
+        pendingSessions: number;
+        confirmedSessions: number;
+        cancelledSessions: number;
+      };
+      pagination: { page: number; limit: number; total: number; pages: number } 
+    } 
+  }> {
+    try {
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+
+      const response = await axios.get(`${API_BASE_URL}/api/bookings/mentor/${mentorId}?${params}`, {
+        headers: this.getAuthHeaders()
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error fetching mentor bookings:', error);
+      throw error;
+    }
+  }
 }
 
 export const bookingApi = new BookingApi();

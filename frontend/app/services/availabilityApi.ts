@@ -171,6 +171,36 @@ class AvailabilityApi {
         throw error;
       }
     }
+
+    // Get available consecutive time slots for a specific mentor by 4-digit user_id on a specific date for a specific duration
+    async getConsecutiveSlotsByUserId(user_id: string, date: string, duration: number): Promise<{ 
+      success: boolean; 
+      data: { 
+        consecutiveSlots: Array<{ 
+          startTime: string; 
+          endTime: string; 
+          startDisplayTime: string; 
+          endDisplayTime: string; 
+          duration: number; 
+          available: boolean 
+        }>;
+        date: string;
+        duration: number;
+        totalSlots: number;
+        availableSlots: number;
+      } 
+    }> {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/availability/userid/${user_id}/consecutive-slots/${date}/${duration}`,
+          { headers: this.getAuthHeaders() }
+        );
+        return response.data;
+      } catch (error: any) {
+        console.error('❌ [FRONTEND] Error fetching consecutive slots by user_id:', error);
+        throw error;
+      }
+    }
   // Generate time slots for a week
   generateWeeklyTimeSlots(): TimeSlot[] {
     const timeSlots: TimeSlot[] = [];

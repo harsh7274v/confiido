@@ -28,6 +28,8 @@ export interface ISession {
   paymentCompletedAt?: Date; // When the payment was completed
   loyaltyPointsUsed?: number; // Number of loyalty points used
   finalAmount?: number; // Final amount after loyalty points deduction
+  // Creation timestamp
+  createdTime?: Date; // When the session was created (when book now was clicked)
 }
 
 export interface IBooking extends Document {
@@ -156,6 +158,11 @@ const sessionSchema = new Schema<ISession>({
   finalAmount: {
     type: Number,
     min: [0, 'Final amount cannot be negative']
+  },
+  // Creation timestamp
+  createdTime: {
+    type: Date,
+    default: Date.now
   }
 });
 
@@ -195,7 +202,7 @@ bookingSchema.index({ 'sessions.expertId': 1 });
 bookingSchema.index({ 'sessions.status': 1 });
 bookingSchema.index({ 'sessions.scheduledDate': 1 });
 bookingSchema.index({ 'sessions.paymentStatus': 1 });
-bookingSchema.index({ createdAt: -1 });
+bookingSchema.index({ updatedAt: -1 });
 
 // Pre-save middleware to update totalSessions and totalSpent
 bookingSchema.pre('save', function(next) {

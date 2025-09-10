@@ -753,8 +753,12 @@ export default function PaymentsPage() {
     alert(`Payment successful! ${loyaltyPointsUsed > 0 ? `Used ${loyaltyPointsUsed} loyalty points. ` : ''}Session completed.`);
   };
 
-  // Use all payments without filtering
-  const filteredPayments = payments;
+  // Sort payments by createdTime (most recent first) - fallback sorting
+  const filteredPayments = [...payments].sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime; // Descending order (newest first)
+  });
 
   if (loading) {
     return (
@@ -865,8 +869,8 @@ export default function PaymentsPage() {
                             </span>
                             <span className="flex items-center gap-1 sm:gap-2">
                               <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="hidden sm:inline">{payment.createdAt ? formatDate(payment.createdAt) : 'Date not available'}</span>
-                              <span className="sm:hidden">{payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : 'N/A'}</span>
+                              <span className="hidden sm:inline">{payment.updatedAt ? formatDate(payment.updatedAt) : 'Date not available'}</span>
+                              <span className="sm:hidden">{payment.updatedAt ? new Date(payment.updatedAt).toLocaleDateString() : 'N/A'}</span>
                             </span>
                             {payment.expertUserId && (
                               <span className="text-xs bg-gray-100 px-2 py-1 rounded-full font-mono">

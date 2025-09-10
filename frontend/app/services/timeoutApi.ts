@@ -25,9 +25,12 @@ export interface CancelExpiredResponse {
 class TimeoutApi {
   private getAuthHeaders() {
     const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      'Authorization': `Bearer ${token}`
     };
   }
 

@@ -166,18 +166,28 @@ router.post('/', protect, [
 
     const price = sessionTypeConfig.price;
 
-    // Check for booking conflicts in existing sessions
+    // Check for booking conflicts in existing sessions (block overlaps for any user)
+    // Allow rebooking if previous attempt failed/refunded/cancelled or expired
+    const now = new Date();
     const existingBooking = await Booking.findOne({
-      clientId: req.user._id,
-      'sessions.expertId': expert._id,
-      'sessions.scheduledDate': new Date(scheduledDate),
-      'sessions.status': { $in: ['pending', 'confirmed'] },
-      $or: [
-        {
-          'sessions.startTime': { $lt: endTime },
-          'sessions.endTime': { $gt: startTime }
+      sessions: {
+        $elemMatch: {
+          expertId: expert._id,
+          scheduledDate: new Date(scheduledDate),
+          startTime: { $lt: endTime },
+          endTime: { $gt: startTime },
+          $or: [
+            { paymentStatus: 'paid' },
+            { status: { $in: ['confirmed', 'completed'] } },
+            {
+              status: 'pending',
+              paymentStatus: 'pending',
+              timeoutStatus: 'active',
+              timeoutAt: { $gt: now }
+            }
+          ]
         }
-      ]
+      }
     });
 
     if (existingBooking) {
@@ -226,7 +236,9 @@ router.post('/', protect, [
       paymentStatus: 'pending',
       // Set 5-minute timeout for pending bookings
       timeoutAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
-      timeoutStatus: 'active'
+      timeoutStatus: 'active',
+      // Set creation time when book now is clicked
+      createdTime: new Date()
     };
 
     // Try to find existing booking document for this client
@@ -235,6 +247,7 @@ router.post('/', protect, [
     if (booking) {
       // Add new session to existing booking
       booking.sessions.push(newSession);
+      booking.updatedAt = new Date(); // Explicitly update the timestamp
       await booking.save();
       
       console.log('✅ [BOOKING] Session added to existing booking:', {
@@ -319,7 +332,7 @@ router.get('/', protect, async (req, res, next) => {
           select: 'firstName lastName email avatar'
         }
       })
-      .sort({ createdAt: -1 })
+      .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit as string));
 
@@ -365,20 +378,39 @@ router.get('/user', protect, async (req, res, next) => {
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    // Get bookings for this user
-    const bookings = await Booking.find(filter)
-      .populate('clientId', 'firstName lastName email')
-      .populate('sessions.expertId', 'title company')
-      .populate({
+    // Get bookings for this user using aggregation to sort by session createdTime
+    const bookings = await Booking.aggregate([
+      { $match: filter },
+      { $unwind: '$sessions' },
+      { $sort: { 'sessions.createdTime': -1, updatedAt: -1 } },
+      { $group: {
+        _id: '$_id',
+        clientId: { $first: '$clientId' },
+        clientUserId: { $first: '$clientUserId' },
+        clientEmail: { $first: '$clientEmail' },
+        sessions: { $push: '$sessions' },
+        totalSessions: { $first: '$totalSessions' },
+        totalSpent: { $first: '$totalSpent' },
+        createdAt: { $first: '$createdAt' },
+        updatedAt: { $first: '$updatedAt' }
+      }},
+      { $sort: { 'sessions.createdTime': -1, updatedAt: -1 } },
+      { $skip: skip },
+      { $limit: parseInt(limit as string) }
+    ]);
+
+    // Populate the aggregated results
+    const populatedBookings = await Booking.populate(bookings, [
+      { path: 'clientId', select: 'firstName lastName email' },
+      { path: 'sessions.expertId', select: 'title company' },
+      { 
         path: 'sessions.expertId',
         populate: {
           path: 'userId',
           select: 'firstName lastName email avatar'
         }
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit as string));
+      }
+    ]);
 
     const total = await Booking.countDocuments(filter);
 
@@ -414,7 +446,7 @@ router.get('/user', protect, async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        bookings,
+        bookings: populatedBookings,
         stats: { 
           total, 
           paid: totalPaid, 
@@ -1096,6 +1128,159 @@ router.put('/:id/complete-payment', protect, [
       success: true,
       message: 'Payment completed successfully',
       data: { booking, session }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   GET /api/bookings/mentor/:mentorId
+// @desc    Get completed and paid bookings for a specific mentor
+// @access  Private
+router.get('/mentor/:mentorId', protect, async (req, res, next) => {
+  try {
+    const { mentorId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    // Validate mentorId (should be 4-digit string)
+    if (!mentorId || !/^\d{4}$/.test(mentorId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid mentor ID. Must be a 4-digit number.'
+      });
+    }
+
+    // Check if the requesting user is the mentor or has permission
+    if (req.user.user_id !== mentorId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to view this mentor\'s bookings'
+      });
+    }
+
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    // Find all bookings for this mentor using expertUserId (4-digit string)
+    console.log('🔍 [MENTOR BOOKINGS] Searching for bookings with expertUserId:', mentorId);
+    
+    // First, let's check if there are any bookings at all for this expert
+    const allBookingsForExpert = await Booking.find({
+      'sessions.expertUserId': mentorId
+    });
+    console.log('🔍 [MENTOR BOOKINGS] All bookings for expert (any status):', allBookingsForExpert.length);
+    
+    const bookings = await Booking.find({
+      'sessions.expertUserId': mentorId
+    })
+      .populate('clientId', 'firstName lastName email phone phoneNumber user_id profession domain location bio category age gender whatsappNumber socialLinks createdAt')
+      .sort({ 'sessions.scheduledDate': -1 })
+      .skip(skip)
+      .limit(parseInt(limit as string));
+
+    console.log('🔍 [MENTOR BOOKINGS] Found bookings:', bookings.length);
+    console.log('🔍 [MENTOR BOOKINGS] Bookings data:', JSON.stringify(bookings, null, 2));
+    
+    // Debug: Log the first booking's clientId structure
+    if (bookings.length > 0) {
+      console.log('🔍 [MENTOR BOOKINGS] First booking clientId structure:', JSON.stringify(bookings[0].clientId, null, 2));
+    }
+
+    // Filter sessions to only include ones for this mentor (any status)
+    const filteredBookings = bookings.map(booking => {
+      const filteredSessions = booking.sessions.filter(session => 
+        session.expertUserId === mentorId
+      );
+      
+      return {
+        ...booking.toObject(),
+        sessions: filteredSessions
+      };
+    }).filter(booking => booking.sessions.length > 0);
+
+    console.log('🔍 [MENTOR BOOKINGS] Before filtering - Total bookings found:', bookings.length);
+    console.log('🔍 [MENTOR BOOKINGS] After filtering - Bookings with matching sessions:', filteredBookings.length);
+
+    console.log('🔍 [MENTOR BOOKINGS] Filtered bookings:', filteredBookings.length);
+    console.log('🔍 [MENTOR BOOKINGS] Filtered bookings data:', JSON.stringify(filteredBookings, null, 2));
+
+    // Calculate total count for pagination
+    const totalBookings = await Booking.countDocuments({
+      'sessions.expertUserId': mentorId
+    });
+
+    // Calculate stats for this mentor (all bookings)
+    const allBookings = await Booking.find({
+      'sessions.expertUserId': mentorId
+    });
+    
+    console.log('🔍 [MENTOR BOOKINGS] All bookings for stats calculation:', allBookings.length);
+
+    let totalEarnings = 0;
+    let totalSessions = 0;
+    let completedSessions = 0;
+    let paidSessions = 0;
+    let pendingSessions = 0;
+    let confirmedSessions = 0;
+    let cancelledSessions = 0;
+
+    console.log('🔍 [MENTOR BOOKINGS] Processing stats for', allBookings.length, 'bookings');
+    
+    for (const booking of allBookings) {
+      console.log('🔍 [MENTOR BOOKINGS] Processing booking:', booking._id, 'with', booking.sessions.length, 'sessions');
+      for (const session of booking.sessions) {
+        console.log('🔍 [MENTOR BOOKINGS] Session:', session.sessionId, 'expertUserId:', session.expertUserId, 'status:', session.status, 'paymentStatus:', session.paymentStatus);
+        if (session.expertUserId === mentorId) {
+          totalSessions++;
+          
+          // Count by status
+          switch (session.status) {
+            case 'completed':
+              completedSessions++;
+              break;
+            case 'confirmed':
+              confirmedSessions++;
+              break;
+            case 'pending':
+              pendingSessions++;
+              break;
+            case 'cancelled':
+            case 'no-show':
+              cancelledSessions++;
+              break;
+          }
+          
+          // Count paid sessions
+          if (session.paymentStatus === 'paid') {
+            paidSessions++;
+            totalEarnings += session.finalAmount || session.price || 0;
+          }
+          
+          console.log('🔍 [MENTOR BOOKINGS] Added session to stats. Total sessions:', totalSessions, 'Total earnings:', totalEarnings);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        bookings: filteredBookings,
+        stats: {
+          totalEarnings,
+          totalSessions,
+          totalBookings,
+          completedSessions,
+          paidSessions,
+          pendingSessions,
+          confirmedSessions,
+          cancelledSessions
+        },
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total: totalBookings,
+          pages: Math.ceil(totalBookings / parseInt(limit as string))
+        }
+      }
     });
   } catch (error) {
     next(error);

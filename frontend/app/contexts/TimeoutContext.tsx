@@ -49,6 +49,13 @@ export const TimeoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const syncWithBackend = useCallback(async () => {
     try {
+      // Check if user is authenticated before attempting to sync
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No authentication token found, skipping timeout sync');
+        return;
+      }
+
       const activeTimeouts = timeoutHook.getActiveTimeouts();
       
       if (activeTimeouts.length > 0) {
@@ -73,6 +80,14 @@ export const TimeoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     } catch (error) {
       console.error('Error syncing timeout state with backend:', error);
+      // Handle different types of errors
+      if (error instanceof Error) {
+        if (error.message.includes('No authentication token found')) {
+          console.log('No authentication token found, skipping timeout sync');
+        } else if (error.message.includes('401')) {
+          console.log('Authentication failed, user may need to log in again');
+        }
+      }
     }
   }, [timeoutHook]);
 

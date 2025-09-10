@@ -2,6 +2,8 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import mongoose from 'mongoose';
 import Availability from '../models/Availability';
+import Booking from '../models/Booking';
+import Expert from '../models/Expert';
 import { protect } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 
@@ -466,6 +468,37 @@ router.get('/mentor/:mentorId', async (req, res, next) => {
       }
       const daySlots = relevantPeriod.timeSlots.filter(slot => slot.dayOfWeek === dayOfWeek && slot.isAvailable);
       const availableSlots = [];
+
+      // Fetch paid sessions for this mentor (by 4-digit user_id) on this date
+      const paidSessions = await Booking.find({
+        sessions: {
+          $elemMatch: {
+            expertUserId: user_id,
+            scheduledDate: selectedDate,
+            paymentStatus: 'paid'
+          }
+        }
+      });
+
+      // Build a set of blocked 15-min times (HH:MM) from paid sessions
+      const blockedTimes = new Set<string>();
+      for (const booking of paidSessions) {
+        for (const session of booking.sessions) {
+          if (
+            session.expertUserId === user_id &&
+            session.paymentStatus === 'paid' &&
+            new Date(session.scheduledDate).toDateString() === selectedDate.toDateString()
+          ) {
+            const start = new Date(`2000-01-01T${session.startTime}:00`);
+            const end = new Date(`2000-01-01T${session.endTime}:00`);
+            const t = new Date(start);
+            while (t < end) {
+              blockedTimes.add(t.toTimeString().slice(0, 5));
+              t.setMinutes(t.getMinutes() + 15);
+            }
+          }
+        }
+      }
       for (const slot of daySlots) {
         const startTime = new Date(`2000-01-01T${slot.startTime}:00`);
         const endTime = new Date(`2000-01-01T${slot.endTime}:00`);
@@ -475,7 +508,7 @@ router.get('/mentor/:mentorId', async (req, res, next) => {
           availableSlots.push({
             time: timeString,
             displayTime: formatTimeForDisplay(timeString),
-            available: true
+            available: !blockedTimes.has(timeString)
           });
           currentTime.setMinutes(currentTime.getMinutes() + 15);
         }
@@ -486,6 +519,165 @@ router.get('/mentor/:mentorId', async (req, res, next) => {
       res.status(500).json({ success: false, error: 'Server error' });
     }
   });
+
+// @route   GET /api/availability/userid/:user_id/consecutive-slots/:date/:duration
+// @desc    Get available consecutive time slots for a specific mentor by 4-digit user_id on a specific date for a specific duration
+// @access  Public
+router.get('/userid/:user_id/consecutive-slots/:date/:duration', async (req, res, next) => {
+  try {
+    const { user_id, date, duration } = req.params;
+    
+    // Validate user_id format
+    if (!/^\d{4}$/.test(user_id)) {
+      return res.status(400).json({ success: false, error: 'Invalid user_id format. Must be a 4-digit number.' });
+    }
+    
+    // Validate date format
+    const selectedDate = new Date(date);
+    if (isNaN(selectedDate.getTime())) {
+      return res.status(400).json({ success: false, error: 'Invalid date format' });
+    }
+    
+    // Validate duration
+    const durationMinutes = parseInt(duration);
+    if (isNaN(durationMinutes) || durationMinutes < 15 || durationMinutes % 15 !== 0) {
+      return res.status(400).json({ success: false, error: 'Duration must be a multiple of 15 minutes and at least 15 minutes' });
+    }
+    
+    const dayOfWeek = selectedDate.getDay();
+    
+    // Find availability for this mentor by user_id
+    const availability = await Availability.findOne({ 
+      user_id,
+      'availabilityPeriods.isActive': true,
+      'availabilityPeriods.dateRange.startDate': { $lte: selectedDate },
+      'availabilityPeriods.dateRange.endDate': { $gte: selectedDate }
+    });
+    
+    if (!availability) {
+      return res.json({ success: true, data: { consecutiveSlots: [], message: 'No availability found for this date' } });
+    }
+    
+    const relevantPeriod = availability.availabilityPeriods.find(period => {
+      const periodStart = new Date(period.dateRange.startDate);
+      const periodEnd = new Date(period.dateRange.endDate);
+      return selectedDate >= periodStart && selectedDate <= periodEnd;
+    });
+    
+    if (!relevantPeriod) {
+      return res.json({ success: true, data: { consecutiveSlots: [], message: 'No availability found for this date' } });
+    }
+    
+    const daySlots = relevantPeriod.timeSlots.filter(slot => slot.dayOfWeek === dayOfWeek && slot.isAvailable);
+    const allSlots = [];
+
+    // Fetch paid sessions for this mentor (by 4-digit user_id) on this date
+    const paidSessions = await Booking.find({
+      sessions: {
+        $elemMatch: {
+          expertUserId: user_id,
+          scheduledDate: selectedDate,
+          paymentStatus: 'paid'
+        }
+      }
+    });
+
+    // Build a set of blocked 15-min times (HH:MM) from paid sessions
+    const blockedTimes = new Set<string>();
+    for (const booking of paidSessions) {
+      for (const session of booking.sessions) {
+        if (
+          session.expertUserId === user_id &&
+          session.paymentStatus === 'paid' &&
+          new Date(session.scheduledDate).toDateString() === selectedDate.toDateString()
+        ) {
+          const start = new Date(`2000-01-01T${session.startTime}:00`);
+          const end = new Date(`2000-01-01T${session.endTime}:00`);
+          const t = new Date(start);
+          while (t < end) {
+            blockedTimes.add(t.toTimeString().slice(0, 5));
+            t.setMinutes(t.getMinutes() + 15);
+          }
+        }
+      }
+    }
+    
+    // Generate all 15-minute slots
+    for (const slot of daySlots) {
+      const startTime = new Date(`2000-01-01T${slot.startTime}:00`);
+      const endTime = new Date(`2000-01-01T${slot.endTime}:00`);
+      let currentTime = new Date(startTime);
+      
+      while (currentTime < endTime) {
+        const timeString = currentTime.toTimeString().slice(0, 5); // HH:MM format
+        allSlots.push({
+          time: timeString,
+          displayTime: formatTimeForDisplay(timeString),
+          available: !blockedTimes.has(timeString)
+        });
+        currentTime.setMinutes(currentTime.getMinutes() + 15);
+      }
+    }
+    
+    // Find consecutive available slots for the requested duration
+    const consecutiveSlots = [];
+    const requiredSlots = durationMinutes / 15; // Number of 15-minute slots needed
+    
+    console.log(`🔍 [CONSECUTIVE SLOTS] Looking for ${durationMinutes}min slots (${requiredSlots} consecutive 15-min slots)`);
+    console.log(`🔍 [CONSECUTIVE SLOTS] Total slots available: ${allSlots.length}`);
+    
+    for (let i = 0; i <= allSlots.length - requiredSlots; i++) {
+      let consecutiveAvailable = true;
+      const startSlot = allSlots[i];
+      
+      // Check if we have enough consecutive available slots
+      for (let j = 0; j < requiredSlots; j++) {
+        if (!allSlots[i + j] || !allSlots[i + j].available) {
+          consecutiveAvailable = false;
+          break;
+        }
+      }
+      
+      if (consecutiveAvailable) {
+        const endSlot = allSlots[i + requiredSlots - 1];
+        
+        // Calculate the actual end time by adding 15 minutes to the last slot
+        const endTimeObj = new Date(`2000-01-01T${endSlot.time}:00`);
+        endTimeObj.setMinutes(endTimeObj.getMinutes() + 15);
+        const actualEndTime = endTimeObj.toTimeString().slice(0, 5);
+        
+        const consecutiveSlot = {
+          startTime: startSlot.time,
+          endTime: actualEndTime,
+          startDisplayTime: startSlot.displayTime,
+          endDisplayTime: formatTimeForDisplay(actualEndTime),
+          duration: durationMinutes,
+          available: true
+        };
+        
+        console.log(`✅ [CONSECUTIVE SLOTS] Found slot: ${consecutiveSlot.startTime} - ${consecutiveSlot.endTime} (${consecutiveSlot.duration}min)`);
+        consecutiveSlots.push(consecutiveSlot);
+      }
+    }
+    
+    console.log(`📊 [CONSECUTIVE SLOTS] Total consecutive slots found: ${consecutiveSlots.length}`);
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        consecutiveSlots,
+        date,
+        duration: durationMinutes,
+        totalSlots: allSlots.length,
+        availableSlots: allSlots.filter(slot => slot.available).length
+      } 
+    });
+  } catch (error) {
+    console.error('[AVAILABILITY] Error fetching consecutive slots by user_id:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
 router.get('/mentor/:mentorId/slots/:date', async (req, res, next) => {
   try {
     const { mentorId, date } = req.params;
@@ -546,6 +738,36 @@ router.get('/mentor/:mentorId/slots/:date', async (req, res, next) => {
 
     // Generate 15-minute intervals for the available time slots
     const availableSlots = [];
+
+    // Fetch paid sessions for this mentor on this date to mark blocked intervals
+    const paidSessions = await Booking.find({
+      sessions: {
+        $elemMatch: {
+          expertId: new mongoose.Types.ObjectId(mentorId),
+          scheduledDate: selectedDate,
+          paymentStatus: 'paid'
+        }
+      }
+    });
+
+    const blockedTimes = new Set<string>();
+    for (const booking of paidSessions) {
+      for (const session of booking.sessions) {
+        if (
+          session.paymentStatus === 'paid' &&
+          session.expertId && session.expertId.toString() === mentorId &&
+          new Date(session.scheduledDate).toDateString() === selectedDate.toDateString()
+        ) {
+          const start = new Date(`2000-01-01T${session.startTime}:00`);
+          const end = new Date(`2000-01-01T${session.endTime}:00`);
+          const t = new Date(start);
+          while (t < end) {
+            blockedTimes.add(t.toTimeString().slice(0, 5));
+            t.setMinutes(t.getMinutes() + 15);
+          }
+        }
+      }
+    }
     
     for (const slot of daySlots) {
       const startTime = new Date(`2000-01-01T${slot.startTime}:00`);
@@ -559,7 +781,7 @@ router.get('/mentor/:mentorId/slots/:date', async (req, res, next) => {
         availableSlots.push({
           time: timeString,
           displayTime: formatTimeForDisplay(timeString),
-          available: true
+          available: !blockedTimes.has(timeString)
         });
         
         // Add 15 minutes

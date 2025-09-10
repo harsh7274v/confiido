@@ -46,6 +46,8 @@ export interface BackendBooking {
     // Timeout fields for 5-minute booking timeout
     timeoutAt?: string;
     timeoutStatus?: 'active' | 'expired' | 'completed';
+    // Creation timestamp
+    createdTime?: string;
   }>;
   totalSessions: number;
   totalSpent: number;
@@ -157,6 +159,23 @@ class PaymentsApi {
       const data = await response.json();
       console.log('Response data:', data);
       
+      // Debug: Log the createdTime values from sessions
+      if (data.data.bookings && Array.isArray(data.data.bookings)) {
+        data.data.bookings.forEach((booking: BackendBooking, bookingIndex: number) => {
+          if (booking.sessions && Array.isArray(booking.sessions)) {
+            booking.sessions.forEach((session, sessionIndex: number) => {
+              console.log(`Booking ${bookingIndex}, Session ${sessionIndex}:`, {
+                sessionId: session.sessionId,
+                createdTime: session.createdTime,
+                scheduledDate: session.scheduledDate,
+                status: session.status,
+                paymentStatus: session.paymentStatus
+              });
+            });
+          }
+        });
+      }
+      
       // Transform booking sessions to individual payment entries
       const transformedPayments: Payment[] = [];
       
@@ -190,7 +209,7 @@ class PaymentsApi {
                 // Timeout fields
                 timeoutAt: session.timeoutAt ? new Date(session.timeoutAt) : undefined,
                 timeoutStatus: session.timeoutStatus,
-                createdAt: new Date(booking.createdAt),
+                createdAt: session.createdTime ? new Date(session.createdTime) : new Date(booking.createdAt),
                 updatedAt: new Date(booking.updatedAt)
               });
             });
@@ -198,8 +217,26 @@ class PaymentsApi {
         });
       }
       
-      // Sort by scheduled date (most recent first)
-      transformedPayments.sort((a, b) => b.scheduledDate.getTime() - a.scheduledDate.getTime());
+      // Sort by createdAt (session createdTime, most recent first), with updatedAt as fallback
+      transformedPayments.sort((a, b) => {
+        // Primary sort: createdAt (session createdTime, most recent first)
+        const createdAtDiff = b.createdAt.getTime() - a.createdAt.getTime();
+        if (createdAtDiff !== 0) {
+          return createdAtDiff;
+        }
+        // Secondary sort: updatedAt (most recent first)
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+      });
+      
+      // Debug: Log the sorted payments
+      console.log('Sorted payments (most recent first):');
+      transformedPayments.forEach((payment, index) => {
+        console.log(`${index + 1}. Session ${payment._id}:`, {
+          createdAt: payment.createdAt.toISOString(),
+          status: payment.status,
+          paymentStatus: payment.paymentStatus
+        });
+      });
       
       return {
         bookings: transformedPayments,

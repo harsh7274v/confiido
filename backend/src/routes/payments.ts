@@ -425,10 +425,11 @@ router.get('/transactions', protect, async (req, res, next) => {
     // Pagination
     const skip = (Number(page) - 1) * Number(limit);
     
-    // Get transactions
+    // Get transactions - for now, sort by createdAt (most recent first)
+    // TODO: Implement session createdTime sorting once we have proper session-transaction relationships
     const transactions = await Transaction.find(query)
       .populate('expertId', 'firstName lastName email profession')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 }) // Most recent first
       .skip(skip)
       .limit(Number(limit));
     
