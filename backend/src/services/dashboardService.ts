@@ -51,6 +51,9 @@ interface DashboardData {
       meetingLink?: string;
       price: number;
       currency: string;
+      expertEmail?: string;
+      notes?: string;
+      scheduledDate: Date;
     }>;
     completed: Array<{
       id: string;
@@ -64,6 +67,9 @@ interface DashboardData {
       meetingLink?: string;
       price: number;
       currency: string;
+      expertEmail?: string;
+      notes?: string;
+      scheduledDate: Date;
     }>;
   };
   recentActivity: Array<{
@@ -85,11 +91,18 @@ interface DashboardData {
 export const getDashboardData = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
+    console.log('=== DASHBOARD SERVICE DEBUG ===');
+    console.log('User ID from request:', userId);
+    console.log('User object from request:', req.user);
+    
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const user = await User.findById(userId).select('-password');
+    console.log('User found in database:', user ? 'Yes' : 'No');
+    console.log('User details:', user ? { id: user._id, email: user.email, isExpert: user.isExpert } : 'Not found');
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -263,49 +276,85 @@ export const getDashboardData = async (req: Request, res: Response) => {
         }));
     } else {
       // For seekers, get sessions where they are the client
-      const clientBookings = await Booking.find({ clientId: userId })
+      // Use clientUserId (4-digit string) to fetch bookings
+      console.log('Using clientUserId for query:', user.user_id);
+      
+      const clientBookings = await Booking.find({ clientUserId: user.user_id })
         .populate('sessions.expertId', 'title')
         .sort({ 'sessions.scheduledDate': 1 });
+      
+      console.log('Client bookings found with clientUserId:', clientBookings.length);
+      
+      // Debug: Try to find the specific booking from the user's data
+      const testBooking = await Booking.findById('68d6e883ca139ef5c406041f');
+      console.log('Test booking found:', testBooking ? 'Yes' : 'No');
+      if (testBooking) {
+        console.log('Test booking clientId:', testBooking.clientId);
+        console.log('Test booking clientUserId:', testBooking.clientUserId);
+        console.log('Test booking sessions count:', testBooking.sessions.length);
+      }
 
       const allSessions = clientBookings.flatMap(booking => 
-        booking.sessions.map(session => ({
-          ...session,
-          expertName: (session.expertId as any)?.title || 'Expert',
-          bookingId: booking._id.toString()
-        }))
+        booking.sessions.map(session => {
+          console.log('Raw session object:', JSON.stringify(session, null, 2));
+          return {
+            ...session,
+            expertName: (session.expertId as any)?.title || 'Expert',
+            bookingId: booking._id.toString()
+          };
+        })
       );
 
+      console.log('=== DASHBOARD DEBUG ===');
+      console.log('User ID being used for query:', user.user_id);
+      console.log('User ID type:', typeof user.user_id);
+      console.log('Total client bookings found:', clientBookings.length);
+      console.log('Booking IDs found:', clientBookings.map(b => b._id));
+      console.log('Total sessions found:', allSessions.length);
+      console.log('All sessions payment statuses:', allSessions.map(s => ({ id: s.sessionId, paymentStatus: s.paymentStatus, status: s.status })));
+      
       const now = new Date();
-      sessions.upcoming = allSessions
+      // Filter for paid sessions only
+      const paidSessions = allSessions.filter(session => session.paymentStatus === 'paid');
+      console.log('Paid sessions count:', paidSessions.length);
+      console.log('Paid sessions details:', paidSessions.map(s => ({ id: s.sessionId, paymentStatus: s.paymentStatus, status: s.status, scheduledDate: s.scheduledDate })));
+      
+      sessions.upcoming = paidSessions
         .filter(session => new Date(session.scheduledDate) > now && session.status !== 'completed' && session.status !== 'cancelled')
         .map(session => ({
-          id: session.sessionId.toString(),
-          title: `${session.sessionType.toUpperCase()} session with ${session.expertName}`,
-          date: new Date(session.scheduledDate).toLocaleDateString(),
-          time: `${session.startTime} - ${session.endTime}`,
-          expertName: session.expertName,
-          sessionType: session.sessionType,
-          status: session.status,
-          paymentStatus: session.paymentStatus,
+          id: session.sessionId?.toString() || 'unknown',
+          title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertName || 'Expert'}`,
+          date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
+          time: session.startTime && session.endTime ? `${session.startTime} - ${session.endTime}` : 'Unknown Time',
+          expertName: session.expertName || 'Expert',
+          sessionType: session.sessionType || 'unknown',
+          status: session.status || 'unknown',
+          paymentStatus: session.paymentStatus || 'unknown',
           meetingLink: session.meetingLink,
-          price: session.price,
-          currency: session.currency
+          price: session.price || 0,
+          currency: session.currency || 'INR',
+          expertEmail: session.expertEmail,
+          notes: session.notes,
+          scheduledDate: session.scheduledDate
         }));
 
-      sessions.completed = allSessions
+      sessions.completed = paidSessions
         .filter(session => session.status === 'completed' || (new Date(session.scheduledDate) <= now && session.status !== 'cancelled'))
         .map(session => ({
-          id: session.sessionId.toString(),
-          title: `${session.sessionType.toUpperCase()} session with ${session.expertName}`,
-          date: new Date(session.scheduledDate).toLocaleDateString(),
-          time: `${session.startTime} - ${session.endTime}`,
-          expertName: session.expertName,
-          sessionType: session.sessionType,
-          status: session.status,
-          paymentStatus: session.paymentStatus,
+          id: session.sessionId?.toString() || 'unknown',
+          title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertName || 'Expert'}`,
+          date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
+          time: session.startTime && session.endTime ? `${session.startTime} - ${session.endTime}` : 'Unknown Time',
+          expertName: session.expertName || 'Expert',
+          sessionType: session.sessionType || 'unknown',
+          status: session.status || 'unknown',
+          paymentStatus: session.paymentStatus || 'unknown',
           meetingLink: session.meetingLink,
-          price: session.price,
-          currency: session.currency
+          price: session.price || 0,
+          currency: session.currency || 'INR',
+          expertEmail: session.expertEmail,
+          notes: session.notes,
+          scheduledDate: session.scheduledDate
         }));
     }
 

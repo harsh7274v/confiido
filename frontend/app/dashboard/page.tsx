@@ -69,11 +69,38 @@ interface Goal {
   sessions: any;
   recentActivity: any[];
   inspiration?: any[];
-}export default function DashboardPage() {
+}// Utility function to create session datetime with proper timezone handling
+const createSessionDateTime = (scheduledDate: string, time: string): Date => {
+  try {
+    console.log('Creating session datetime:', { scheduledDate, time });
+    
+    const sessionDate = new Date(scheduledDate);
+    console.log('Parsed session date:', sessionDate.toISOString());
+    
+    const timeParts = time.split(' - ')[0].split(':');
+    const hours = parseInt(timeParts[0]) || 0;
+    const minutes = parseInt(timeParts[1]) || 0;
+    
+    console.log('Time parts:', { timeParts, hours, minutes });
+    
+    // Create datetime in local timezone
+    const sessionDateTime = new Date(sessionDate);
+    sessionDateTime.setHours(hours, minutes, 0, 0);
+    
+    console.log('Final session datetime:', sessionDateTime.toISOString());
+    
+    return sessionDateTime;
+  } catch (error) {
+    console.error('Error parsing session datetime:', error);
+    return new Date();
+  }
+};
+
+export default function DashboardPage() {
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -191,18 +218,113 @@ interface Goal {
       setApiStatus('loading');
       try {
         const headers = await getAuthHeaders();
-        console.log('Making API call to dashboard with headers:', headers);
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/dashboard`, { headers });
-        console.log('Dashboard API response:', res.data);
-        const dashboardData = res.data?.data;
-        if (dashboardData && dashboardData.sessions) {
-          setSessions(sessionTab === 'upcoming' ? dashboardData.sessions.upcoming : dashboardData.sessions.completed);
-        } else {
-          setSessions([]);
-        }
+        console.log('Making API call to bookings/user with headers:', headers);
+        
+        // Use the same API endpoint that works for the payment page
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/bookings/user?page=1&limit=100`, { headers });
+        console.log('Bookings API response:', res.data);
+        
+        // Transform the bookings data to sessions format
+        const bookings = res.data?.data?.bookings || [];
+        console.log('Bookings found:', bookings.length);
+        
+        // Extract all sessions from all bookings
+        const allSessions = bookings.flatMap(booking => 
+          booking.sessions.map(session => ({
+            id: session.sessionId || session._id,
+            title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertId?.title || 'Expert'}`,
+            date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
+            time: session.startTime && session.endTime ? `${session.startTime} - ${session.endTime}` : 'Unknown Time',
+            expertName: session.expertId?.title || 'Expert',
+            sessionType: session.sessionType || 'unknown',
+            status: session.status || 'unknown',
+            paymentStatus: session.paymentStatus || 'unknown',
+            meetingLink: session.meetingLink,
+            price: session.price || 0,
+            currency: session.currency || 'INR',
+            expertEmail: session.expertEmail,
+            notes: session.notes,
+            scheduledDate: session.scheduledDate
+          }))
+        );
+        
+        console.log('=== FRONTEND DASHBOARD DEBUG ===');
+        console.log('All sessions extracted:', allSessions.length);
+        console.log('All sessions:', allSessions);
+        
+        // Debug: Show the first few sessions in detail
+        allSessions.slice(0, 3).forEach((session, index) => {
+          console.log(`Session ${index + 1} details:`, {
+            id: session.id,
+            scheduledDate: session.scheduledDate,
+            time: session.time,
+            status: session.status,
+            paymentStatus: session.paymentStatus
+          });
+        });
+        
+        // Filter for paid sessions only
+        const paidSessions = allSessions.filter(session => {
+          const isPaid = session.paymentStatus === 'paid';
+          if (!isPaid) {
+            console.log(`Skipping unpaid session: ${session.id} (status: ${session.paymentStatus})`);
+          }
+          return isPaid;
+        });
+        console.log('Paid sessions:', paidSessions.length);
+        console.log('Total sessions before filtering:', allSessions.length);
+        
+        // Separate upcoming and completed sessions with proper date/time comparison
+        const now = new Date();
+        console.log('Current date/time:', now.toISOString());
+        
+        // Test: Create a future date to verify the logic works
+        const testFutureDate = new Date();
+        testFutureDate.setDate(testFutureDate.getDate() + 1); // Tomorrow
+        testFutureDate.setHours(10, 0, 0, 0); // 10:00 AM
+        console.log('Test future date:', testFutureDate.toISOString());
+        console.log('Is test future date > now?', testFutureDate > now);
+        
+        const upcoming = paidSessions.filter(session => {
+          const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
+          
+          console.log(`Session ${session.id}:`, {
+            scheduledDate: session.scheduledDate,
+            time: session.time,
+            sessionDateTime: sessionDateTime.toISOString(),
+            currentTime: now.toISOString(),
+            isUpcoming: sessionDateTime > now,
+            status: session.status // Just for debugging, not used in logic
+          });
+          
+          // Only use date/time comparison, ignore backend status
+          return sessionDateTime > now;
+        });
+        
+        const completed = paidSessions.filter(session => {
+          const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
+          
+          // Only use date/time comparison, ignore backend status
+          return sessionDateTime <= now;
+        });
+        
+        console.log('Upcoming sessions:', upcoming.length);
+        console.log('Completed sessions:', completed.length);
+        
+        // Debug: Show which sessions are in which category
+        console.log('=== SESSION CATEGORIZATION (DATE-BASED ONLY) ===');
+        console.log('Note: Categorization is based ONLY on scheduledDate + time, ignoring backend status');
+        console.log('Upcoming sessions:', upcoming.map(s => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
+        console.log('Completed sessions:', completed.map(s => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
+        
+        const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
+        console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
+        setSessions(selectedSessions);
+        
         setApiStatus('success');
       } catch (err: any) {
         console.error('Error fetching sessions:', err);
+        console.error('Error response:', err.response?.data);
         setSessions([]);
         setSessionsError(err.response?.data?.message || 'Failed to load sessions');
         setApiStatus('error');
@@ -526,6 +648,15 @@ interface Goal {
 
   return (
   <div>
+    <style jsx>{`
+      .scrollbar-hide {
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+      }
+      .scrollbar-hide::-webkit-scrollbar { 
+        display: none;  /* Safari and Chrome */
+      }
+    `}</style>
     {/* Popup logic fixed with fragment */}
     {showProfilePopup && (
       <>
@@ -613,7 +744,7 @@ interface Goal {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
                 {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
                 <div className="flex-1 order-2 lg:order-1">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Next in Your Career Journey</h2>
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-black mb-2">Next in Your Career Journey</h2>
                   <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
                   <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
@@ -625,7 +756,7 @@ interface Goal {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-gray-900">Not sure what direction to take?</div>
+                      <div className="text-base sm:text-lg font-semibold text-black">Not sure what direction to take?</div>
                       <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Book a career exploration session</button>
                     </div>
                     {/* Card 2 */}
@@ -637,7 +768,7 @@ interface Goal {
                         </div>
                         <span className="text-2xl sm:text-3xl">🚲</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-gray-900">Need help creating a strong first resume?</div>
+                      <div className="text-base sm:text-lg font-semibold text-black">Need help creating a strong first resume?</div>
                       <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Resume review for freshers</button>
                     </div>
                     {/* Card 3 */}
@@ -649,7 +780,7 @@ interface Goal {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-gray-900">Applied to a few jobs but no response?</div>
+                      <div className="text-base sm:text-lg font-semibold text-black">Applied to a few jobs but no response?</div>
                       <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Audit your job strategy</button>
                     </div>
                   </div>
@@ -661,7 +792,7 @@ interface Goal {
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Quick Actions</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black">Quick Actions</h2>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
                       <button
@@ -674,7 +805,7 @@ interface Goal {
                             <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 mb-1 text-sm">Book a session</p>
+                            <p className="text-lg font-semibold text-black mb-1">Book a session</p>
                             <p className="text-xs text-gray-600">Find a coach and schedule</p>
                           </div>
                           <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
@@ -691,7 +822,7 @@ interface Goal {
                             <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 mb-1 text-sm">Open messages</p>
+                            <p className="text-lg font-semibold text-black mb-1">Open messages</p>
                             <p className="text-xs text-gray-600">Chat with your coach</p>
                           </div>
                           <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
@@ -724,7 +855,7 @@ interface Goal {
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Find Your Mentor</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black">Find Your Mentor</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       {mentors.map((mentor) => (
@@ -776,7 +907,7 @@ interface Goal {
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Sessions</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black">Sessions</h2>
                     </div>
                     <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
                       <button
@@ -792,7 +923,7 @@ interface Goal {
                         Completed
                       </button>
                     </div>
-                    <div className="w-full flex-1 overflow-y-auto">
+                    <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {sessionsLoading ? (
                         <div className="flex items-center justify-center h-full">
                           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
@@ -812,7 +943,7 @@ interface Goal {
                             <div key={session.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
                               <div className="flex items-center justify-between mb-3">
                                 <div>
-                                  <h3 className="font-bold text-gray-900 text-base mb-1">{session.title}</h3>
+                                  <h3 className="font-semibold text-black text-base mb-1">{session.title}</h3>
                                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                                     <Calendar className="h-4 w-4" />
                                     <span>{session.date}</span>
@@ -824,6 +955,25 @@ interface Goal {
                                     <span className="text-gray-400">•</span>
                                     <span className="font-medium">{session.expertName}</span>
                                   </div>
+                                  {session.expertEmail && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                      </svg>
+                                      <span>{session.expertEmail}</span>
+                                    </div>
+                                  )}
+                                  {session.notes && (
+                                    <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+                                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span className="font-medium">Notes:</span>
+                                      </div>
+                                      <p className="text-sm text-gray-700">{session.notes}</p>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                   <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -843,8 +993,8 @@ interface Goal {
                                 </div>
                               </div>
                               
-                              {/* Meeting Link Section - Only show for paid sessions */}
-                              {session.paymentStatus === 'paid' && session.meetingLink && (
+                              {/* Meeting Link Section - Show for all sessions with meeting link */}
+                              {session.meetingLink && (
                                 <div className="mt-3 pt-3 border-t border-gray-100">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -890,7 +1040,7 @@ interface Goal {
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-800">Goals</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black">Goals</h2>
                     </div>
                     
                     {/* Add Goal Input */}
@@ -915,7 +1065,7 @@ interface Goal {
                     </div>
 
                     {/* Goals List */}
-                    <div className="w-full flex-1 overflow-y-auto">
+                    <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {goals.length === 0 ? (
                         <div className="text-center py-12">
                           <Target className="h-12 w-12 text-purple-400 mx-auto mb-4" />
