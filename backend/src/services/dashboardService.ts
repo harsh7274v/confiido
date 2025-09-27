@@ -38,6 +38,34 @@ interface DashboardData {
     averageRating?: number;
     totalReviews?: number;
   };
+  sessions: {
+    upcoming: Array<{
+      id: string;
+      title: string;
+      date: string;
+      time: string;
+      expertName: string;
+      sessionType: string;
+      status: string;
+      paymentStatus: string;
+      meetingLink?: string;
+      price: number;
+      currency: string;
+    }>;
+    completed: Array<{
+      id: string;
+      title: string;
+      date: string;
+      time: string;
+      expertName: string;
+      sessionType: string;
+      status: string;
+      paymentStatus: string;
+      meetingLink?: string;
+      price: number;
+      currency: string;
+    }>;
+  };
   recentActivity: Array<{
     id: string;
     type: string;
@@ -183,6 +211,104 @@ export const getDashboardData = async (req: Request, res: Response) => {
       }));
     }
 
+    // Get sessions data for both experts and seekers
+    let sessions = { upcoming: [], completed: [] };
+    
+    if (user.isExpert) {
+      // For experts, get sessions where they are the expert
+      const expertBookings = await Booking.find({ 'sessions.expertId': userId })
+        .populate('clientId', 'firstName lastName')
+        .populate('sessions.expertId', 'title')
+        .sort({ 'sessions.scheduledDate': 1 });
+
+      const allSessions = expertBookings.flatMap(booking => 
+        booking.sessions.map(session => ({
+          ...session,
+          clientName: `${(booking.clientId as any)?.firstName || ''} ${(booking.clientId as any)?.lastName || ''}`.trim(),
+          bookingId: booking._id.toString()
+        }))
+      );
+
+      const now = new Date();
+      sessions.upcoming = allSessions
+        .filter(session => new Date(session.scheduledDate) > now && session.status !== 'completed' && session.status !== 'cancelled')
+        .map(session => ({
+          id: session.sessionId.toString(),
+          title: `${session.sessionType.toUpperCase()} session with ${session.clientName}`,
+          date: new Date(session.scheduledDate).toLocaleDateString(),
+          time: `${session.startTime} - ${session.endTime}`,
+          expertName: session.clientName,
+          sessionType: session.sessionType,
+          status: session.status,
+          paymentStatus: session.paymentStatus,
+          meetingLink: session.meetingLink,
+          price: session.price,
+          currency: session.currency
+        }));
+
+      sessions.completed = allSessions
+        .filter(session => session.status === 'completed' || (new Date(session.scheduledDate) <= now && session.status !== 'cancelled'))
+        .map(session => ({
+          id: session.sessionId.toString(),
+          title: `${session.sessionType.toUpperCase()} session with ${session.clientName}`,
+          date: new Date(session.scheduledDate).toLocaleDateString(),
+          time: `${session.startTime} - ${session.endTime}`,
+          expertName: session.clientName,
+          sessionType: session.sessionType,
+          status: session.status,
+          paymentStatus: session.paymentStatus,
+          meetingLink: session.meetingLink,
+          price: session.price,
+          currency: session.currency
+        }));
+    } else {
+      // For seekers, get sessions where they are the client
+      const clientBookings = await Booking.find({ clientId: userId })
+        .populate('sessions.expertId', 'title')
+        .sort({ 'sessions.scheduledDate': 1 });
+
+      const allSessions = clientBookings.flatMap(booking => 
+        booking.sessions.map(session => ({
+          ...session,
+          expertName: (session.expertId as any)?.title || 'Expert',
+          bookingId: booking._id.toString()
+        }))
+      );
+
+      const now = new Date();
+      sessions.upcoming = allSessions
+        .filter(session => new Date(session.scheduledDate) > now && session.status !== 'completed' && session.status !== 'cancelled')
+        .map(session => ({
+          id: session.sessionId.toString(),
+          title: `${session.sessionType.toUpperCase()} session with ${session.expertName}`,
+          date: new Date(session.scheduledDate).toLocaleDateString(),
+          time: `${session.startTime} - ${session.endTime}`,
+          expertName: session.expertName,
+          sessionType: session.sessionType,
+          status: session.status,
+          paymentStatus: session.paymentStatus,
+          meetingLink: session.meetingLink,
+          price: session.price,
+          currency: session.currency
+        }));
+
+      sessions.completed = allSessions
+        .filter(session => session.status === 'completed' || (new Date(session.scheduledDate) <= now && session.status !== 'cancelled'))
+        .map(session => ({
+          id: session.sessionId.toString(),
+          title: `${session.sessionType.toUpperCase()} session with ${session.expertName}`,
+          date: new Date(session.scheduledDate).toLocaleDateString(),
+          time: `${session.startTime} - ${session.endTime}`,
+          expertName: session.expertName,
+          sessionType: session.sessionType,
+          status: session.status,
+          paymentStatus: session.paymentStatus,
+          meetingLink: session.meetingLink,
+          price: session.price,
+          currency: session.currency
+        }));
+    }
+
     const dashboardData: DashboardData = {
       user: {
         id: user._id.toString(),
@@ -209,6 +335,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
         createdAt: goal.createdAt
       })),
       stats,
+      sessions,
       recentActivity,
       inspiration
     };

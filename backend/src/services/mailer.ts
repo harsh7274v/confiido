@@ -17,3 +17,19 @@ export const sendOTPEmail = async (to: string, otp: string) => {
   };
   await transporter.sendMail(mailOptions);
 };
+
+export const sendSessionEmail = async (
+  to: string,
+  subject: string,
+  text: string,
+  html?: string
+) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    text,
+    ...(html ? { html } : {})
+  } as any;
+  await transporter.sendMail(mailOptions);
+};

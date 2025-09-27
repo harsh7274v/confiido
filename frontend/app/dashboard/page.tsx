@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, Star, Users, Shield } from "lucide-react";
+import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
 import React, { useEffect, useMemo, useState } from 'react';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
@@ -40,15 +40,36 @@ import { type DashboardData, type SetupStep } from '../services/dashboardApi';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
-// Define Goal type locally
+// Define types locally
 interface Goal {
   id: string;
   text: string;
   completed: boolean;
   createdAt: Date;
-}
-
-export default function DashboardPage() {
+}interface SetupStep {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  action: string;
+  icon: string;
+}interface DashboardData {
+  user: {
+    id: string;
+    name: string;
+    fullName: string;
+    handle: string;
+    email: string;
+    profileUrl: string;
+    userType: 'expert' | 'seeker';
+  };
+  setupSteps: SetupStep[];
+  goals: Goal[];
+  stats: any;
+  sessions: any;
+  recentActivity: any[];
+  inspiration?: any[];
+}export default function DashboardPage() {
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
@@ -414,9 +435,7 @@ export default function DashboardPage() {
       // revert on error
       setSetupSteps(prev => prev.map(s => s.id === step.id ? { ...s, completed: step.completed } : s));
     }
-  }
-
-  async function addGoal() {
+  }  async function addGoal() {
     if (!newGoal.trim()) return;
     try {
       setSaving(true);
@@ -442,9 +461,7 @@ export default function DashboardPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  async function toggleGoal(goal: Goal) {
+  }  async function toggleGoal(goal: Goal) {
     try {
       const updatedGoals = goals.map(g => g.id === goal.id ? { ...g, completed: !g.completed } : g);
       setGoals(updatedGoals);
@@ -457,9 +474,7 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
     }
-  }
-
-  async function deleteGoal(goal: Goal) {
+  }  async function deleteGoal(goal: Goal) {
     try {
       const updatedGoals = goals.filter(g => g.id !== goal.id);
       setGoals(updatedGoals);
@@ -472,9 +487,7 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
     }
-  }
-
-  // Function to scroll to sessions section
+  }  // Function to scroll to sessions section
   const scrollToSessions = () => {
     setCurrentView('dashboard');
     
@@ -797,21 +810,72 @@ export default function DashboardPage() {
                         <div className="space-y-4">
                           {sessions.map((session: any) => (
                             <div key={session.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between mb-3">
                                 <div>
                                   <h3 className="font-bold text-gray-900 text-base mb-1">{session.title}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                                     <Calendar className="h-4 w-4" />
                                     <span>{session.date}</span>
+                                    <span className="text-gray-400">•</span>
+                                    <span>{session.time}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <span className="capitalize">{session.sessionType}</span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="font-medium">{session.expertName}</span>
                                   </div>
                                 </div>
-                                <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                  sessionTab === 'upcoming' 
-                                    ? 'bg-blue-100 text-blue-700' 
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
-                                  {sessionTab.charAt(0).toUpperCase() + sessionTab.slice(1)}
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    sessionTab === 'upcoming' 
+                                      ? 'bg-blue-100 text-blue-700' 
+                                      : 'bg-green-100 text-green-700'
+                                  }`}>
+                                    {sessionTab.charAt(0).toUpperCase() + sessionTab.slice(1)}
+                                  </div>
+                                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    session.paymentStatus === 'paid' 
+                                      ? 'bg-green-100 text-green-700' 
+                                      : 'bg-yellow-100 text-yellow-700'
+                                  }`}>
+                                    {session.paymentStatus.charAt(0).toUpperCase() + session.paymentStatus.slice(1)}
+                                  </div>
                                 </div>
+                              </div>
+                              
+                              {/* Meeting Link Section - Only show for paid sessions */}
+                              {session.paymentStatus === 'paid' && session.meetingLink && (
+                                <div className="mt-3 pt-3 border-t border-gray-100">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="p-1.5 bg-blue-100 rounded-lg">
+                                        <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                      </div>
+                                      <span className="text-sm font-medium text-gray-700">Meeting Link</span>
+                                    </div>
+                                    <a
+                                      href={session.meetingLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                    >
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                      </svg>
+                                      Join Meeting
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Price Information */}
+                              <div className="mt-2 flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Price: {session.currency} {session.price}</span>
+                                {session.paymentStatus !== 'paid' && (
+                                  <span className="text-orange-600 font-medium">Payment Pending</span>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -916,4 +980,84 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

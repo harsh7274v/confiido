@@ -6,6 +6,8 @@ import Expert from '../models/Expert';
 import User from '../models/User';
 import mongoose, { Types } from 'mongoose';
 import SocketService from '../services/socketService';
+import { sendSessionEmail } from '../services/mailer';
+import { createMeetEventForSession } from '../services/googleCalendar';
 
 const router = express.Router();
 
@@ -223,7 +225,7 @@ router.post('/', protect, [
       sessionId: new Types.ObjectId(),
       expertId: expert._id as mongoose.Types.ObjectId,
       expertUserId: expertUser.user_id || '0000',
-      expertEmail: expertUser.email,
+      expertEmail: (expertUser as any)?.mentor_email || expertUser.email,
       sessionType,
       duration,
       scheduledDate: new Date(scheduledDate),
@@ -1097,6 +1099,50 @@ router.put('/:id/complete-payment', protect, [
       session.finalAmount = session.price;
     }
     
+    // Try to create a real Google Meet event if mentor has Google calendar connected
+    try {
+      console.log('🔍 [DEBUG] Starting Google Meet event creation...');
+      const expertUser = await User.findById(session.expertId);
+      const clientUser = await User.findById(booking.clientId);
+      const title = `${session.sessionType.toUpperCase()} session with ${clientUser?.firstName || 'Client'}`;
+      
+      console.log('🔍 [DEBUG] Calling createMeetEventForSession with:', {
+        expertUserObjectId: String(session.expertId),
+        clientEmail: clientUser?.email || booking.clientEmail,
+        expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
+        title,
+        scheduledDate: session.scheduledDate,
+        startTime: session.startTime,
+        endTime: session.endTime
+      });
+      
+      const { hangoutLink } = await createMeetEventForSession({
+        expertUserObjectId: session.expertId as any,
+        clientEmail: clientUser?.email || booking.clientEmail,
+        expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
+        title,
+        description: session.notes || undefined,
+        scheduledDate: new Date(session.scheduledDate),
+        startTime: session.startTime,
+        endTime: session.endTime,
+      });
+
+      console.log('🔍 [DEBUG] createMeetEventForSession returned:', { hangoutLink });
+
+      if (hangoutLink) {
+        session.meetingLink = hangoutLink;
+        console.log('✅ [DEBUG] Google Meet link set:', hangoutLink);
+      } else {
+        console.log('❌ [DEBUG] No hangout link returned from createMeetEventForSession');
+      }
+    } catch (gErr) {
+      console.error('❌ [DEBUG] Failed to create Google Meet event:', gErr);
+      console.error('❌ [DEBUG] Error details:', {
+        message: gErr.message,
+        stack: gErr.stack
+      });
+    }
+
     await booking.save();
 
     // Emit socket event for real-time updates
@@ -1113,6 +1159,30 @@ router.put('/:id/complete-payment', protect, [
           finalAmount: session.finalAmount
         }
       );
+    }
+
+    // Send meeting link emails to client and mentor
+    try {
+      const client = await User.findById(booking.clientId);
+      const expertUser = await User.findById(session.expertId);
+      const scheduled = new Date(session.scheduledDate);
+      const scheduledStr = `${scheduled.toDateString()} ${session.startTime} - ${session.endTime}`;
+      const subject = 'Your session is confirmed';
+      const text = session.meetingLink
+        ? `Your session is confirmed for ${scheduledStr}. Join link: ${session.meetingLink}`
+        : `Your session is confirmed for ${scheduledStr}. A meeting link will be shared shortly.`;
+      const html = session.meetingLink
+        ? `<p>Your session is confirmed for <strong>${scheduledStr}</strong>.</p><p>Join: <a href=\"${session.meetingLink}\">${session.meetingLink}</a></p>`
+        : `<p>Your session is confirmed for <strong>${scheduledStr}</strong>.</p><p>A meeting link will be shared shortly.</p>`;
+      if (client?.email) {
+        await sendSessionEmail(client.email, subject, text, html);
+      }
+      const mentorEmail = session.expertEmail || (expertUser as any)?.email;
+      if (mentorEmail) {
+        await sendSessionEmail(mentorEmail, 'You have a confirmed session - link inside', text, html);
+      }
+    } catch (emailErr) {
+      console.error('⚠️ Failed to send session emails:', emailErr);
     }
 
     console.log('✅ [BOOKING] Payment completed successfully:', {
