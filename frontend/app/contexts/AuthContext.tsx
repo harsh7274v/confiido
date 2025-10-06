@@ -119,18 +119,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      console.log('Starting logout process...');
       setLogoutLoading(true);
       
       // Add a small delay for better UX
+      console.log('Waiting for UX delay...');
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      console.log('Signing out from Firebase...');
       await signOut(auth);
       
       // Clear any stored tokens
+      console.log('Clearing localStorage tokens...');
       localStorage.removeItem('token');
       
-      // Redirect to home page after logout
-      router.push('/');
+      // Redirect to login page after logout
+      console.log('Redirecting to login page...');
+      router.push('/login');
+      console.log('Logout process completed successfully');
     } catch (error) {
       console.error('Error signing out:', error);
     } finally {

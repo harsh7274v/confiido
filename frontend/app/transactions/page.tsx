@@ -1,16 +1,10 @@
 "use client";
+import { PropagateLoader } from 'react-spinners';
 
 import React, { useEffect, useState } from 'react';
 import { 
   CreditCard, 
-  Filter, 
-  Search, 
-  Download, 
-  Eye, 
   Calendar,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
   CheckCircle,
   XCircle,
   Clock,
@@ -60,7 +54,12 @@ export default function TransactionsPage() {
         limit: 10
       };
       const response = await transactionsApi.getTransactions(params);
-      setTransactions(response.transactions);
+      const sorted = [...response.transactions].sort((a: any, b: any) => {
+        const aDate = new Date((a as any).createdAt || (a as any).updatedAt).getTime();
+        const bDate = new Date((b as any).createdAt || (b as any).updatedAt).getTime();
+        return bDate - aDate; // newest first by creation time
+      });
+      setTransactions(sorted);
       setStats(response.stats);
       setTotalPages(response.pagination.pages);
     } catch (err: any) {
@@ -213,7 +212,7 @@ export default function TransactionsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 flex justify-center"><PropagateLoader color="#9333ea" /></div>
           <p className="text-gray-600">Loading transactions...</p>
           <p className="text-sm text-gray-500 mt-2">Connecting to backend server</p>
         </div>
@@ -242,35 +241,7 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-            {/* Completed and Pending boxes only */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Stats removed */}
 
   {/* Removed search/filter/export/refresh box */}
 
@@ -287,9 +258,6 @@ export default function TransactionsPage() {
                      Service
                    </th>
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Mentor
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Amount
                    </th>
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -298,15 +266,12 @@ export default function TransactionsPage() {
                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                      Date
                    </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Actions
-                   </th>
                  </tr>
                </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {transactions.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                                              {error ? (
                          <div>
                            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -345,10 +310,7 @@ export default function TransactionsPage() {
                        <td className="px-6 py-4">
                          <div>
                            <p className="text-sm font-medium text-gray-900">
-                             {transaction.transaction_id}
-                           </p>
-                           <p className="text-xs text-gray-500">
-                             User: {transaction.user_id}
+                            {(transaction as any).transactionId || (transaction as any).transaction_id || transaction._id}
                            </p>
                          </div>
                        </td>
@@ -359,16 +321,6 @@ export default function TransactionsPage() {
                            </p>
                            <p className="text-xs text-gray-500">
                              {transaction.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                           </p>
-                         </div>
-                       </td>
-                       <td className="px-6 py-4">
-                         <div>
-                           <p className="text-sm font-medium text-gray-900">
-                             {transaction.mentor_name}
-                           </p>
-                           <p className="text-xs text-gray-500">
-                             {transaction.expertId && `${transaction.expertId.firstName} ${transaction.expertId.lastName}`}
                            </p>
                          </div>
                        </td>
@@ -389,18 +341,12 @@ export default function TransactionsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-900">
-                            {formatDate(transaction.updatedAt)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </button>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-900">
+                              {formatDate(transaction.createdAt)}
+                            </span>
+                          </div>
                       </td>
                     </tr>
                   ))

@@ -8,9 +8,12 @@ export interface ITransaction extends Document {
   amount: number;
   currency: string;
   status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'refunded';
-  paymentMethod: 'stripe' | 'paypal' | 'bank_transfer' | 'upi' | 'crypto';
+  paymentMethod: 'stripe' | 'paypal' | 'bank_transfer' | 'upi' | 'crypto' | 'razorpay';
   paymentIntentId?: string;
   transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   description: string;
   metadata?: {
     sessionTitle?: string;
@@ -18,6 +21,17 @@ export interface ITransaction extends Document {
     webinarTitle?: string;
     bundleName?: string;
     productName?: string;
+    razorpayOrderId?: string;
+    razorpayPaymentId?: string;
+    userEmail?: string;
+    userName?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    paymentCreatedAt?: number;
+    orderAmount?: number;
+    orderCurrency?: string;
+    orderReceipt?: string;
+    [key: string]: any; // Allow additional metadata fields
   };
   completedAt?: Date;
   failedAt?: Date;
@@ -63,21 +77,21 @@ const transactionSchema = new Schema<ITransaction>({
   },
   paymentMethod: {
     type: String,
-    enum: ['stripe', 'paypal', 'bank_transfer', 'upi', 'crypto'],
+    enum: ['stripe', 'paypal', 'bank_transfer', 'upi', 'crypto', 'razorpay'],
     required: true
   },
   paymentIntentId: String,
   transactionId: String,
+  razorpayOrderId: String,
+  razorpayPaymentId: String,
+  razorpaySignature: String,
   description: {
     type: String,
     required: true
   },
   metadata: {
-    sessionTitle: String,
-    courseName: String,
-    webinarTitle: String,
-    bundleName: String,
-    productName: String
+    type: Schema.Types.Mixed,
+    default: {}
   },
   completedAt: Date,
   failedAt: Date,
@@ -92,11 +106,12 @@ const transactionSchema = new Schema<ITransaction>({
 });
 
 // Indexes
-transactionSchema.index({ userId: 1, status: 1 });
-transactionSchema.index({ userId: 1, updatedAt: -1 });
+transactionSchema.index({ user_id: 1, status: 1 });
+transactionSchema.index({ user_id: 1, updatedAt: -1 });
 transactionSchema.index({ expertId: 1, status: 1 });
 transactionSchema.index({ paymentIntentId: 1 });
-transactionSchema.index({ transactionId: 1 });
+transactionSchema.index({ razorpayPaymentId: 1 }, { sparse: true, unique: true });
+transactionSchema.index({ transactionId: 1 }, { sparse: true, unique: true });
 
 export default mongoose.model<ITransaction>('Transaction', transactionSchema);
 

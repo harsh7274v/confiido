@@ -3,6 +3,8 @@
 import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { PropagateLoader } from 'react-spinners';
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -11,6 +13,20 @@ export default function Home() {
   const [isTestimonialPaused, setIsTestimonialPaused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'student' | 'professional'>('student');
+  const [showSpinner, setShowSpinner] = useState(false);
+  const router = useRouter();
+
+  const handleLoginClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    e.preventDefault();
+    setShowSpinner(true);
+    router.push('/login');
+  };
+
+  const handleSignupClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    e.preventDefault();
+    setShowSpinner(true);
+    router.push('/signup');
+  };
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -195,6 +211,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      {showSpinner && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+          <PropagateLoader color="#9333ea" />
+        </div>
+      )}
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -214,10 +235,10 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 px-3 py-2 rounded-lg hover:bg-blue-50">
+              <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 px-3 py-2 rounded-lg hover:bg-blue-50" onClick={handleLoginClick}>
                 Login
               </Link>
-              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg">
+              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg" onClick={handleSignupClick}>
                 Sign Up
               </Link>
             </div>
@@ -238,7 +259,7 @@ export default function Home() {
               1-on-1 coaching and self-placed courses to build unshakable public speaking skills.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/signup" className="bg-gray-900 text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+              <Link href="/signup" className="bg-gray-900 text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-gray-800 transition-colors" onClick={handleSignupClick}>
                 Book a Free Trial
               </Link>
             </div>
@@ -469,7 +490,7 @@ export default function Home() {
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Secure your session with our easy payment process. Multiple payment options available for your convenience.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors" onClick={handleSignupClick}>
                 Make Payment <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -952,7 +973,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-white mb-4">Ready to supercharge your career?</h2>
           <p className="text-xl text-white/90 mb-8">Join thousands of professionals who have accelerated their careers with mentorship</p>
           <div className="flex justify-center">
-            <Link href="/signup" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+            <Link href="/signup" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onClick={handleSignupClick}>
               Book a Free Trial
             </Link>
           </div>

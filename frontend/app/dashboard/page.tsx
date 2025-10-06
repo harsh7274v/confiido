@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useLayoutEffect } from 'react';
+import { PropagateLoader } from 'react-spinners';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
@@ -110,6 +111,59 @@ export default function DashboardPage() {
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
+  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false);
+
+  // On mount, check URL for view=payments and switch view
+  useLayoutEffect(() => {
+    try {
+      let targetView: typeof currentView | null = null;
+      // Read from localStorage first for speed and to avoid exposing identifiers
+      if (!targetView && typeof window !== 'undefined') {
+        const storedView = localStorage.getItem('dashboard_redirect_view') as typeof currentView | null;
+        if (storedView === 'payments') targetView = 'payments';
+      }
+      // Also support query param if present (legacy)
+      if (!targetView) {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view');
+        if (view === 'payments') targetView = 'payments';
+      }
+
+      if (targetView) {
+        setCurrentView(targetView);
+        // Clear the redirect flag so it doesn't persist
+        try {
+          localStorage.removeItem('dashboard_redirect_view');
+        } catch {}
+        // Clean the URL (remove any query params like view/bookingId)
+        try {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        } catch {}
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside the dropdown menu
+      if (showThreeDotMenu && !target.closest('.dropdown-menu')) {
+        setShowThreeDotMenu(false);
+      }
+    };
+
+    if (showThreeDotMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showThreeDotMenu]);
 
 
 
@@ -677,8 +731,10 @@ export default function DashboardPage() {
         )}
       </>
     )}
-    <div className="min-h-screen bg-[#f5f5f5] grid-pattern">
-      <div className="flex h-full">
+    <div className="min-h-screen bg-[#f5f5f5] translucent-bg">
+      {/* Semi-transparent overlay for better content readability */}
+      <div className="absolute inset-0 bg-white/20 pointer-events-none z-0"></div>
+      <div className="flex h-full relative z-20">
         {/* Sidebar */}
                 <Sidebar
           userName={userDisplayName}
@@ -692,7 +748,7 @@ export default function DashboardPage() {
         />
         
         {/* Main content */}
-        <main className="flex-1 lg:ml-0 grid-pattern">
+        <main className="flex-1 lg:ml-0">
           {currentView === 'transactions' ? (
             <div className="w-full">
               <TransactionsPage />
@@ -712,9 +768,11 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Modern Header */}
-              <section className="relative overflow-hidden bg-gray-100 py-6 sm:py-10 grid-pattern">
-              <div className="mx-auto max-w-md sm:max-w-lg lg:max-w-2xl px-6 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border-4 border-purple-300 transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
-                <div className="flex flex-col items-start space-y-2 mb-4 sm:mb-0">
+              <section className="relative overflow-hidden py-8 sm:py-10 translucent-bg">
+              {/* Semi-transparent overlay for header */}
+              <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
+              <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-6 flex flex-row items-center justify-between relative z-20">
+                <div className="flex flex-col items-start space-y-2">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
                       <User className="h-5 w-5 text-white" />
@@ -725,15 +783,49 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12">Ready to accelerate your career journey?</span>
                 </div>
-                <div className="self-end sm:ml-4">
+                <div className="flex-shrink-0 flex items-center gap-3 relative py-2">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl transition-all duration-300">
+                    <User className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
+                      onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
+                    >
+                      <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {showThreeDotMenu && (
+                      <div className="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                        <button
+                          type="button"
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors duration-200"
+                          onClick={async () => {
+                            console.log('Logout button clicked');
+                            try {
+                              await logout();
+                              console.log('Logout successful');
+                              setShowThreeDotMenu(false);
+                            } catch (error) {
+                              console.error('Logout failed:', error);
+                              setShowThreeDotMenu(false);
+                            }
+                          }}
+                        >
+                          <LogOut className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium">Logout</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    className="focus:outline-none group"
-                    onClick={handleProfileClick}
+                    onClick={() => setShowProfilePopup(true)}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
                   >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 flex items-center justify-center overflow-hidden border-2 border-gray-300 shadow-xl sm:shadow-2xl group-hover:scale-110 group-hover:shadow-2xl sm:group-hover:shadow-3xl group-hover:border-gray-400 transition-all duration-300">
-                      <img src="https://api.dicebear.com/7.x/initials/svg?seed=User" alt="Default Profile" className="w-full h-full object-cover rounded-xl sm:rounded-2xl" />
-                    </div>
+                    <Settings className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
               </div>
@@ -748,7 +840,7 @@ export default function DashboardPage() {
                   <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
                   <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-gentle">
                       <div className="flex items-center justify-between">
                         <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
@@ -760,7 +852,7 @@ export default function DashboardPage() {
                       <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Book a career exploration session</button>
                     </div>
                     {/* Card 2 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10 animate-float-slow">
                       <div className="flex items-center justify-between">
                         <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
@@ -772,7 +864,7 @@ export default function DashboardPage() {
                       <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Resume review for freshers</button>
                     </div>
                     {/* Card 3 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-fast">
                       <div className="flex items-center justify-between">
                         <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
                           <span>Interested</span>
@@ -787,54 +879,64 @@ export default function DashboardPage() {
                 </div>
                 {/* Mobile: Career Journey Second, Desktop: Quick Actions Second */}
                 <div className="flex flex-col gap-8 items-end w-full lg:w-auto order-1 lg:order-2">
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 w-full max-w-none sm:min-w-[400px] sm:max-w-[500px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
-                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black">Quick Actions</h2>
-                    </div>
+                  {/* Quick Actions box removed; buttons retained below */}
+                  <div className="w-full sm:min-w-[400px] sm:max-w-[500px]">
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                      <button
+                      <button 
                         type="button"
-                        className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none w-full"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-purple-600 text-white hover:bg-purple-700"
                         onClick={() => setShowBookSessionPopup(true)}
+                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <p className="text-lg font-semibold text-black mb-1">Book a session</p>
-                            <p className="text-xs text-gray-600">Find a coach and schedule</p>
+                            <p className="text-lg font-semibold mb-1">Book a session</p>
+                            <p className="text-xs opacity-90">Find a coach and schedule</p>
                           </div>
-                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/80 group-hover:text-white transition-colors flex-shrink-0" />
                         </div>
                       </button>
 
+
                       <button
                         type="button"
-                        className="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl border border-gray-200 transition-all duration-300 hover:-translate-y-1 focus:outline-none w-full"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
                         onClick={() => setShowMessageToast(true)}
+                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-600 to-purple-700 flex items-center justify-center shadow-lg flex-shrink-0">
-                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
+                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
-                            <p className="text-lg font-semibold text-black mb-1">Open messages</p>
-                            <p className="text-xs text-gray-600">Chat with your coach</p>
+                            <p className="text-lg font-semibold mb-1">Open messages</p>
+                            <p className="text-xs opacity-90">Chat with your coach</p>
                           </div>
-                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 group-hover:text-gray-700 transition-colors flex-shrink-0" />
+                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/80 group-hover:text-white transition-colors flex-shrink-0" />
                         </div>
                       </button>
                     </div>
                   </div>
                   
                   {/* BookSessionPopup modal */}
-                  {showBookSessionPopup && (
-                    <BookSessionPopup onClose={() => setShowBookSessionPopup(false)} />
-                  )}
+                  <div className={`fixed inset-0 z-[9999] ${showBookSessionPopup ? 'block' : 'hidden'}`}>
+                    <BookSessionPopup 
+                      onClose={() => {
+                        console.log('Closing BookSessionPopup');
+                        setShowBookSessionPopup(false);
+                      }}
+                      onGoToPayments={(bookingId?: string) => {
+                        try {
+                          if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
+                          localStorage.setItem('dashboard_redirect_view', 'payments');
+                        } catch {}
+                        setCurrentView('payments');
+                      }}
+                    />
+                  </div>
                   
                   {/* Modern Toast Notification */}
                   {showMessageToast && (
@@ -849,8 +951,8 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   )}
-                  {/* Find Your Mentor Section */}
-                  <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 mt-6 w-full max-w-none sm:min-w-[400px] sm:max-w-[500px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
+                  {/* Find Your Mentor Section (outer box/background removed, cards retained) */}
+                  <div className="mt-6 w-full">
                     <div className="flex items-center gap-3 mb-6 sm:mb-8">
                       <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -926,7 +1028,7 @@ export default function DashboardPage() {
                     <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {sessionsLoading ? (
                         <div className="flex items-center justify-center h-full">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600"></div>
+                          <PropagateLoader color="#9333ea" />
                         </div>
                       ) : sessionsError ? (
                         <div className="text-center py-12">

@@ -31,13 +31,20 @@ router.post('/request-otp', [
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
+    // Rate limit: max 3 login OTP requests per 10 minutes per email
+    const tenMinutesAgoLogin = new Date(Date.now() - 10 * 60 * 1000);
+    const recentLoginCount = await OTP.countDocuments({ email, type: 'login', createdAt: { $gte: tenMinutesAgoLogin } });
+    if (recentLoginCount >= 3) {
+      return res.status(429).json({ success: false, error: 'Too many OTP requests. Try again in 10 minutes.' });
+    }
+
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     // Remove previous OTPs
-    await OTP.deleteMany({ email });
+    await OTP.deleteMany({ email, type: 'login' });
     // Save OTP
-    await OTP.create({ email, otp, expiresAt });
+    await OTP.create({ email, otp, expiresAt, type: 'login' });
     // Send OTP email
     await sendOTPEmail(email, otp);
     res.json({ success: true, message: 'OTP sent to email' });
@@ -59,7 +66,7 @@ router.post('/verify-otp', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
     const { email, otp } = req.body;
-    const otpDoc = await OTP.findOne({ email, otp });
+    const otpDoc = await OTP.findOne({ email, otp, type: 'login' });
     if (!otpDoc || otpDoc.expiresAt < new Date()) {
       return res.status(401).json({ success: false, error: 'Invalid or expired OTP' });
     }
@@ -444,15 +451,32 @@ router.post('/forgot-password', [
       });
     }
 
-    // Generate reset token (in a real app, you'd send this via email)
-    const resetToken = `reset_${user._id.toString()}_${Date.now()}`;
+    // Rate limit: max 3 reset requests per 10 minutes per email
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const recentCount = await OTP.countDocuments({ email, type: 'reset', createdAt: { $gte: tenMinutesAgo } });
+    if (recentCount >= 3) {
+      return res.status(429).json({ success: false, error: 'Too many reset requests. Try again in 10 minutes.' });
+    }
 
-    // TODO: Send email with reset link
-    // For now, just return the token
+    // Generate a 6-digit numeric code and store in OTP collection with expiry (5 minutes)
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await OTP.deleteMany({ email, type: 'reset', expiresAt: { $lt: new Date() } });
+    await OTP.create({ email, otp: resetCode, expiresAt, type: 'reset' });
+
+    // Try to send via email using existing mailer
+    try {
+      const { sendSessionEmail } = await import('../services/mailer');
+      const subject = 'Your password reset code';
+      const text = `Your password reset code is: ${resetCode}. It will expire in 5 minutes.`;
+      await sendSessionEmail(user.email, subject, text);
+    } catch (mailErr) {
+      console.error('Failed to send reset email:', mailErr);
+    }
+
     res.json({
       success: true,
-      message: 'Password reset email sent',
-      data: { resetToken } // Remove this in production
+      message: 'Password reset code sent to email'
     });
   } catch (error) {
     next(error);
@@ -463,14 +487,18 @@ router.post('/forgot-password', [
 // @desc    Reset password
 // @access  Public
 router.post('/reset-password', [
-  body('token')
-    .notEmpty()
-    .withMessage('Reset token is required'),
+  body('email')
+    .isEmail()
+    .withMessage('Please enter a valid email')
+    .normalizeEmail(),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Reset code must be 6 digits'),
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+    .matches(/^(?=.*[^A-Za-z0-9]).+$/)
+    .withMessage('Password must include at least one special character')
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -481,24 +509,23 @@ router.post('/reset-password', [
       });
     }
 
-    const { token, password } = req.body;
+    const { email, otp, password } = req.body as { email: string; otp: string; password: string };
 
-    // Verify token (simplified for development)
-    const tokenParts = token.split('_');
-    if (tokenParts.length < 2) {
-      throw new Error('Invalid token format');
-    }
-    const decoded = { id: tokenParts[1] };
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
+    // Verify OTP for this email
+    const otpDoc = await OTP.findOne({ email, otp, type: 'reset' });
+    if (!otpDoc || otpDoc.expiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid reset token'
+        error: 'Invalid or expired reset code'
       });
     }
 
-    // Update password
+    // OTP valid: delete it and update password
+    await OTP.deleteMany({ email });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
     user.password = password;
     await user.save();
 

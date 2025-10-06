@@ -155,6 +155,20 @@ html, body {
   --tw-ring-color: transparent !important;
 }
 
+/* Specific class to remove all focus styles from transaction boxes */
+.no-focus:focus,
+.no-focus:focus-visible,
+.no-focus:focus-within,
+.no-focus *:focus,
+.no-focus *:focus-visible,
+.no-focus *:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-color: transparent !important;
+}
+
 /* Button hover effects */
 button:hover {
   transform: translateY(-1px);
@@ -220,6 +234,33 @@ button:hover {
   }
 }
 
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes floatFast {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -257,6 +298,18 @@ button:hover {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: floatGentle 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: floatFast 2.5s ease-in-out infinite;
 }
 
 .animate-pulse-slow {
@@ -359,4 +412,26 @@ button:hover {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
+}
+
+/* Translucent background image */
+.translucent-bg {
+  position: relative;
+}
+
+.translucent-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/download.jpg');
+  background-size: 200px 200px;
+  background-position: top left;
+  background-repeat: repeat;
+  background-attachment: fixed;
+  opacity: 0.3;
+  z-index: 0;
+  pointer-events: none;
 }

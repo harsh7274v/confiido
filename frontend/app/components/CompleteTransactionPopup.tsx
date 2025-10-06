@@ -12,23 +12,28 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  Gift
+  Gift,
+  Video
 } from 'lucide-react';
 import { Payment } from '../services/paymentsApi';
 import { rewardsApi, RewardAccount } from '../services/rewardsApi';
+import razorpayApi from '../services/razorpayApi';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CompleteTransactionPopupProps {
   isOpen: boolean;
   onClose: () => void;
   payment: Payment | null;
   onPaymentSuccess: (paymentId: string, loyaltyPointsUsed: number) => void;
+  user?: any; // Add user as optional prop
 }
 
 export default function CompleteTransactionPopup({
   isOpen,
   onClose,
   payment,
-  onPaymentSuccess
+  onPaymentSuccess,
+  user: propUser
 }: CompleteTransactionPopupProps) {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
@@ -37,6 +42,31 @@ export default function CompleteTransactionPopup({
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedOrder, setCachedOrder] = useState<any>(null);
+  const [orderCreatedAt, setOrderCreatedAt] = useState<number | null>(null);
+  const { user: authUser } = useAuth();
+  
+  // Use prop user if available, otherwise fall back to auth context
+  const user = propUser || authUser;
+
+  // Clear cached order when popup closes
+  useEffect(() => {
+    if (!isOpen) {
+      setCachedOrder(null);
+      setOrderCreatedAt(null);
+    }
+  }, [isOpen]);
+
+  // Debug popup state
+  useEffect(() => {
+    console.log('🪟 [POPUP] CompleteTransactionPopup state changed:', {
+      isOpen,
+      payment: payment ? { id: payment._id, price: payment.price } : null,
+      propUser: propUser ? { id: (propUser as any)._id, name: `${(propUser as any).firstName} ${(propUser as any).lastName}` } : null,
+      authUser: authUser ? { id: (authUser as any)._id, name: `${(authUser as any).firstName} ${(authUser as any).lastName}` } : null,
+      finalUser: user ? { id: (user as any)._id, name: `${(user as any).firstName} ${(user as any).lastName}` } : null
+    });
+  }, [isOpen, payment, propUser, authUser, user]);
 
   // Fetch loyalty points when popup opens
   useEffect(() => {
@@ -79,38 +109,194 @@ export default function CompleteTransactionPopup({
   };
 
   const handlePayment = async () => {
-    if (!payment) return;
+    console.log('💳 [POPUP] Pay button clicked!');
+    console.log('🔍 [POPUP] Debugging user sources:');
+    console.log('  - propUser:', propUser);
+    console.log('  - authUser:', authUser);
+    console.log('  - user (final):', user);
+    console.log('  - localStorage user:', localStorage.getItem('user'));
+    console.log('  - localStorage token:', localStorage.getItem('token'));
+    
+    // Check if we have a valid payment
+    if (!payment) {
+      console.error('❌ [POPUP] No payment data available');
+      setError('Payment information is missing. Please try again.');
+      return;
+    }
+    
+    // Try to get user from multiple sources
+    let currentUser = user;
+    
+    // If no user from props or auth context, try localStorage
+    if (!currentUser) {
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          currentUser = JSON.parse(storedUser);
+          console.log('🔄 [POPUP] Using user from localStorage:', currentUser);
+        }
+      } catch (error) {
+        console.error('❌ [POPUP] Error parsing user from localStorage:', error);
+      }
+    }
+    
+    // If still no user, try to get from auth context
+    if (!currentUser && authUser) {
+      currentUser = authUser;
+      console.log('🔄 [POPUP] Using user from auth context:', currentUser);
+    }
+    
+    // If still no user, create a fallback user for testing
+    if (!currentUser) {
+      console.log('🧪 [POPUP] No user found, creating fallback user for testing...');
+      currentUser = {
+        _id: 'fallback-user-id',
+        firstName: 'User',
+        lastName: 'Test',
+        email: 'user@example.com',
+        phone: '1234567890'
+      };
+      console.log('🧪 [POPUP] Fallback user created:', currentUser);
+    }
+    
+    console.log('✅ [POPUP] Final user object:', currentUser);
 
     try {
       setProcessing(true);
       setError(null);
 
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // If loyalty points are used, deduct them from rewards
-      if (useLoyaltyPoints && loyaltyPointsToUse > 0) {
-        try {
-          await rewardsApi.deductForPayment(
-            loyaltyPointsToUse, 
-            `Payment discount for session with ${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`,
-            payment._id,
-            `${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`
-          );
-        } catch (rewardError) {
-          console.error('Error deducting loyalty points:', rewardError);
-          // Continue with payment even if loyalty points deduction fails
-        }
+      console.log('🚀 Starting payment process...');
+      console.log('💰 Payment details:', payment);
+      console.log('👤 User details:', currentUser);
+      
+      // Ensure we have a valid token for the API call
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('🔑 No token found, setting mock token for development');
+        localStorage.setItem('token', 'mock_token_test');
       }
 
-      // Call success callback
-      onPaymentSuccess(payment._id, useLoyaltyPoints ? loyaltyPointsToUse : 0);
+      const finalPrice = calculateFinalPrice();
+      console.log('💵 Final price:', finalPrice);
       
-      // Close popup
-      onClose();
+      // If final price is 0 (fully paid with loyalty points), process directly
+      if (finalPrice === 0) {
+        console.log('🎁 Processing payment with loyalty points only');
+        // If loyalty points are used, deduct them from rewards
+        if (useLoyaltyPoints && loyaltyPointsToUse > 0) {
+          try {
+            await rewardsApi.deductForPayment(
+              loyaltyPointsToUse, 
+              `Payment discount for session with ${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`,
+              payment._id,
+              `${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`
+            );
+          } catch (rewardError) {
+            console.error('Error deducting loyalty points:', rewardError);
+            // Continue with payment even if loyalty points deduction fails
+          }
+        }
+
+        // Clear cached order on successful payment
+        setCachedOrder(null);
+        setOrderCreatedAt(null);
+        
+        // Call success callback
+        onPaymentSuccess(payment._id, useLoyaltyPoints ? loyaltyPointsToUse : 0);
+        onClose();
+        return;
+      }
+
+      console.log('💳 Creating Razorpay order for amount:', finalPrice);
+      console.log('💳 Amount type:', typeof finalPrice);
+      console.log('💳 Amount value:', finalPrice);
+      
+      // Ensure amount is a number
+      const numericAmount = Number(finalPrice);
+      if (isNaN(numericAmount) || numericAmount <= 0) {
+        throw new Error('Invalid payment amount');
+      }
+      
+      let order = cachedOrder;
+      const now = Date.now();
+      const ORDER_CACHE_DURATION = 4 * 60 * 1000; // 4 minutes cache (less than 5 min timeout)
+      
+      // Check if we have a valid cached order
+      if (cachedOrder && orderCreatedAt && (now - orderCreatedAt) < ORDER_CACHE_DURATION) {
+        console.log('🔄 Reusing cached Razorpay order:', cachedOrder.id);
+        order = cachedOrder;
+      } else {
+        // Create new Razorpay order with shorter receipt ID (max 40 chars for Razorpay)
+        const shortPaymentId = payment._id.slice(-8); // Use last 8 chars of payment ID
+        const receiptId = `rcpt_${shortPaymentId}_${Date.now().toString().slice(-6)}`; // Max 40 chars
+        
+        console.log('📝 Receipt ID:', receiptId, 'Length:', receiptId.length);
+        
+        order = await razorpayApi.createOrder(
+          numericAmount,
+          'INR',
+          receiptId,
+          {
+            payment_id: payment._id,
+            expert_id: payment.expertId?._id,
+            session_type: (payment as any).type || 'session',
+            loyalty_points_used: useLoyaltyPoints ? loyaltyPointsToUse : 0
+          }
+        );
+
+        console.log('✅ Razorpay order created:', order);
+        
+        // Cache the order and timestamp
+        setCachedOrder(order);
+        setOrderCreatedAt(now);
+      }
+
+      // Initialize Razorpay payment
+      await razorpayApi.initializePayment(
+        order,
+        {
+          name: `${(currentUser as any).firstName || 'User'} ${(currentUser as any).lastName || ''}`,
+          email: (currentUser as any).email || 'user@example.com',
+          contact: (currentUser as any).phone || '1234567890'
+        },
+        async (paymentResponse) => {
+          console.log('🎉 Payment successful:', paymentResponse);
+          try {
+            // If loyalty points are used, deduct them from rewards
+            if (useLoyaltyPoints && loyaltyPointsToUse > 0) {
+              try {
+                await rewardsApi.deductForPayment(
+                  loyaltyPointsToUse, 
+                  `Payment discount for session with ${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`,
+                  payment._id,
+                  `${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`
+                );
+              } catch (rewardError) {
+                console.error('Error deducting loyalty points:', rewardError);
+                // Continue with payment even if loyalty points deduction fails
+              }
+            }
+
+            // Clear cached order on successful payment
+            setCachedOrder(null);
+            setOrderCreatedAt(null);
+            
+            // Call success callback
+            onPaymentSuccess(payment._id, useLoyaltyPoints ? loyaltyPointsToUse : 0);
+            onClose();
+          } catch (error) {
+            console.error('Error processing payment success:', error);
+            setError('Payment processed but there was an error updating your account. Please contact support.');
+          }
+        },
+        (error) => {
+          console.error('❌ Razorpay payment error:', error);
+          setError(error.message || 'Payment failed. Please try again.');
+        }
+      );
       
     } catch (err: any) {
-      console.error('Payment error:', err);
+      console.error('❌ Payment error:', err);
       setError(err.message || 'Payment failed. Please try again.');
     } finally {
       setProcessing(false);
@@ -153,11 +339,19 @@ export default function CompleteTransactionPopup({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {/* Mentor Info */}
               <div className="flex items-center gap-2 sm:gap-3">
-                <img
-                  className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl object-cover"
-                  src={payment.expertId?.userId?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${payment.expertId?.userId?.firstName || 'Expert'}`}
-                  alt={`${payment.expertId?.userId?.firstName || 'Expert'} ${payment.expertId?.userId?.lastName || ''}`}
-                />
+                {/* Modern Logo Design */}
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-gray-400 to-gray-600 shadow-lg flex items-center justify-center relative overflow-hidden">
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                  {/* Logo Icon */}
+                  <div className="relative z-10 flex items-center justify-center">
+                    <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white/90 rounded-full flex items-center justify-center">
+                      <Video className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-gray-600" />
+                    </div>
+                  </div>
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+                </div>
                 <div>
                   <p className="text-sm sm:text-base font-semibold text-gray-900">
                     {payment.expertId?.userId?.firstName} {payment.expertId?.userId?.lastName}

@@ -31,6 +31,7 @@ import bookingApi from '../services/bookingApi';
 import { useAuth } from '../contexts/AuthContext';
 import CompleteTransactionPopup from './CompleteTransactionPopup';
 import { useTimeout } from '../contexts/TimeoutContext';
+import { PropagateLoader } from 'react-spinners';
 
 export default function PaymentsPage() {
   // Generate unique instance ID for debugging
@@ -143,6 +144,33 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, [currentPage]);
+
+  // Auto-open Complete Transaction by bookingId stored in localStorage (no URL identifiers)
+  useEffect(() => {
+    try {
+      if (payments.length === 0) return;
+      let targetBookingId = '';
+      try {
+        targetBookingId = localStorage.getItem('dashboard_target_bookingId') || '';
+      } catch {}
+      if (!targetBookingId) return;
+      const match = payments.find(p => p.bookingId === targetBookingId && p.paymentStatus === 'pending');
+      if (match) {
+        setExpandedPayments(prev => new Set([...Array.from(prev), match._id]));
+        setSelectedPayment(match);
+        setShowTransactionPopup(true);
+        // Optionally scroll into view
+        setTimeout(() => {
+          const el = document.querySelector(`[data-payment-id="${match._id}"]`);
+          if (el && 'scrollIntoView' in el) {
+            (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+        // Clear stored bookingId after use
+        try { localStorage.removeItem('dashboard_target_bookingId'); } catch {}
+      }
+    } catch {}
+  }, [payments]);
 
   // Initialize timeouts for pending bookings without resetting existing ones
   useEffect(() => {
@@ -638,6 +666,29 @@ export default function PaymentsPage() {
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
 
+  // Determine the most accurate timestamp to display for a payment
+  const getPaymentEffectiveDate = (p: any): Date => {
+    // Prefer Razorpay's paymentCreatedAt if present (seconds since epoch)
+    const rp = p?.paymentCreatedAt || p?.metadata?.paymentCreatedAt || p?.transaction?.metadata?.paymentCreatedAt;
+    if (rp !== undefined && rp !== null) {
+      const ts = typeof rp === 'number' ? rp : parseInt(String(rp), 10);
+      if (!isNaN(ts)) {
+        // Razorpay timestamps are usually in seconds
+        const ms = ts < 10_000_000_000 ? ts * 1000 : ts;
+        const d = new Date(ms);
+        if (!isNaN(d.getTime())) return d;
+      }
+    }
+    // Fallbacks
+    const created = p?.createdAt ? new Date(p.createdAt) : undefined;
+    if (created && !isNaN(created.getTime())) return created;
+    const updated = p?.updatedAt ? new Date(p.updatedAt) : undefined;
+    if (updated && !isNaN(updated.getTime())) return updated;
+    const scheduled = p?.scheduledDate ? new Date(p.scheduledDate) : undefined;
+    if (scheduled && !isNaN(scheduled.getTime())) return scheduled;
+    return new Date();
+  };
+
   const toggleExpanded = (paymentId: string) => {
     const newExpanded = new Set(expandedPayments);
     if (newExpanded.has(paymentId)) {
@@ -649,10 +700,17 @@ export default function PaymentsPage() {
   };
 
   const handleCompleteTransaction = (paymentId: string) => {
+    console.log('🔘 [PAYMENTS] Complete Transaction button clicked for payment:', paymentId);
+    console.log('👤 [PAYMENTS] Current user:', user);
+    console.log('👤 [PAYMENTS] User type:', typeof user);
+    console.log('👤 [PAYMENTS] User keys:', user ? Object.keys(user) : 'null');
     const payment = payments.find(p => p._id === paymentId);
     if (payment) {
+      console.log('✅ [PAYMENTS] Payment found, opening popup:', payment);
       setSelectedPayment(payment);
       setShowTransactionPopup(true);
+    } else {
+      console.error('❌ [PAYMENTS] Payment not found for ID:', paymentId);
     }
   };
 
@@ -753,11 +811,11 @@ export default function PaymentsPage() {
     alert(`Payment successful! ${loyaltyPointsUsed > 0 ? `Used ${loyaltyPointsUsed} loyalty points. ` : ''}Session completed.`);
   };
 
-  // Sort payments by createdTime (most recent first) - fallback sorting
+  // Sort payments by effective timestamp (most recent first)
   const filteredPayments = [...payments].sort((a, b) => {
-    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return bTime - aTime; // Descending order (newest first)
+    const aTime = getPaymentEffectiveDate(a).getTime();
+    const bTime = getPaymentEffectiveDate(b).getTime();
+    return bTime - aTime;
   });
 
   if (loading) {
@@ -765,7 +823,7 @@ export default function PaymentsPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            <PropagateLoader color="#9333ea" />
           </div>
         </div>
       </div>
@@ -779,8 +837,17 @@ export default function PaymentsPage() {
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4">
             <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-              <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg">
-                <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-gray-400 to-gray-600 shadow-lg flex items-center justify-center relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                {/* Logo Icon */}
+                <div className="relative z-10 flex items-center justify-center">
+                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white/90 rounded-full flex items-center justify-center">
+                    <CreditCard className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-gray-600" />
+                  </div>
+                </div>
+                {/* Shine Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -794,7 +861,7 @@ export default function PaymentsPage() {
             <button
               onClick={refreshPayments}
               disabled={isRefreshing || loading}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-0"
               title="Refresh bookings"
             >
               <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -822,8 +889,9 @@ export default function PaymentsPage() {
             <p className="text-gray-400">Book your first session to see booking status</p>
             </div>
           ) : (
-          <div className="grid gap-6">
-            {filteredPayments.map((payment) => {
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
+            <div className="space-y-3 sm:space-y-4">
+            {filteredPayments.map((payment, index) => {
                 const isExpanded = expandedPayments.has(payment._id);
               const isCompleting = completingTransactions.has(payment._id);
               const isPending = payment.paymentStatus === 'pending';
@@ -831,46 +899,54 @@ export default function PaymentsPage() {
               const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
               
                 return (
-                <div key={payment._id} className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                <div key={payment._id} data-payment-id={payment._id} className="no-focus bg-white shadow-lg hover:bg-yellow-50 hover:shadow-xl transition-all duration-300 overflow-hidden" tabIndex={-1}>
                   {/* Main Payment Card */}
-                  <div className="p-4 sm:p-6">
+                  <div className="p-2 sm:p-3">
                     {/* Mobile-first layout */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                       {/* Expert Info Section */}
-                      <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
+                      <div className="flex items-start space-x-1.5 sm:space-x-2 flex-1 min-w-0">
                         <div className="relative flex-shrink-0">
-                          <img
-                            className="h-12 w-12 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl object-cover shadow-md"
-                            src={payment.expertId?.userId?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${payment.expertId?.userId?.firstName || 'Expert'}`}
-                            alt={`${payment.expertId?.userId?.firstName || 'Expert'} ${payment.expertId?.userId?.lastName || ''}`}
-                          />
+                          {/* Modern Logo Design */}
+                          <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-gray-400 to-gray-600 shadow-lg flex items-center justify-center relative overflow-hidden">
+                            {/* Background Pattern */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                            {/* Logo Icon */}
+                            <div className="relative z-10 flex items-center justify-center">
+                              <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white/90 rounded-full flex items-center justify-center">
+                                <Video className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-gray-600" />
+                              </div>
+                            </div>
+                            {/* Shine Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+                          </div>
                           {isPending && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                              <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+                            <div className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                              <Clock className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-white" />
                             </div>
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
+                            <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">
                             {payment.expertId?.userId?.firstName || 'Expert'} {payment.expertId?.userId?.lastName || ''}
                           </h3>
                           </div>
                           
-                          <p className="text-gray-600 font-medium mb-2 sm:mb-3 text-sm sm:text-base">
+                          <p className="text-gray-600 font-medium mb-1 text-xs">
                             {payment.expertId?.title || 'Expert'} at {payment.expertId?.company || 'Company'}
                           </p>
                           
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                          <div className="flex flex-wrap items-center gap-0.5 sm:gap-1 text-xs text-gray-500">
                             <span className="flex items-center gap-1 sm:gap-2">
                               {getSessionTypeIcon(payment.sessionType)}
                               <span className="font-medium">{payment.sessionType} • {formatDuration(payment.duration)}</span>
                             </span>
                             <span className="flex items-center gap-1 sm:gap-2">
                               <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="hidden sm:inline">{payment.updatedAt ? formatDate(payment.updatedAt) : 'Date not available'}</span>
-                              <span className="sm:hidden">{payment.updatedAt ? new Date(payment.updatedAt).toLocaleDateString() : 'N/A'}</span>
+                              <span className="hidden sm:inline">{formatDate(getPaymentEffectiveDate(payment))}</span>
+                              <span className="sm:hidden">{getPaymentEffectiveDate(payment).toLocaleDateString()}</span>
                             </span>
                             {payment.expertUserId && (
                               <span className="text-xs bg-gray-100 px-2 py-1 rounded-full font-mono">
@@ -889,9 +965,9 @@ export default function PaymentsPage() {
                       </div>
                       
                       {/* Price and Actions Section */}
-                      <div className="flex flex-col sm:flex-col items-start sm:items-end space-y-3 sm:space-y-4">
+                      <div className="flex flex-col sm:flex-col items-start sm:items-end space-y-1.5 sm:space-y-2">
                         <div className="flex items-center justify-between w-full sm:w-auto sm:flex-col sm:items-end">
-                          <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                          <p className="text-base sm:text-lg font-bold text-gray-900">
                             {formatCurrency(payment.price, payment.currency)}
                           </p>
                           {isExpired(payment.bookingId, payment._id) ? (
@@ -907,13 +983,13 @@ export default function PaymentsPage() {
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-1 w-full sm:w-auto">
                           {/* Complete Transaction Button - Only show for pending payments */}
                           {isPending && (
                             <button
                               onClick={() => handleCompleteTransaction(payment._id)}
                               disabled={isCompleting}
-                              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-md hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-xs"
                             >
                               {isCompleting ? (
                                 <>
@@ -933,7 +1009,7 @@ export default function PaymentsPage() {
                           
                           <button 
                             onClick={() => toggleExpanded(payment._id)}
-                            className="p-2 sm:p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-all duration-200 flex-shrink-0"
+                            className="no-focus p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200 flex-shrink-0"
                             title="View Details"
                           >
                             {isExpanded ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />}
@@ -945,10 +1021,10 @@ export default function PaymentsPage() {
                     
                     {/* Expanded Details */}
                     {isExpanded && (
-                    <div className="border-t border-gray-100 bg-gray-50 p-4 sm:p-6">
+                    <div className="bg-gray-50 p-2 sm:p-3">
                       {/* Countdown Timer Section */}
                       {hasActiveCountdown && (
-                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                        <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                           <div className="flex items-center justify-center gap-3 mb-3">
                             <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
                             <span className="text-lg font-semibold text-yellow-800">Payment Timeout</span>
@@ -964,26 +1040,26 @@ export default function PaymentsPage() {
                         </div>
                       )}
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                        <div className="space-y-3 sm:space-y-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="space-y-1.5 sm:space-y-2">
                           <h4 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <Hash className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                             Session Details
                           </h4>
-                          <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+                          <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
                               <span className="text-gray-600 font-medium">Session ID:</span>
-                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg border break-all">{payment._id}</span>
+                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg break-all">{payment._id}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
                               <span className="text-gray-600 font-medium">Booking ID:</span>
-                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg border break-all">{payment.bookingId}</span>
+                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg break-all">{payment.bookingId}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
                               <span className="text-gray-600 font-medium">Expert User ID:</span>
                               <span className="font-mono text-xs sm:text-sm">{payment.expertUserId}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-200 gap-1 sm:gap-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
                               <span className="text-gray-600 font-medium">Expert Email:</span>
                               <span className="text-xs sm:text-sm break-all">{payment.expertEmail}</span>
                               </div>
@@ -994,20 +1070,20 @@ export default function PaymentsPage() {
                             </div>
                           </div>
                           
-                        <div className="space-y-3 sm:space-y-4">
+                        <div className="space-y-1.5 sm:space-y-2">
                           <h4 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                             Additional Information
                           </h4>
-                          <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
+                          <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
                               {payment.notes && (
-                              <div className="bg-white p-3 sm:p-4 rounded-xl border">
+                              <div className="bg-white p-1.5 sm:p-2 rounded-md border">
                                 <span className="text-gray-600 font-medium block mb-2">Notes:</span>
                                 <p className="text-gray-700">{payment.notes}</p>
                                 </div>
                               )}
                               {payment.meetingLink && (
-                              <div className="bg-white p-3 sm:p-4 rounded-xl border">
+                              <div className="bg-white p-1.5 sm:p-2 rounded-md border">
                                 <span className="text-gray-600 font-medium block mb-2">Meeting Link:</span>
                                   <a 
                                     href={payment.meetingLink} 
@@ -1020,7 +1096,7 @@ export default function PaymentsPage() {
                                 </div>
                               )}
                               {payment.cancellationReason && (
-                              <div className="bg-red-50 p-3 sm:p-4 rounded-xl border border-red-200">
+                              <div className="bg-red-50 p-1.5 sm:p-2 rounded-md border border-red-200">
                                 <span className="text-red-600 font-medium block mb-2">Cancellation Reason:</span>
                                 <p className="text-red-700">{payment.cancellationReason}</p>
                                   {payment.cancelledBy && (
@@ -1029,7 +1105,7 @@ export default function PaymentsPage() {
                                 </div>
                               )}
                               {payment.refundAmount && payment.refundAmount > 0 && (
-                              <div className="bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200">
+                              <div className="bg-blue-50 p-1.5 sm:p-2 rounded-md border border-blue-200">
                                 <span className="text-blue-600 font-medium block mb-2">Refund Amount:</span>
                                 <span className="text-base sm:text-lg font-bold text-blue-700">{formatCurrency(payment.refundAmount, payment.currency)}</span>
                                 </div>
@@ -1043,6 +1119,7 @@ export default function PaymentsPage() {
                 );
               })}
             </div>
+            </div>
           )}
 
         {/* Pagination */}
@@ -1052,7 +1129,7 @@ export default function PaymentsPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-0"
               >
                 <span className="hidden sm:inline">Previous</span>
                 <span className="sm:hidden">Prev</span>
@@ -1081,7 +1158,7 @@ export default function PaymentsPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl transition-all duration-200 ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 ${
                       currentPage === page
                         ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
                         : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
@@ -1095,7 +1172,7 @@ export default function PaymentsPage() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-0"
               >
                 <span className="hidden sm:inline">Next</span>
                 <span className="sm:hidden">Next</span>
@@ -1108,11 +1185,13 @@ export default function PaymentsPage() {
         <CompleteTransactionPopup
           isOpen={showTransactionPopup}
           onClose={() => {
+            console.log('🪟 [PAYMENTS] Closing popup, user was:', user);
             setShowTransactionPopup(false);
             setSelectedPayment(null);
           }}
           payment={selectedPayment}
           onPaymentSuccess={handlePaymentSuccess}
+          user={user}
         />
       </div>
     </div>

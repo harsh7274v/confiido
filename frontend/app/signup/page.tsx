@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
+import { BarLoader } from 'react-spinners';
 
 export default function Signup() {
   const router = useRouter();
@@ -128,10 +129,12 @@ export default function Signup() {
       <div className="max-w-2xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-8">
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Back to Home
+          <Link href="/" className="inline-flex items-center mb-2 transition-colors text-black font-bold uppercase">
+            CONFIIDO
           </Link>
+          <div className="flex justify-center mb-6">
+            <BarLoader color="#9333ea" />
+          </div>
           <h2 className="text-3xl font-bold text-gray-900">
             Create your account
           </h2>
@@ -358,7 +361,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
+              className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
             >
               {isSubmitting ? (
                 <>

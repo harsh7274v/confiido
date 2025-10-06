@@ -4,31 +4,63 @@ import { protect } from '../middleware/auth';
 import PaymentAccount from '../models/PaymentAccount';
 import Expert from '../models/Expert';
 import Transaction from '../models/Transaction';
+import User from '../models/User';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// @route   POST /api/payments/create-payment-intent
-// @desc    Create payment intent for booking/course/webinar (Direct to mentor)
+// Helper function to generate unique transaction ID
+const generateUniqueTransactionId = (razorpayPaymentId?: string): string => {
+  if (razorpayPaymentId && razorpayPaymentId.trim()) {
+    return razorpayPaymentId;
+  }
+  // Generate a unique ID with timestamp and random string
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substr(2, 9);
+  return `txn_${timestamp}_${randomStr}`;
+};
+
+// Initialize Razorpay with fallback to test credentials for development
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_1DP5mmOlF5G5ag',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'test_secret_key'
+});
+
+// @route   POST /api/payments/create-razorpay-order
+// @desc    Create Razorpay order for payment (Production Ready with Test Key Support)
 // @access  Private
-router.post('/create-payment-intent', protect, [
-  body('type')
-    .isIn(['booking', 'course', 'webinar', 'bundle', 'digital_product', 'priority_dm'])
-    .withMessage('Invalid payment type'),
-  body('itemId')
-    .notEmpty()
-    .withMessage('Item ID is required'),
+router.post('/create-razorpay-order', protect, [
   body('amount')
-    .isFloat({ min: 0.01 })
-    .withMessage('Amount must be greater than 0'),
+    .isNumeric()
+    .withMessage('Amount must be a number')
+    .custom((value) => {
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0.01) {
+        throw new Error('Amount must be at least 0.01');
+      }
+      return true;
+    }),
   body('currency')
     .optional()
-    .isIn(['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'])
-    .withMessage('Invalid currency'),
-  body('expertId')
-    .isMongoId()
-    .withMessage('Valid expert ID is required')
+    .isIn(['INR', 'USD'])
+    .withMessage('Currency must be INR or USD'),
+  body('receipt')
+    .optional()
+    .isString()
+    .isLength({ max: 40 })
+    .withMessage('Receipt must be a string with maximum 40 characters'),
+  body('notes')
+    .optional()
+    .isObject()
+    .withMessage('Notes must be an object')
 ], async (req, res, next) => {
   try {
+    // Log order creation with key type
+    const keyType = process.env.RAZORPAY_KEY_ID?.startsWith('rzp_live_') ? 'LIVE' : 'TEST';
+    console.log(`[RAZORPAY] Creating order for user ${req.user.email}, amount: ${req.body.amount}, key: ${keyType}`);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -37,67 +69,68 @@ router.post('/create-payment-intent', protect, [
       });
     }
 
-    const { type, itemId, amount, currency = 'USD', expertId } = req.body;
-
-    // Get expert's payment account
-    const paymentAccount = await PaymentAccount.findOne({
-      expertId,
-      isVerified: true,
-      isActive: true
-    });
-
-    if (!paymentAccount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Expert payment account not set up or not verified'
-      });
+    // Check if Razorpay is properly configured
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.warn('[RAZORPAY] Using fallback test credentials');
     }
 
-    // Create payment intent that goes directly to expert
-    // This is where you'd integrate with Stripe Connect, PayPal, etc.
-    const paymentIntent = {
-      id: `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      clientSecret: `pi_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`,
-      amount: amount * 100, // Convert to cents for Stripe
+    const { amount, currency = 'INR', receipt, notes } = req.body;
+    
+    // Convert amount to paise (smallest currency unit for INR)
+    const amountInPaise = Math.round(amount * 100);
+
+    // Ensure receipt is within Razorpay's 40 character limit
+    let finalReceipt = receipt || `rcpt_${Date.now().toString().slice(-6)}`;
+    if (finalReceipt.length > 40) {
+      finalReceipt = `rcpt_${Date.now().toString().slice(-6)}`;
+    }
+
+    const options = {
+      amount: amountInPaise,
       currency,
-      type,
-      itemId,
-      expertId,
-      expertAccountId: paymentAccount.stripeAccountId || paymentAccount.paypalMerchantId,
-      commissionRate: 0, // 0% commission as per requirement
-      netAmount: amount, // Full amount goes to expert
-      status: 'requires_payment_method'
+      receipt: finalReceipt,
+      notes: notes || {}
     };
+
+    console.log('[RAZORPAY] Creating order with options:', options);
+
+    // Create Razorpay order
+    const order = await razorpay.orders.create(options);
+
+    // Log successful order creation
+    console.log(`[RAZORPAY] Order created successfully: ${order.id}`);
 
     res.json({
       success: true,
       data: {
-        clientSecret: paymentIntent.clientSecret,
-        paymentIntentId: paymentIntent.id,
-        amount: paymentIntent.amount,
-        currency: paymentIntent.currency,
-        expertAccountId: paymentIntent.expertAccountId,
-        commissionRate: paymentIntent.commissionRate,
-        netAmount: paymentIntent.netAmount
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        receipt: order.receipt,
+        status: order.status,
+        created_at: order.created_at
       },
-      message: 'Payment intent created - funds will go directly to expert'
+      message: 'Razorpay order created successfully'
     });
   } catch (error) {
+    console.error('[RAZORPAY] Order creation error:', error);
     next(error);
   }
 });
 
-// @route   POST /api/payments/confirm
-// @desc    Confirm payment (Direct to mentor)
+// @route   POST /api/payments/verify-razorpay-payment
+// @desc    Verify Razorpay payment signature (Production Ready)
 // @access  Private
-router.post('/confirm', protect, [
-  body('paymentIntentId')
+router.post('/verify-razorpay-payment', protect, [
+  body('razorpay_order_id')
     .notEmpty()
-    .withMessage('Payment intent ID is required'),
-  body('paymentMethodId')
-    .optional()
-    .isString()
-    .withMessage('Payment method ID must be a string')
+    .withMessage('Razorpay order ID is required'),
+  body('razorpay_payment_id')
+    .notEmpty()
+    .withMessage('Razorpay payment ID is required'),
+  body('razorpay_signature')
+    .notEmpty()
+    .withMessage('Razorpay signature is required')
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -108,380 +141,372 @@ router.post('/confirm', protect, [
       });
     }
 
-    const { paymentIntentId, paymentMethodId } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    // Here you would confirm the payment with your payment provider
-    // ensuring the money goes directly to the expert's account
-    
-    // For demo purposes, we'll simulate a successful payment
-    const paymentResult = {
-      id: paymentIntentId,
-      status: 'succeeded',
-      amount: 5000, // $50.00
-      currency: 'usd',
-      expertAccountId: 'acct_expert_123',
-      transferId: 'tr_direct_transfer_123',
-      commissionAmount: 0, // No commission taken
-      netAmount: 5000, // Full amount to expert
-      processed_at: new Date().toISOString()
-    };
+    // Create signature for verification
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'test_secret_key')
+      .update(body.toString())
+      .digest('hex');
 
-    res.json({
-      success: true,
-      data: paymentResult,
-      message: 'Payment confirmed - funds transferred directly to expert'
-    });
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      // Payment is authentic - update database
+      console.log(`[RAZORPAY] Payment verified successfully: ${razorpay_payment_id}`);
+      
+      try {
+        // Get user details
+        const user = await User.findById(req.user.id);
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: 'User not found'
+          });
+        }
+
+        // Get payment details from Razorpay
+        let payment, order;
+        try {
+          payment = await razorpay.payments.fetch(razorpay_payment_id);
+          order = await razorpay.orders.fetch(razorpay_order_id);
+        } catch (razorpayError: any) {
+          console.error('[RAZORPAY] Error fetching payment/order details:', razorpayError);
+          return res.status(400).json({
+            success: false,
+            message: 'Failed to fetch payment details from Razorpay',
+            error: 'RAZORPAY_API_ERROR',
+            details: razorpayError.message
+          });
+        }
+        
+        // Convert amount from paise to rupees (ensure it's a number)
+        const paymentAmount = typeof payment.amount === 'number' ? payment.amount : parseInt(payment.amount.toString());
+        const amountInRupees = paymentAmount / 100;
+        
+        // Validate payment data
+        if (!paymentAmount || paymentAmount <= 0) {
+          console.error(`[RAZORPAY] Invalid payment amount: ${paymentAmount}`);
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid payment amount',
+            error: 'INVALID_AMOUNT'
+          });
+        }
+
+        // Validate required payment fields
+        if (!razorpay_payment_id || !razorpay_order_id) {
+          console.error(`[RAZORPAY] Missing required payment fields - payment_id: ${razorpay_payment_id}, order_id: ${razorpay_order_id}`);
+          return res.status(400).json({
+            success: false,
+            message: 'Missing required payment information',
+            error: 'MISSING_PAYMENT_DATA'
+          });
+        }
+
+        if (!payment.currency) {
+          console.error(`[RAZORPAY] Missing payment currency`);
+          return res.status(400).json({
+            success: false,
+            message: 'Payment currency is missing',
+            error: 'MISSING_CURRENCY'
+          });
+        }
+        
+        // Check if transaction already exists for this payment
+        const existingTransaction = await Transaction.findOne({ 
+          $or: [
+            { razorpayPaymentId: razorpay_payment_id },
+            { transactionId: razorpay_payment_id }
+          ]
+        });
+        
+        if (existingTransaction) {
+          console.log(`[RAZORPAY] Transaction already exists for payment: ${razorpay_payment_id}`);
+          return res.json({
+            success: true,
+            data: {
+              order_id: razorpay_order_id,
+              payment_id: razorpay_payment_id,
+              transaction_id: existingTransaction._id,
+              verified: true
+            },
+            message: 'Payment already processed'
+          });
+        }
+        
+        // Generate a unique transaction ID using utility function
+        const uniqueTransactionId = generateUniqueTransactionId(razorpay_payment_id);
+        
+        // Create transaction record with guaranteed unique transactionId
+        const transaction = new Transaction({
+          user_id: user.user_id || user._id.toString().slice(-4), // Use 4-digit user_id or last 4 digits of _id
+          type: 'booking', // Default type, can be updated based on context
+          itemId: new mongoose.Types.ObjectId(), // This should be the booking/session ID - TODO: Link to actual booking
+          amount: amountInRupees, // Convert from paise to rupees
+          currency: payment.currency,
+          status: 'completed',
+          paymentMethod: 'razorpay',
+          transactionId: uniqueTransactionId, // Always ensure we have a non-null unique transactionId
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          description: `Payment for expert consultation - Order: ${razorpay_order_id}`,
+          metadata: {
+            sessionTitle: 'Expert Consultation Session',
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            userEmail: user.email,
+            userName: `${user.firstName} ${user.lastName}`,
+            paymentMethod: payment.method || 'unknown',
+            paymentStatus: payment.status || 'unknown',
+            paymentCreatedAt: payment.created_at,
+            orderAmount: typeof order.amount === 'number' ? order.amount : parseInt(order.amount.toString()),
+            orderCurrency: order.currency,
+            orderReceipt: order.receipt,
+            // Additional metadata for better tracking
+            paymentId: razorpay_payment_id,
+            orderId: razorpay_order_id,
+            signature: razorpay_signature,
+            timestamp: new Date().toISOString()
+          },
+          completedAt: new Date()
+        });
+
+        try {
+          await transaction.save();
+          console.log(`[RAZORPAY] Transaction saved successfully: ${transaction._id}`);
+          
+          res.json({
+            success: true,
+            data: {
+              order_id: razorpay_order_id,
+              payment_id: razorpay_payment_id,
+              transaction_id: transaction._id,
+              verified: true
+            },
+            message: 'Payment verified and transaction recorded successfully'
+          });
+        } catch (saveError: any) {
+          console.error('[RAZORPAY] Transaction save error:', saveError);
+          
+          // Handle duplicate key error specifically
+          if (saveError.code === 11000) {
+            console.log(`[RAZORPAY] Duplicate key error detected, searching for existing transaction`);
+            
+            // Search for existing transaction by multiple criteria
+            const existingTransaction = await Transaction.findOne({ 
+              $or: [
+                { razorpayPaymentId: razorpay_payment_id },
+                { transactionId: uniqueTransactionId },
+                { razorpayOrderId: razorpay_order_id }
+              ]
+            });
+            
+            if (existingTransaction) {
+              console.log(`[RAZORPAY] Found existing transaction: ${existingTransaction._id}`);
+              return res.json({
+                success: true,
+                data: {
+                  order_id: razorpay_order_id,
+                  payment_id: razorpay_payment_id,
+                  transaction_id: existingTransaction._id,
+                  verified: true
+                },
+                message: 'Payment verified (existing transaction found)'
+              });
+            } else {
+              // If no existing transaction found but duplicate key error, try with a new unique ID
+              console.log(`[RAZORPAY] No existing transaction found, retrying with new unique ID`);
+              const retryTransactionId = generateUniqueTransactionId();
+              transaction.transactionId = retryTransactionId;
+              
+              try {
+                await transaction.save();
+                console.log(`[RAZORPAY] Transaction saved with retry ID: ${transaction._id}`);
+                
+                return res.json({
+                  success: true,
+                  data: {
+                    order_id: razorpay_order_id,
+                    payment_id: razorpay_payment_id,
+                    transaction_id: transaction._id,
+                    verified: true
+                  },
+                  message: 'Payment verified and transaction recorded successfully'
+                });
+              } catch (retryError: any) {
+                console.error('[RAZORPAY] Retry save also failed:', retryError);
+                throw retryError;
+              }
+            }
+          }
+          
+          // Re-throw the error if it's not a duplicate key error
+          throw saveError;
+        }
+      } catch (dbError: any) {
+        
+        console.error('[RAZORPAY] Database error:', dbError);
+        
+        // Provide more specific error messages
+        if (dbError.code === 11000) {
+          console.error('[RAZORPAY] Duplicate key error:', dbError.keyValue);
+          res.status(409).json({
+            success: false,
+            message: 'Transaction already exists for this payment',
+            error: 'DUPLICATE_TRANSACTION'
+          });
+        } else if (dbError.name === 'ValidationError') {
+          console.error('[RAZORPAY] Validation error:', dbError.errors);
+          res.status(400).json({
+            success: false,
+            message: 'Invalid transaction data',
+            error: 'VALIDATION_ERROR',
+            details: dbError.errors
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'Payment verified but failed to save transaction record',
+            error: 'DATABASE_ERROR',
+            details: dbError.message
+          });
+        }
+      }
+    } else {
+      console.error(`[RAZORPAY] Payment verification failed: ${razorpay_payment_id}`);
+      res.status(400).json({
+        success: false,
+        message: 'Payment verification failed'
+      });
+    }
   } catch (error) {
-    next(error);
-  }
-});
-
-// @route   GET /api/payments/account
-// @desc    Get expert's payment account details
-// @access  Private (Expert only)
-router.get('/account', protect, async (req, res, next) => {
-  try {
-    const expert = await Expert.findOne({ userId: req.user.id });
-    if (!expert) {
-      return res.status(403).json({
-        success: false,
-        message: 'Expert profile not found'
-      });
-    }
-
-    const paymentAccount = await PaymentAccount.findOne({ expertId: expert._id });
-
-    res.json({
-      success: true,
-      data: paymentAccount || {},
-      message: paymentAccount ? 'Payment account found' : 'No payment account set up'
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// @route   POST /api/payments/account/setup
-// @desc    Set up expert payment account for direct payments
-// @access  Private (Expert only)
-router.post('/account/setup', protect, [
-  body('accountType')
-    .isIn(['stripe', 'paypal', 'bank_transfer', 'upi', 'crypto'])
-    .withMessage('Invalid account type'),
-  body('currency')
-    .optional()
-    .isIn(['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD'])
-    .withMessage('Invalid currency')
-], async (req, res, next) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-
-    const expert = await Expert.findOne({ userId: req.user.id });
-    if (!expert) {
-      return res.status(403).json({
-        success: false,
-        message: 'Expert profile not found'
-      });
-    }
-
-    // Check if payment account already exists
-    let paymentAccount = await PaymentAccount.findOne({ expertId: expert._id });
-
-    if (paymentAccount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment account already exists'
-      });
-    }
-
-    // Create new payment account
-    paymentAccount = new PaymentAccount({
-      userId: req.user.id,
-      expertId: expert._id,
-      accountType: req.body.accountType,
-      currency: req.body.currency || 'USD',
-      commissionRate: 0, // 0% commission
-      ...req.body
-    });
-
-    await paymentAccount.save();
-
-    res.status(201).json({
-      success: true,
-      data: paymentAccount,
-      message: 'Payment account created successfully. Direct payments enabled with 0% commission.'
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// @route   PUT /api/payments/account/update
-// @desc    Update expert payment account
-// @access  Private (Expert only)
-router.put('/account/update', protect, async (req, res, next) => {
-  try {
-    const expert = await Expert.findOne({ userId: req.user.id });
-    if (!expert) {
-      return res.status(403).json({
-        success: false,
-        message: 'Expert profile not found'
-      });
-    }
-
-    const paymentAccount = await PaymentAccount.findOne({ expertId: expert._id });
-    if (!paymentAccount) {
-      return res.status(404).json({
-        success: false,
-        message: 'Payment account not found'
-      });
-    }
-
-    // Ensure commission rate stays at 0%
-    if (req.body.commissionRate && req.body.commissionRate > 0) {
-      req.body.commissionRate = 0;
-    }
-
-    const updatedAccount = await PaymentAccount.findByIdAndUpdate(
-      paymentAccount._id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      data: updatedAccount,
-      message: 'Payment account updated successfully'
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// @route   POST /api/payments/payout
-// @desc    Request payout (for testing - normally automatic)
-// @access  Private (Expert only)
-router.post('/payout', protect, [
-  body('amount')
-    .isFloat({ min: 1 })
-    .withMessage('Amount must be at least $1')
-], async (req, res, next) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
-    }
-
-    const expert = await Expert.findOne({ userId: req.user.id });
-    if (!expert) {
-      return res.status(403).json({
-        success: false,
-        message: 'Expert profile not found'
-      });
-    }
-
-    const paymentAccount = await PaymentAccount.findOne({ 
-      expertId: expert._id,
-      isVerified: true,
-      isActive: true 
-    });
-
-    if (!paymentAccount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Payment account not set up or not verified'
-      });
-    }
-
-    // Check minimum payout amount
-    if (req.body.amount < paymentAccount.minimumPayout) {
-      return res.status(400).json({
-        success: false,
-        message: `Minimum payout amount is ${paymentAccount.currency} ${paymentAccount.minimumPayout}`
-      });
-    }
-
-    // Simulate payout processing
-    const payout = {
-      id: `po_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      amount: req.body.amount,
-      currency: paymentAccount.currency,
-      status: 'pending',
-      estimatedArrival: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      accountType: paymentAccount.accountType,
-      commissionDeducted: 0, // No commission
-      netAmount: req.body.amount
-    };
-
-    res.json({
-      success: true,
-      data: payout,
-      message: 'Payout initiated - full amount will be transferred (no commission deducted)'
-    });
-  } catch (error) {
+    console.error('[RAZORPAY] Payment verification error:', error);
     next(error);
   }
 });
 
 // @route   POST /api/payments/webhook
-// @desc    Handle payment provider webhooks
+// @desc    Handle Razorpay webhooks (Production Ready)
 // @access  Public
 router.post('/webhook', async (req, res, next) => {
   try {
-    // Handle webhooks from payment providers (Stripe, PayPal, etc.)
-    // Verify webhook signature and process events
+    const signature = req.headers['x-razorpay-signature'];
+    const body = JSON.stringify(req.body);
     
-    const event = req.body;
-    
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        // Payment successful - money already went directly to expert
-        console.log('Payment succeeded:', event.data.object.id);
-        break;
-        
-      case 'transfer.created':
-        // Direct transfer to expert account
-        console.log('Transfer to expert:', event.data.object.id);
-        break;
-        
-      case 'payout.paid':
-        // Payout completed to expert
-        console.log('Payout completed:', event.data.object.id);
-        break;
-        
-      default:
-        console.log('Unhandled event type:', event.type);
+    // Verify webhook signature
+    if (signature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET || 'test_webhook_secret')
+        .update(body)
+        .digest('hex');
+      
+      if (signature !== expectedSignature) {
+        console.error('[RAZORPAY] Invalid webhook signature');
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+      
+      // Handle webhook events
+      const event = req.body;
+      console.log(`[RAZORPAY] Webhook received: ${event.event}`);
+      
+      switch (event.event) {
+        case 'payment.captured':
+          // Handle successful payment
+          console.log(`[RAZORPAY] Payment captured: ${event.payload.payment.entity.id}`);
+          // TODO: Update booking status, send confirmation email, etc.
+          break;
+          
+        case 'payment.failed':
+          // Handle failed payment
+          console.log(`[RAZORPAY] Payment failed: ${event.payload.payment.entity.id}`);
+          // TODO: Update booking status, notify user, etc.
+          break;
+          
+        case 'order.paid':
+          // Handle successful order payment
+          console.log(`[RAZORPAY] Order paid: ${event.payload.order.entity.id}`);
+          // TODO: Update booking status, create transaction record, etc.
+          break;
+          
+        default:
+          console.log(`[RAZORPAY] Unhandled event: ${event.event}`);
+      }
+      
+      return res.json({ received: true });
     }
     
     res.json({ received: true });
   } catch (error) {
-    next(error);
-  }
-});
-
-// @route   GET /api/payments/earnings
-// @desc    Get expert's earnings summary
-// @access  Private (Expert only)
-router.get('/earnings', protect, async (req, res, next) => {
-  try {
-    const expert = await Expert.findOne({ userId: req.user.id });
-    if (!expert) {
-      return res.status(403).json({
-        success: false,
-        message: 'Expert profile not found'
-      });
-    }
-
-    // This would typically come from your payment provider or database
-    const earnings = {
-      totalEarnings: 12500.00,
-      currentBalance: 2300.00,
-      pendingBalance: 850.00,
-      lastPayout: {
-        amount: 1500.00,
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        status: 'completed'
-      },
-      currency: 'USD',
-      commissionRate: 0, // 0% commission
-      payoutSchedule: 'weekly',
-      nextPayoutDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-    };
-
-    res.json({
-      success: true,
-      data: earnings,
-      message: 'Earnings summary - 100% of payments go directly to you'
-    });
-  } catch (error) {
+    console.error('[RAZORPAY] Webhook error:', error);
     next(error);
   }
 });
 
 // @route   GET /api/payments/transactions
-// @desc    Get user's transaction history
+// @desc    Get user's transaction history with pagination and filtering
 // @access  Private
-router.get('/transactions', protect, async (req, res, next) => {
+router.get('/transactions', protect, [
+  param('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  param('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
+  param('status').optional().isIn(['pending', 'completed', 'failed', 'cancelled', 'refunded']).withMessage('Invalid status')
+], async (req, res, next) => {
   try {
-    const { status, type, page = 1, limit = 10 } = req.query;
-    
-    // Build query - filter by both MongoDB userId and user_id
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+    const skip = (page - 1) * limit;
+
+    // Build query
     const query: any = { 
-      userId: req.user.id,
-      user_id: req.user.user_id // Also filter by the 4-digit user_id
+      user_id: user.user_id || user._id.toString().slice(-4) 
     };
-    if (status) query.status = status;
-    if (type) query.type = type;
     
-    // Pagination
-    const skip = (Number(page) - 1) * Number(limit);
-    
-    // Get transactions - for now, sort by createdAt (most recent first)
-    // TODO: Implement session createdTime sorting once we have proper session-transaction relationships
+    if (status) {
+      query.status = status;
+    }
+
     const transactions = await Transaction.find(query)
-      .populate('expertId', 'firstName lastName email profession')
-      .sort({ createdAt: -1 }) // Most recent first
+      .sort({ createdAt: -1 })
+      .populate('expertId', 'userId firstName lastName')
       .skip(skip)
-      .limit(Number(limit));
-    
-    // Get total count
+      .limit(limit);
+
     const total = await Transaction.countDocuments(query);
-    
-    // Get summary stats
-    const summary = await Transaction.aggregate([
-      { 
-        $match: { 
-          userId: req.user.id,
-          user_id: req.user.user_id 
-        } 
-      },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-          totalAmount: { $sum: '$amount' }
-        }
-      }
-    ]);
-    
-    // Calculate stats from the transactions array for better accuracy
-    const completedTransactions = transactions.filter(t => t.status === 'completed');
-    const failedTransactions = transactions.filter(t => t.status === 'failed');
-    const pendingTransactions = transactions.filter(t => t.status === 'pending');
-    const totalSpent = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
-    
-    const stats = {
-      total: total,
-      completed: completedTransactions.length,
-      failed: failedTransactions.length,
-      pending: pendingTransactions.length,
-      totalSpent: totalSpent
-    };
-    
+
     res.json({
       success: true,
       data: {
         transactions,
-        stats,
         pagination: {
-          page: Number(page),
-          limit: Number(limit),
+          page,
+          limit,
           total,
-          pages: Math.ceil(total / Number(limit))
+          pages: Math.ceil(total / limit)
         }
       },
-      message: 'Transactions retrieved successfully'
+      message: 'Transaction history retrieved successfully'
     });
   } catch (error) {
+    console.error('[TRANSACTIONS] Error fetching transactions:', error);
     next(error);
   }
 });
@@ -489,39 +514,102 @@ router.get('/transactions', protect, async (req, res, next) => {
 // @route   GET /api/payments/transactions/:id
 // @desc    Get specific transaction details
 // @access  Private
-router.get('/transactions/:id', protect, [
-  param('id').isMongoId().withMessage('Valid transaction ID is required')
-], async (req, res, next) => {
+router.get('/transactions/:id', protect, async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+    const { id } = req.params;
+    
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        errors: errors.array()
+        message: 'User not found'
       });
     }
-    
-    const transaction = await Transaction.findOne({
-      _id: req.params.id,
-      userId: req.user.id,
-      user_id: req.user.user_id
-    }).populate('expertId', 'firstName lastName email profession');
-    
+
+    const transaction = await Transaction.findOne({ 
+      _id: id,
+      user_id: user.user_id || user._id.toString().slice(-4) 
+    }).populate('expertId', 'userId firstName lastName');
+
     if (!transaction) {
       return res.status(404).json({
         success: false,
         message: 'Transaction not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: transaction,
       message: 'Transaction details retrieved successfully'
     });
   } catch (error) {
+    console.error('[TRANSACTIONS] Error fetching transaction:', error);
     next(error);
   }
 });
 
-export default router; 
+// @route   GET /api/payments/transactions/stats
+// @desc    Get user's transaction statistics
+// @access  Private
+router.get('/transactions/stats', protect, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const userId = user.user_id || user._id.toString().slice(-4);
+    
+    // Get transaction statistics
+    const stats = await Transaction.aggregate([
+      { $match: { user_id: userId } },
+      {
+        $group: {
+          _id: null,
+          totalTransactions: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+          completedTransactions: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+          },
+          completedAmount: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, '$amount', 0] }
+          },
+          failedTransactions: {
+            $sum: { $cond: [{ $eq: ['$status', 'failed'] }, 1, 0] }
+          },
+          pendingTransactions: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          },
+          refundedTransactions: {
+            $sum: { $cond: [{ $eq: ['$status', 'refunded'] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const result = stats[0] || {
+      totalTransactions: 0,
+      totalAmount: 0,
+      completedTransactions: 0,
+      completedAmount: 0,
+      failedTransactions: 0,
+      pendingTransactions: 0,
+      refundedTransactions: 0
+    };
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Transaction statistics retrieved successfully'
+    });
+  } catch (error) {
+    console.error('[TRANSACTIONS] Error fetching transaction stats:', error);
+    next(error);
+  }
+});
+
+export default router;

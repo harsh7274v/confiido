@@ -13,6 +13,7 @@ import { createServer } from 'http';
 import path from 'path';
 
 import { connectDB } from './config/database';
+import Transaction from './models/Transaction';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import SocketService from './services/socketService';
@@ -132,6 +133,18 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
+    try {
+      // Ensure indexes are in sync and drop legacy snake_case index if present
+      await Transaction.syncIndexes();
+      const indexes = await Transaction.collection.indexes();
+      const legacy = indexes.find((idx: any) => idx.name === 'transaction_id_1');
+      if (legacy) {
+        console.warn('[INIT] Dropping legacy index transaction_id_1');
+        await Transaction.collection.dropIndex('transaction_id_1').catch(() => {});
+      }
+    } catch (idxErr) {
+      console.warn('[INIT] Index sync/cleanup warning:', idxErr);
+    }
     
     // Connect socket service with booking timeout service
     bookingTimeoutService.setSocketService(socketService);

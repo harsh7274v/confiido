@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Select, SelectItem } from "./ui/Select";
 import { availabilityApi } from '../services/availabilityApi';
 import { expertsApi, Expert } from '../services/expertsApi';
@@ -12,7 +13,7 @@ const services = [
   { name: 'Public Speaking', duration: '60 min' },
 ];
 
-const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookingId?: string) => void }> = ({ onClose, onGoToPayments }) => {
   const [service, setService] = useState<string | undefined>(undefined);
   const [mentor, setMentor] = useState<string | undefined>(undefined);
   const [date, setDate] = useState('');
@@ -38,6 +39,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   
   // Use the timeout context
   const { addTimeout, formatCountdown } = useTimeout();
+  const router = useRouter();
 
   // Get the duration for the selected service
   const getSelectedServiceDuration = () => {
@@ -309,10 +311,22 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           );
         }
         
-        // Close the popup after a short delay
+        // Show success briefly then redirect to payments page
         setTimeout(() => {
-          onClose();
-        }, 2000);
+          try { onClose(); } catch (_) {}
+          const bookingId = response.data?.booking?._id;
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('dashboard_redirect_view', 'payments');
+              if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
+            }
+          } catch {}
+          if (onGoToPayments) {
+            onGoToPayments(bookingId);
+          } else {
+            router.push('/dashboard');
+          }
+        }, 1500);
       }
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error creating booking:', error);
@@ -523,7 +537,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               onClick={handleBookingSubmit}
               className={`mt-6 px-6 py-3 rounded-lg font-semibold shadow transition text-lg ${
                 service && mentor && date && fromTime && toTime && !isSubmitting
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
               disabled={!service || !mentor || !date || !fromTime || !toTime || isSubmitting}
