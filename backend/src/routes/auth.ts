@@ -8,6 +8,8 @@ import { sendOTPEmail } from '../services/mailer';
 import { AppError } from '../middleware/errorHandler';
 import { protect } from '../middleware/auth';
 import { verifyFirebaseToken } from '../middleware/firebaseAuth';
+import { generateJWTToken } from '../utils/jwtGenerator';
+import { generateUniqueUserId } from '../utils/userIdGenerator';
 
 const router = express.Router();
 
@@ -168,19 +170,8 @@ router.post('/register', [
       });
     }
 
-    // Generate a unique 4-digit user_id
-    let user_id;
-    let tries = 0;
-    do {
-      user_id = Math.floor(1000 + Math.random() * 9000).toString();
-      // Check uniqueness
-      // eslint-disable-next-line no-await-in-loop
-      var existingId = await User.findOne({ user_id });
-      tries++;
-    } while (existingId && tries < 10);
-    if (existingId) {
-      return res.status(500).json({ success: false, error: 'Could not generate unique user_id. Please try again.' });
-    }
+    // Generate a unique serial user_id starting from 1000
+    const user_id = await generateUniqueUserId();
 
     // Prepare user data
     const userData: any = {
@@ -345,16 +336,21 @@ router.post('/login', [
 // @access  Public
 router.post('/verify', verifyFirebaseToken, async (req, res, next) => {
   try {
+    // Generate JWT token using user's userId (4-digit)
+    const jwtToken = generateJWTToken(req.user.user_id);
+    
     res.json({
       success: true,
       data: { 
         user: {
           id: req.user._id,
+          user_id: req.user.user_id, // Include the 4-digit user_id
           email: req.user.email,
           name: req.user.name || `${req.user.firstName} ${req.user.lastName}`,
           avatar: req.user.avatar,
           role: req.user.role || 'user'
-        }
+        },
+        token: jwtToken // Return JWT token for future authentication
       }
     });
   } catch (error) {

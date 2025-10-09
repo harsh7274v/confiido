@@ -5,18 +5,22 @@ export const connectDB = async (): Promise<void> => {
     const mongoURI = process.env['MONGODB_URI'] || 'mongodb://localhost:27017/lumina';
     const isAtlas = mongoURI.includes('mongodb+srv://');
     const connOptions: mongoose.ConnectOptions = {
-      // Enhanced connection options for better reliability
-      serverSelectionTimeoutMS: 30000, // Increased from 10s to 30s
-      socketTimeoutMS: 60000,
-      connectTimeoutMS: 30000, // Added connection timeout
-      maxPoolSize: 10,
-      minPoolSize: 1,
+      // High concurrency connection options
+      serverSelectionTimeoutMS: 5000, // Reduced for faster failover
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 100, // Increased for high concurrency
+      minPoolSize: 10, // Increased minimum pool size
       heartbeatFrequencyMS: 10000,
       retryWrites: true,
-      retryReads: true, // Added retry reads
+      retryReads: true,
+      // SSL/TLS configuration for production
       tls: isAtlas ? true : undefined,
       tlsAllowInvalidCertificates: false,
       tlsAllowInvalidHostnames: false,
+      // Connection retry configuration (handled by mongoose internally)
+      // Read preference for better performance
+      readPreference: 'primaryPreferred',
     };
 
     console.log('🔌 Connecting to MongoDB...', { isAtlas, uriPreview: mongoURI.replace(/(:)([^:@/]+)(@)/, '$1****$3') });

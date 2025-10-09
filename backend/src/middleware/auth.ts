@@ -4,6 +4,8 @@ import { AppError } from './errorHandler';
 import User from '../models/User';
 import Reward from '../models/Reward';
 import { auth } from '../config/firebase';
+import { generateUniqueUserId, ensureUserId } from '../utils/userIdGenerator';
+import { verifyJWTToken } from '../utils/jwtGenerator';
 
 // Extend Express Request interface to include user
 declare global {
@@ -21,17 +23,30 @@ export const protect = async (
 ): Promise<void> => {
   let token: string | undefined;
 
+  // Enhanced debugging
+  console.log('\n🔍 AUTH MIDDLEWARE DEBUG:');
+  console.log('URL:', req.url);
+  console.log('Method:', req.method);
+  console.log('Authorization header:', req.headers.authorization);
+  console.log('All headers:', req.headers);
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+    console.log('✅ Bearer token extracted:', token ? `${token.substring(0, 20)}...` : 'null');
+  } else {
+    console.log('❌ No Bearer token found in Authorization header');
+    console.log('Authorization header value:', req.headers.authorization);
+    console.log('Starts with Bearer:', req.headers.authorization?.startsWith('Bearer'));
   }
 
   console.log('Auth middleware - Token:', token);
   console.log('Auth middleware - NODE_ENV:', process.env.NODE_ENV);
 
   if (!token) {
+    console.log('❌ No token provided - rejecting request');
     next(new AppError('Not authorized to access this route', 401));
     return;
   }
@@ -39,66 +54,10 @@ export const protect = async (
   try {
     let user;
 
-    // Check if it's a mock token for development
-    if (token.startsWith('mock_token_')) {
-      console.log('Processing mock token');
-      const mockUid = token.replace('mock_token_', '');
-      console.log('Mock UID:', mockUid);
-      
-      // Find or create a mock user
-      user = await User.findOne({ firebaseUid: mockUid });
-      console.log('Found existing mock user:', user ? 'yes' : 'no');
-      
-      if (!user) {
-        console.log('Creating new mock user');
-        // Create a mock user for development
-        user = new User({
-          firebaseUid: mockUid,
-          email: `mock-${mockUid}@example.com`,
-          name: 'Mock User',
-          firstName: 'Mock',
-          lastName: 'User',
-          role: 'user',
-          isVerified: true,
-          isActive: true,
-          lastLogin: new Date()
-        });
-        await user.save();
-        console.log('Mock user created successfully');
-        
-        // Create initial rewards for the new mock user
-        try {
-          await Reward.create({
-            userId: user._id,
-            user_id: user.user_id || 'MOCK', // Include user_id if available, or placeholder
-            points: 250,
-            totalEarned: 250,
-            totalSpent: 0,
-            history: [
-              {
-                type: 'earned',
-                description: 'Welcome bonus for new mock user',
-                points: 250,
-                status: 'completed',
-                date: new Date(),
-              },
-            ],
-          });
-          console.log(`✅ Rewards created for new mock user: ${user.email} (${user.user_id || 'MOCK'})`);
-        } catch (rewardError) {
-          console.error('Failed to create rewards for new mock user:', rewardError);
-          // Don't fail auth if rewards creation fails
-        }
-      } else {
-        // Update last login for existing mock user
-        user.lastLogin = new Date();
-        await user.save();
-        console.log('Mock user last login updated');
-      }
-    } else {
-      console.log('Not a mock token, trying Firebase/JWT');
-      // First, try to verify as Firebase token
-      try {
+    console.log('Processing authentication token');
+    
+    // First, try to verify as Firebase token
+    try {
         const decodedToken = await auth.verifyIdToken(token);
         
         // Find user by Firebase UID first
@@ -119,8 +78,12 @@ export const protect = async (
           } else {
             // Create new Firebase user
             const nameParts = decodedToken.name?.split(' ') || ['', ''];
+            // Generate unique user_id for new Firebase user
+            const userId = await generateUniqueUserId();
+            
             user = new User({
               firebaseUid: decodedToken.uid,
+              user_id: userId,
               email: decodedToken.email,
               name: decodedToken.name,
               firstName: nameParts[0] || '',
@@ -132,26 +95,27 @@ export const protect = async (
               lastLogin: new Date()
             });
             await user.save();
+            console.log(`Firebase user created successfully with user_id: ${userId}`);
             
-            // Create initial rewards for the new Firebase user
+            // Create initial rewards for the new Firebase user (same as traditional users)
             try {
               await Reward.create({
                 userId: user._id,
-                user_id: user.user_id || 'FIREBASE', // Include user_id if available, or placeholder
+                user_id: user.user_id, // Use the actual 4-digit user_id
                 points: 0,
                 totalEarned: 0,
                 totalSpent: 0,
                 history: [
                   {
                     type: 'earned',
-                    description: 'Welcome bonus for new Firebase user',
+                    description: 'Welcome bonus for new user registration',
                     points: 0,
                     status: 'completed',
                     date: new Date(),
                   },
                 ],
               });
-              console.log(`✅ Rewards created for new Firebase user: ${user.email} (${user.user_id || 'FIREBASE'})`);
+              console.log(`✅ Rewards created for new Firebase user: ${user.email} (${user.user_id})`);
             } catch (rewardError) {
               console.error('Failed to create rewards for new Firebase user:', rewardError);
               // Don't fail auth if rewards creation fails
@@ -160,22 +124,34 @@ export const protect = async (
         } else {
           // Update last login for existing Firebase user
           user.lastLogin = new Date();
+          // Ensure user has userId
+          await ensureUserId(user);
           await user.save();
         }
       } catch (firebaseError) {
         console.log('Firebase verification failed, trying JWT');
         // If Firebase verification fails, try custom JWT token
         try {
-          const tokenParts = token.split('_');
-          if (tokenParts.length < 2) {
-            throw new Error('Invalid token format');
-          }
-          const decoded = { id: tokenParts[1] };
-          console.log('JWT decoded ID:', decoded.id);
+          // Try new JWT format first (user_id based)
+          const userIdFromToken = verifyJWTToken(token);
+          if (userIdFromToken) {
+            console.log('JWT user_id found:', userIdFromToken);
+            // Find user by user_id
+            user = await User.findOne({ user_id: userIdFromToken }).select('-password');
+            console.log('JWT user found by user_id:', user ? 'yes' : 'no');
+          } else {
+            // Try legacy JWT format (MongoDB _id based)
+            const tokenParts = token.split('_');
+            if (tokenParts.length < 2) {
+              throw new Error('Invalid token format');
+            }
+            const decoded = { id: tokenParts[1] };
+            console.log('Legacy JWT decoded ID:', decoded.id);
 
-          // Get user from token
-          user = await User.findById(decoded.id).select('-password');
-          console.log('JWT user found:', user ? 'yes' : 'no');
+            // Get user from token
+            user = await User.findById(decoded.id).select('-password');
+            console.log('Legacy JWT user found:', user ? 'yes' : 'no');
+          }
         } catch (jwtError) {
           console.log('JWT verification also failed');
           // Both Firebase and JWT verification failed
@@ -183,7 +159,6 @@ export const protect = async (
           return;
         }
       }
-    }
 
     if (!user) {
       console.log('No user found');
@@ -249,67 +224,30 @@ export const optionalAuth = async (
   try {
     let user;
 
-    // Check if it's a mock token for development
-    if (token.startsWith('mock_token_')) {
-      const mockUid = token.replace('mock_token_', '');
-      user = await User.findOne({ firebaseUid: mockUid });
+    // Try Firebase token first
+    try {
+      const decodedToken = await auth.verifyIdToken(token);
+      user = await User.findOne({ firebaseUid: decodedToken.uid });
       
-      if (!user) {
-        // Create a mock user for development
-        user = new User({
-          firebaseUid: mockUid,
-          email: `mock-${mockUid}@example.com`,
-          name: 'Mock User',
-          firstName: 'Mock',
-          lastName: 'User',
-          role: 'user',
-          isVerified: true,
-          isActive: true,
-          lastLogin: new Date()
-        });
-        await user.save();
-        
-        // Create initial rewards for the new mock user in optionalAuth
-        try {
-          await Reward.create({
-            userId: user._id,
-            user_id: user.user_id || 'MOCK', // Include user_id if available, or placeholder
-            points: 0,
-            totalEarned: 0,
-            totalSpent: 0,
-            history: [
-              {
-                type: 'earned',
-                description: 'Welcome bonus for new mock user (optionalAuth)',
-                points: 0,
-                status: 'completed',
-                date: new Date(),
-              },
-            ],
-          });
-          console.log(`✅ Rewards created for new mock user (optionalAuth): ${user.email} (${user.user_id || 'MOCK'})`);
-        } catch (rewardError) {
-          console.error('Failed to create rewards for new mock user (optionalAuth):', rewardError);
-          // Don't fail auth if rewards creation fails
-        }
-      } else {
-        // Ensure existing mock user has user_id
-        // await ensureUserId(user); // This line is removed as per the edit hint
+      if (user && user.isActive) {
+        // Ensure Firebase user has user_id
+        await ensureUserId(user);
+        req.user = user;
       }
-    } else {
-      // Try Firebase token first
+    } catch (firebaseError) {
+      // Try custom JWT token
       try {
-        const decodedToken = await auth.verifyIdToken(token);
-        user = await User.findOne({ firebaseUid: decodedToken.uid });
-        
-        if (user && user.isActive) {
-          // Ensure Firebase user has user_id
-          // await ensureUserId(user); // This line is removed as per the edit hint
-          req.user = user;
-        }
-      } catch (firebaseError) {
-        // Try custom JWT token
-        try {
+        // Try new JWT format first (user_id based)
+        const userIdFromToken = verifyJWTToken(token);
+        if (userIdFromToken) {
+          console.log('OptionalAuth JWT user_id found:', userIdFromToken);
+          user = await User.findOne({ user_id: userIdFromToken }).select('-password');
+          
+          if (user && user.isActive) {
+            req.user = user;
+          }
+        } else {
+          // Try legacy JWT format (MongoDB _id based)
           const tokenParts = token.split('_');
           if (tokenParts.length < 2) {
             throw new Error('Invalid token format');
@@ -319,12 +257,12 @@ export const optionalAuth = async (
 
           if (user && user.isActive) {
             // Ensure JWT user has user_id
-            // await ensureUserId(user); // This line is removed as per the edit hint
+            await ensureUserId(user);
             req.user = user;
           }
-        } catch (jwtError) {
-          // Both failed, continue without user
         }
+      } catch (jwtError) {
+        // Both failed, continue without user
       }
     }
 

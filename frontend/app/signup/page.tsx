@@ -25,6 +25,17 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const isValidEmailForSupport = (email: string): boolean => {
+    const trimmed = (email || '').trim().toLowerCase();
+    if (!trimmed.includes('@')) return false;
+    const dotCount = (trimmed.match(/\./g) || []).length;
+    if (dotCount > 2) return false;
+    const allowedDomains = ['gmail.com', 'outlook.com', 'icloud.com', 'hotmail.com'];
+    const domain = trimmed.split('@')[1] || '';
+    if (!allowedDomains.includes(domain)) return false;
+    return true;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -48,7 +59,7 @@ export default function Signup() {
       setError('Email is required');
       return false;
     }
-    if (!formData.email.includes('@')) {
+    if (!isValidEmailForSupport(formData.email)) {
       setError('Please enter a valid email address');
       return false;
     }
@@ -243,7 +254,10 @@ export default function Signup() {
                 required
                 disabled={isSubmitting}
                 suppressHydrationWarning
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-invalid={!!formData.email && !isValidEmailForSupport(formData.email)}
+                className={`w-full px-3 py-2 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  formData.email && !isValidEmailForSupport(formData.email) ? 'border-red-400' : 'border-gray-300'
+                }`}
               />
             </div>
 
@@ -360,7 +374,7 @@ export default function Signup() {
 
             <button
               type="submit"
-              disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms}
+              disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms || !isValidEmailForSupport(formData.email)}
               className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
             >
               {isSubmitting ? (

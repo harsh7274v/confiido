@@ -32,14 +32,16 @@ export interface Booking {
 class BookingApi {
   private getAuthHeaders() {
     const token = localStorage.getItem('token');
-    console.log('🔍 [FRONTEND] Token from localStorage:', token ? 'Present' : 'Missing');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
     
     const headers = {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
+      'Authorization': `Bearer ${token}`
     };
     
-    console.log('🔍 [FRONTEND] Final headers:', headers);
+    console.log('🔍 [FRONTEND] Making authenticated request with token');
     return headers;
   }
 

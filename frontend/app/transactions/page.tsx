@@ -26,14 +26,9 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, [currentPage]);
 
-  // Show mock data on mount if no authentication
+  // Initialize stats when component mounts
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    // Only show mock data if not authenticated
-    if (!token && !user && transactions.length === 0) {
-      setMockData();
-    } else if ((token || user) && transactions.length === 0 && !loading) {
-      // If authenticated and no transactions, do nothing (show 'No transactions found')
+    if (user && transactions.length === 0 && !loading) {
       setStats(null);
     }
   }, [user, transactions.length, loading]);
@@ -42,13 +37,14 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
       setError(null);
+      
       // Check if we have authentication
       const token = localStorage.getItem('token');
       if (!token && !user) {
-        // No authentication available, show mock data
-        setMockData();
+        setError('Please log in to view your transactions');
         return;
       }
+      
       const params: any = {
         page: currentPage,
         limit: 10
@@ -64,95 +60,12 @@ export default function TransactionsPage() {
       setTotalPages(response.pagination.pages);
     } catch (err: any) {
       console.error('Error fetching transactions:', err);
-      // If it's an authentication error, show mock data
-      if (err.message && err.message.includes('401')) {
-        setMockData();
-      } else {
-        setError(err.message || 'Failed to fetch transactions');
-      }
+      setError(err.message || 'Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
   };
 
-  const setMockData = () => {
-    const mockTransactions: Transaction[] = [
-      {
-        _id: '1',
-        user_id: '1001',
-        transaction_id: 'TXN001',
-        status: 'completed',
-        mentor_name: 'Priya Sharma',
-        service: 'Career Coaching',
-        type: 'booking',
-        itemId: 'booking1',
-        amount: 2500,
-        currency: 'INR',
-        paymentMethod: 'stripe',
-        description: 'Career coaching session with Priya Sharma',
-        metadata: {
-          sessionTitle: 'Career coaching session'
-        },
-        expertId: {
-          _id: 'expert1',
-          firstName: 'Priya',
-          lastName: 'Sharma',
-          email: 'priya.sharma@example.com',
-          profession: 'Product Manager'
-        },
-        createdAt: new Date(Date.now() - 86400000), // 1 day ago
-        updatedAt: new Date(Date.now() - 86400000)
-      },
-      {
-        _id: '2',
-        user_id: '1001',
-        transaction_id: 'TXN002',
-        status: 'pending',
-        mentor_name: 'Priya Sharma',
-        service: 'Online Course',
-        type: 'course',
-        itemId: 'course1',
-        amount: 5000,
-        currency: 'INR',
-        paymentMethod: 'paypal',
-        description: 'Product Management Fundamentals Course',
-        metadata: {
-          courseName: 'Product Management Fundamentals'
-        },
-        createdAt: new Date(Date.now() - 172800000), // 2 days ago
-        updatedAt: new Date(Date.now() - 172800000)
-      },
-      {
-        _id: '3',
-        user_id: '1001',
-        transaction_id: 'TXN003',
-        status: 'completed',
-        mentor_name: 'Priya Sharma',
-        service: 'Webinar',
-        type: 'webinar',
-        itemId: 'webinar1',
-        amount: 1500,
-        currency: 'INR',
-        paymentMethod: 'stripe',
-        description: 'Leadership Skills Webinar',
-        metadata: {
-          webinarTitle: 'Leadership Skills Webinar'
-        },
-        createdAt: new Date(Date.now() - 259200000), // 3 days ago
-        updatedAt: new Date(Date.now() - 259200000)
-      }
-    ];
-    const mockStats: TransactionStats = {
-      total: 3,
-      completed: 2,
-      failed: 0,
-      pending: 1,
-      totalSpent: 4000
-    };
-    setTransactions(mockTransactions);
-    setStats(mockStats);
-    setTotalPages(1);
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -283,12 +196,6 @@ export default function TransactionsPage() {
                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                              >
                                Try Again
-                             </button>
-                             <button
-                               onClick={setMockData}
-                               className="ml-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                             >
-                               Show Demo Data
                              </button>
                            </div>
                          </div>

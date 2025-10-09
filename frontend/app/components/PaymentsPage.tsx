@@ -347,14 +347,9 @@ export default function PaymentsPage() {
     }
   }, [debugTimeoutStatus, refreshPayments]);
 
-  // Show mock data on mount if no authentication
+  // Initialize stats when component mounts
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    // Only show mock data if not authenticated
-    if (!token && !user && payments.length === 0) {
-      setMockData();
-    } else if ((token || user) && payments.length === 0 && !loading) {
-      // If authenticated and no payments, do nothing (show 'No payments found')
+    if (user && payments.length === 0 && !loading) {
       setStats(null);
     }
   }, [user, payments.length, loading]);
@@ -364,13 +359,14 @@ export default function PaymentsPage() {
     try {
       setLoading(true);
       setError(null);
+      
       // Check if we have authentication
       const token = localStorage.getItem('token');
       if (!token && !user) {
-        // No authentication available, show mock data
-        setMockData();
+        setError('Please log in to view your payments');
         return;
       }
+      
       const params: any = {
         page: currentPage,
         limit: 10
@@ -387,162 +383,12 @@ export default function PaymentsPage() {
       setTotalPages(response.pagination.pages);
     } catch (err: any) {
       console.error('Error fetching payments:', err);
-      // If it's an authentication error, show mock data
-      if (err.message && err.message.includes('401')) {
-        setMockData();
-      } else {
-        setError(err.message || 'Failed to fetch payments');
-      }
+      setError(err.message || 'Failed to fetch payments');
     } finally {
       setLoading(false);
     }
   };
 
-  const setMockData = () => {
-    const mockPayments: Payment[] = [
-      {
-        _id: '1',
-        bookingId: 'booking_1',
-        clientUserId: '1001',
-        expertId: {
-          _id: 'expert1',
-          title: 'Senior Product Manager',
-          company: 'Google',
-          userId: {
-            _id: 'user1',
-            firstName: 'Priya',
-            lastName: 'Sharma',
-            email: 'priya.sharma@example.com',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-          }
-        },
-        expertUserId: 'expert_user_1',
-        expertEmail: 'priya.sharma@example.com',
-        sessionType: 'video',
-        duration: 60,
-        scheduledDate: new Date(Date.now() - 86400000), // 1 day ago
-        startTime: '14:00',
-        endTime: '15:00',
-        status: 'completed',
-        price: 2500,
-        currency: 'INR',
-        paymentStatus: 'paid',
-        paymentMethod: 'stripe',
-        meetingLink: 'https://meet.google.com/abc-defg-hij',
-        notes: 'Career coaching session',
-        createdAt: new Date(Date.now() - 86400000),
-        updatedAt: new Date(Date.now() - 86400000)
-      },
-      {
-        _id: '2',
-        bookingId: 'booking_2',
-        clientUserId: '1001',
-        expertId: {
-          _id: 'expert2',
-          title: 'Software Engineering Manager',
-          company: 'Microsoft',
-          userId: {
-            _id: 'user2',
-            firstName: 'Rahul',
-            lastName: 'Verma',
-            email: 'rahul.verma@example.com',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-          }
-        },
-        expertUserId: 'expert_user_2',
-        expertEmail: 'rahul.verma@example.com',
-        sessionType: 'chat',
-        duration: 30,
-        scheduledDate: new Date(Date.now() - 172800000), // 2 days ago
-        startTime: '10:00',
-        endTime: '10:30',
-        status: 'confirmed',
-        price: 1200,
-        currency: 'INR',
-        paymentStatus: 'pending',
-        paymentMethod: 'paypal',
-        notes: 'Resume review session',
-        createdAt: new Date(Date.now() - 172800000),
-        updatedAt: new Date(Date.now() - 172800000)
-      },
-      {
-        _id: '3',
-        bookingId: 'booking_3',
-        clientUserId: '1001',
-        expertId: {
-          _id: 'expert3',
-          title: 'UX Design Director',
-          company: 'Adobe',
-          userId: {
-            _id: 'user3',
-            firstName: 'Anjali',
-            lastName: 'Patel',
-            email: 'anjali.patel@example.com',
-            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-          }
-        },
-        expertUserId: 'expert_user_3',
-        expertEmail: 'anjali.patel@example.com',
-        sessionType: 'video',
-        duration: 45,
-        scheduledDate: new Date(Date.now() - 259200000), // 3 days ago
-        startTime: '16:00',
-        endTime: '16:45',
-        status: 'cancelled',
-        price: 1800,
-        currency: 'INR',
-        paymentStatus: 'refunded',
-        paymentMethod: 'stripe',
-        notes: 'Design portfolio review - cancelled',
-        createdAt: new Date(Date.now() - 259200000),
-        updatedAt: new Date(Date.now() - 259200000)
-      },
-      // Add more mock data with pending payments as shown in the user's example
-      {
-        _id: '4',
-        bookingId: 'booking_4',
-        clientUserId: '1001',
-        expertId: {
-          _id: 'expert4',
-          title: 'Data Science Lead',
-          company: 'Amazon',
-          userId: {
-            _id: 'user4',
-            firstName: 'Arjun',
-            lastName: 'Kumar',
-            email: 'arjun.kumar@example.com',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-          }
-        },
-        expertUserId: '1534',
-        expertEmail: 'arjun.kumar@example.com',
-        sessionType: 'chat',
-        duration: 30,
-        scheduledDate: new Date('2025-08-29T05:30:00Z'),
-        startTime: '05:30',
-        endTime: '06:00',
-        status: 'pending',
-        price: 20,
-        currency: 'INR',
-        paymentStatus: 'pending',
-        paymentMethod: 'upi',
-        notes: 'Data science career guidance',
-        createdAt: new Date('2025-08-29T05:30:00Z'),
-        updatedAt: new Date('2025-08-29T05:30:00Z')
-      }
-    ];
-    const mockStats: PaymentStats = {
-      total: 4,
-      paid: 1,
-      pending: 2,
-      failed: 0,
-      refunded: 1,
-      totalSpent: 2500
-    };
-    setPayments(mockPayments);
-    setStats(mockStats);
-    setTotalPages(1);
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {

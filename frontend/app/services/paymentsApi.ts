@@ -119,9 +119,12 @@ export interface PaymentResponse {
 class PaymentsApi {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
     return {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
+      'Authorization': `Bearer ${token}`
     };
   }
 

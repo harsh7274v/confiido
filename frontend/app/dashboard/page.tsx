@@ -258,13 +258,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchSessions() {
-      // Check if we have any form of authentication
+      // Check if we have authentication
       const storedToken = localStorage.getItem('token');
       
-      // For development/testing: if no auth, set a mock token
       if (!user && !storedToken) {
-        console.log('No authentication found, using mock token for development');
-        localStorage.setItem('token', 'mock_token_test');
+        console.log('No authentication found, redirecting to login');
+        setSessionsError('Please log in to view your sessions');
+        setSessionsLoading(false);
+        return;
       }
       
       setSessionsLoading(true);

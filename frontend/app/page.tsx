@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, MessageCircle, X, Send, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,57 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'student' | 'professional'>('student');
   const [showSpinner, setShowSpinner] = useState(false);
+  const [currentMentorIndex, setCurrentMentorIndex] = useState(0);
+  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
+  const [faqButtonColors, setFaqButtonColors] = useState<{ [key: number]: string }>({});
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [chatbotStep, setChatbotStep] = useState<'email' | 'subject' | 'query'>('email');
+  const [chatbotData, setChatbotData] = useState({
+    email: '',
+    subject: '',
+    query: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
+
+  // Generate random light background colors for testimonials
+  const getRandomBackgroundColor = (index: number) => {
+    const colors = [
+      'bg-pink-50',
+      'bg-blue-50', 
+      'bg-green-50',
+      'bg-yellow-50',
+      'bg-purple-50',
+      'bg-indigo-50',
+      'bg-cyan-50',
+      'bg-emerald-50',
+      'bg-orange-50',
+      'bg-rose-50',
+      'bg-sky-50',
+      'bg-lime-50'
+    ];
+    return colors[index % colors.length];
+  };
+
+  // Generate random light shadow colors for testimonials
+  const getRandomShadowColor = (index: number) => {
+    const colors = [
+      'shadow-pink-200',
+      'shadow-blue-200', 
+      'shadow-green-200',
+      'shadow-yellow-200',
+      'shadow-purple-200',
+      'shadow-indigo-200',
+      'shadow-cyan-200',
+      'shadow-emerald-200',
+      'shadow-orange-200',
+      'shadow-rose-200',
+      'shadow-sky-200',
+      'shadow-lime-200'
+    ];
+    return colors[index % colors.length];
+  };
 
   const handleLoginClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
     e.preventDefault();
@@ -30,6 +80,131 @@ export default function Home() {
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const handleFaqHover = (index: number, isHovering: boolean) => {
+    if (isHovering && openFaq !== index) {
+      // Generate a random color for hover state
+      const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100', 'bg-indigo-100'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      setFaqButtonColors(prev => ({ ...prev, [index]: randomColor }));
+    } else if (!isHovering && openFaq !== index) {
+      // Reset to default color when not hovering and not open
+      setFaqButtonColors(prev => ({ ...prev, [index]: 'bg-gray-50' }));
+    }
+  };
+
+  const handleFaqClick = (index: number) => {
+    if (openFaq === index) {
+      // Closing the FAQ, reset to default color
+      setFaqButtonColors(prev => ({ ...prev, [index]: 'bg-gray-50' }));
+    } else {
+      // Opening the FAQ, set a random color
+      const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100', 'bg-indigo-100'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      setFaqButtonColors(prev => ({ ...prev, [index]: randomColor }));
+    }
+    toggleFaq(index);
+  };
+
+  const nextMentor = () => {
+    setCurrentMentorIndex((prev) => (prev + 1) % mentors.length);
+    setPlayingVideo(null); // Stop any playing video when switching mentors
+  };
+
+  const prevMentor = () => {
+    setCurrentMentorIndex((prev) => (prev - 1 + mentors.length) % mentors.length);
+    setPlayingVideo(null); // Stop any playing video when switching mentors
+  };
+
+  const toggleVideo = (mentorId: number) => {
+    setPlayingVideo(playingVideo === mentorId ? null : mentorId);
+  };
+
+  const scrollToMentors = () => {
+    const mentorsSection = document.getElementById('mentors-section');
+    if (mentorsSection) {
+      mentorsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToTestimonials = () => {
+    const testimonialsSection = document.getElementById('testimonials-section');
+    if (testimonialsSection) {
+      testimonialsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const openChatbot = () => {
+    setIsChatbotOpen(true);
+    setChatbotStep('email');
+    setChatbotData({ email: '', subject: '', query: '' });
+    setIsSubmitted(false);
+  };
+
+  const closeChatbot = () => {
+    setIsChatbotOpen(false);
+    setChatbotStep('email');
+    setChatbotData({ email: '', subject: '', query: '' });
+    setIsSubmitted(false);
+  };
+
+  const handleChatbotInput = (value: string) => {
+    setChatbotData(prev => ({
+      ...prev,
+      [chatbotStep]: value
+    }));
+  };
+
+  const nextChatbotStep = () => {
+    if (chatbotStep === 'email') {
+      setChatbotStep('subject');
+    } else if (chatbotStep === 'subject') {
+      setChatbotStep('query');
+    }
+  };
+
+  const isValidEmailForSupport = (email: string): boolean => {
+    const trimmed = (email || '').trim().toLowerCase();
+    if (!trimmed.includes('@')) return false;
+    const dotCount = (trimmed.match(/\./g) || []).length;
+    if (dotCount > 2) return false;
+    const allowedDomains = ['gmail.com', 'outlook.com', 'icloud.com', 'hotmail.com'];
+    const domain = trimmed.split('@')[1] || '';
+    if (!allowedDomains.includes(domain)) return false;
+    return true;
+  };
+
+  const submitSupportRequest = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: chatbotData.email,
+          subject: chatbotData.subject,
+          query: chatbotData.query,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send support request');
+      }
+
+      const data = await response.json();
+      if (data.ok) {
+        setIsSubmitted(true);
+      } else {
+        throw new Error('Failed to send support request');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting support request:', error);
+      // Optionally show inline error UI in future
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Check screen size for mobile optimization
@@ -61,6 +236,47 @@ export default function Home() {
       return () => clearInterval(timer);
     }
   }, [isTestimonialPaused]);
+  const mentors = [
+    {
+      id: 1,
+      name: "Megha Upadhyay",
+      title: "Public Speaking Coach",
+      company: "ABP News Alumni",
+      experience: "4+ years experience",
+      rating: 4.9,
+      reviews: 127,
+      price: "Rs 500/session",
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Replace with actual video URL
+      videoDuration: "2 min video",
+      quote: "I used to be uncomfortable speaking in public. Now I help students/professional find their authentic voice and speak with confidence.",
+      skills: [
+        "Overcoming speaking anxiety",
+        "Building executive presence", 
+        "Presentation skills for work"
+      ],
+      image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h=400&fit=crop&crop=face"
+    },
+    {
+      id: 2,
+      name: "Marcus Rodriguez",
+      title: "Leadership Communication Expert",
+      company: "Microsoft Alumni",
+      experience: "15+ years experience",
+      rating: 4.8,
+      reviews: 203,
+      price: "$200/session",
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Replace with actual video URL
+      videoDuration: "3 min video",
+      quote: "Leadership is about inspiring others through clear, confident communication. Let me show you how.",
+      skills: [
+        "Leadership communication",
+        "Team meeting confidence",
+        "Executive storytelling"
+      ],
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=400&fit=crop&crop=face"
+    }
+  ];
+
   const experts = [
     {
       id: 1,
@@ -210,7 +426,12 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {showSpinner && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
           <PropagateLoader color="#9333ea" />
@@ -221,18 +442,18 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">XXXXX</h1>
+              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Confiido</h1>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <button onClick={scrollToMentors} className="text-gray-700 hover:text-blue-600 transition-colors">
                 Explore Mentors
-              </Link>
+              </button>
               {/* <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
                 AI Mentors
               </Link> */}
-              <Link href="#features" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <button onClick={scrollToTestimonials} className="text-gray-700 hover:text-blue-600 transition-colors">
                 Success Stories
-              </Link>
+              </button>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 px-3 py-2 rounded-lg hover:bg-blue-50" onClick={handleLoginClick}>
@@ -284,7 +505,7 @@ export default function Home() {
       </section>
 
       {/* Meet Your Mentors Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section id="mentors-section" className="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-4">
@@ -298,160 +519,129 @@ export default function Home() {
             </p>
           </div>
           
-          {/* Mentors Grid */}
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            {/* Mentor 1 - Megha Upadhyay */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="relative mb-4">
-                  <img 
-                    src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face" 
-                    alt="Sarah Chen" 
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  />
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Megha Upadhyay</h3>
-                <p className="text-blue-600 font-medium mb-1">Public Speaking Coach</p>
-                <p className="text-gray-500 text-sm mb-4">4+ years experience • ABP News Alumni</p>
-                
-                {/* Video Introduction */}
-                <div className="w-full mb-6">
-                  <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300">
-                    <div className="flex flex-col items-center text-gray-500">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                        <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M8 5v10l8-5-8-5z"/>
-                        </svg>
+          {/* Mentor Carousel */}
+          <div className="relative max-w-5xl mx-auto">
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevMentor}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-600" />
+            </button>
+            
+            <button
+              onClick={nextMentor}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-600" />
+            </button>
+
+            {/* Mentor Card */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+              <div className="flex flex-col lg:flex-row">
+                {/* Left Side - Photo/Video Area */}
+                <div className="lg:w-1/2 relative">
+                  {playingVideo === mentors[currentMentorIndex].id ? (
+                    <div className="w-full h-80 lg:h-[500px]">
+                      <iframe
+                        src={mentors[currentMentorIndex].videoUrl}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={`${mentors[currentMentorIndex].name} Introduction Video`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-80 lg:h-[500px]">
+                      <img 
+                        src={mentors[currentMentorIndex].image}
+                        alt={mentors[currentMentorIndex].name}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Video Play Button */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+                        <button
+                          onClick={() => toggleVideo(mentors[currentMentorIndex].id)}
+                          className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                        >
+                          <Play className="w-8 h-8 text-gray-800 ml-1" />
+                        </button>
                       </div>
-                      <p className="text-sm font-medium">Watch Megha's Introduction</p>
-                      <p className="text-xs text-gray-400 mt-1">2 min video</p>
-                      <button className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                        Play Video
-                      </button>
+                      {/* Video Duration Badge */}
+                      <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                        {mentors[currentMentorIndex].videoDuration}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Side - Mentor Details */}
+                <div className="lg:w-1/2 p-8 flex flex-col justify-between">
+                  <div>
+                    {/* Mentor Info */}
+                    <div className="mb-6">
+                      <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                        {mentors[currentMentorIndex].name}
+                      </h3>
+                      <p className="text-blue-600 font-semibold text-lg mb-1">
+                        {mentors[currentMentorIndex].title}
+                      </p>
+                      <p className="text-gray-500 text-sm mb-4">
+                        {mentors[currentMentorIndex].experience} • {mentors[currentMentorIndex].company}
+                      </p>
+                    </div>
+
+                    {/* Quote */}
+                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                      <p className="text-gray-700 text-sm leading-relaxed italic">
+                        "{mentors[currentMentorIndex].quote}"
+                      </p>
+                    </div>
+
+                    {/* Skills */}
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-gray-900 mb-3">What I can help you with:</h4>
+                      <ul className="space-y-2 text-sm text-gray-600">
+                        {mentors[currentMentorIndex].skills.map((skill, index) => (
+                          <li key={index} className="flex items-start space-x-2">
+                            <span className="text-green-500 mt-1">✓</span>
+                            <span>{skill}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Quick Bio */}
-              <div className="space-y-4 text-left">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-gray-700 text-sm leading-relaxed italic">
-                    "I used to be uncomfortable speaking in public. Now I help students/professional find their authentic voice and speak with confidence."
-                  </p>
-                </div>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-gray-900">What I can help you with:</h4>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Overcoming speaking anxiety</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Building executive presence</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Presentation skills for work</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                    <span> Rs 500/session</span>
-                      4.9 (127 reviews)
-                    </span>
+                  {/* Bottom Section - Rating and Book Button */}
+                  <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span className="flex items-center">
+                        <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                        {mentors[currentMentorIndex].rating} ({mentors[currentMentorIndex].reviews} reviews)
+                      </span>
+                      <span className="font-semibold text-gray-900">
+                        {mentors[currentMentorIndex].price}
+                      </span>
+                    </div>
+                    <button className="px-6 py-3 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+                      Book {mentors[currentMentorIndex].name.split(' ')[0]}
+                    </button>
                   </div>
-                  <button className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors">
-                    Book Megha
-                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Mentor 2 - Marcus Rodriguez */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="relative mb-4">
-                  <img 
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" 
-                    alt="Marcus Rodriguez" 
-                    className="w-32 h-32 rounded-full object-cover border-4 border-emerald-100"
-                  />
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Marcus Rodriguez</h3>
-                <p className="text-emerald-600 font-medium mb-1">Leadership Communication Expert</p>
-                <p className="text-gray-500 text-sm mb-4">15+ years experience • Microsoft Alumni</p>
-                
-                {/* Video Introduction */}
-                <div className="w-full mb-6">
-                  <div className="bg-gray-100 rounded-xl p-6 border-2 border-dashed border-gray-300">
-                    <div className="flex flex-col items-center text-gray-500">
-                      <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
-                        <svg className="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M8 5v10l8-5-8-5z"/>
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium">Watch Marcus's Introduction</p>
-                      <p className="text-xs text-gray-400 mt-1">3 min video</p>
-                      <button className="mt-3 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors">
-                        Play Video
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Bio */}
-              <div className="space-y-4 text-left">
-                <div className="bg-emerald-50 p-4 rounded-lg">
-                  <p className="text-gray-700 text-sm leading-relaxed italic">
-                    "Leadership is about inspiring others through clear, confident communication. Let me show you how."
-                  </p>
-                </div>
-                
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-gray-900">What I can help you with:</h4>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Leadership communication</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Team meeting confidence</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>Executive storytelling</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                      4.8 (203 reviews)
-                    </span>
-                    <span>$200/session</span>
-                  </div>
-                  <button className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors">
-                    Book Marcus
-                  </button>
-                </div>
-              </div>
+            {/* Carousel Indicators */}
+            <div className="flex justify-center mt-8 space-x-2">
+              {mentors.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentMentorIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentMentorIndex ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -467,44 +657,44 @@ export default function Home() {
           
           {/* Steps Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {/* Step 1 */}
+            {/* Step 1 - Red */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-red-200">
                 1
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Your Session</h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Choose your preferred coach and schedule a personalized 1-on-1 session at a time that works best for you.
               </p>
-              <Link href="/search" className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors shadow-lg shadow-red-200" onClick={handleSignupClick}>
                 Book Session <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2 - Yellow */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-yellow-200">
                 2
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Make Payment</h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Secure your session with our easy payment process. Multiple payment options available for your convenience.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors" onClick={handleSignupClick}>
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-200" onClick={handleSignupClick}>
                 Make Payment <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3 - Green */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-green-200">
                 3
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Join via Google Meet</h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
                 Connect with your mentor seamlessly through Google Meet for your personalized coaching session.
               </p>
-              <Link href="/dashboard" className="inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors shadow-lg shadow-green-200" onClick={handleSignupClick}>
                 Join Session <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -513,7 +703,7 @@ export default function Home() {
       </section>
 
       {/* Love & Praise by The Mentees Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section id="testimonials-section" className="py-16 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Love & Praise by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">The Mentees</span></h2>
@@ -539,7 +729,7 @@ export default function Home() {
                 {/* First set of testimonials */}
                 {testimonials.map((testimonial, slideIndex) => (
                   <div key={slideIndex} className="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 flex-shrink-0 px-2 sm:px-4">
-                    <div className="bg-white rounded-xl p-2 sm:p-6 shadow-lg border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105">
+                    <div className={`${getRandomBackgroundColor(slideIndex)} rounded-xl p-2 sm:p-6 shadow-lg ${getRandomShadowColor(slideIndex)} border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105`}>
                       {/* User Avatar and Name */}
                       <div className="flex items-start space-x-2 mb-3">
                         <div className="w-6 sm:w-10 h-6 sm:h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
@@ -582,7 +772,7 @@ export default function Home() {
                 {/* Duplicate testimonials for seamless loop */}
                 {testimonials.map((testimonial, slideIndex) => (
                   <div key={`duplicate-${slideIndex}`} className="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 flex-shrink-0 px-2 sm:px-4">
-                    <div className="bg-white rounded-xl p-2 sm:p-6 shadow-lg border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105">
+                    <div className={`${getRandomBackgroundColor(slideIndex)} rounded-xl p-2 sm:p-6 shadow-lg ${getRandomShadowColor(slideIndex)} border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105`}>
                       {/* User Avatar and Name */}
                       <div className="flex items-start space-x-2 mb-3">
                         <div className="w-6 sm:w-10 h-6 sm:h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
@@ -834,10 +1024,12 @@ export default function Home() {
 
           <div className="space-y-4">
             {/* FAQ 1 - Can I get refund? */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className={`${faqButtonColors[0] || 'bg-gray-50'} rounded-xl border border-gray-200 overflow-hidden transition-colors duration-300`}>
               <button 
-                onClick={() => toggleFaq(0)}
-                className="w-full p-6 text-left hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                onClick={() => handleFaqClick(0)}
+                onMouseEnter={() => handleFaqHover(0, true)}
+                onMouseLeave={() => handleFaqHover(0, false)}
+                className="w-full p-6 text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -864,10 +1056,12 @@ export default function Home() {
             </div>
 
             {/* FAQ 2 - Are sessions online? */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className={`${faqButtonColors[1] || 'bg-gray-50'} rounded-xl border border-gray-200 overflow-hidden transition-colors duration-300`}>
               <button 
-                onClick={() => toggleFaq(1)}
-                className="w-full p-6 text-left hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                onClick={() => handleFaqClick(1)}
+                onMouseEnter={() => handleFaqHover(1, true)}
+                onMouseLeave={() => handleFaqHover(1, false)}
+                className="w-full p-6 text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -895,10 +1089,12 @@ export default function Home() {
             </div>
 
             {/* FAQ 3 - What language will sessions be in? */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className={`${faqButtonColors[2] || 'bg-gray-50'} rounded-xl border border-gray-200 overflow-hidden transition-colors duration-300`}>
               <button 
-                onClick={() => toggleFaq(2)}
-                className="w-full p-6 text-left hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                onClick={() => handleFaqClick(2)}
+                onMouseEnter={() => handleFaqHover(2, true)}
+                onMouseLeave={() => handleFaqHover(2, false)}
+                className="w-full p-6 text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -925,10 +1121,12 @@ export default function Home() {
             </div>
 
             {/* FAQ 4 - Will this help if I'm introvert? */}
-            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+            <div className={`${faqButtonColors[3] || 'bg-gray-50'} rounded-xl border border-gray-200 overflow-hidden transition-colors duration-300`}>
               <button 
-                onClick={() => toggleFaq(3)}
-                className="w-full p-6 text-left hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                onClick={() => handleFaqClick(3)}
+                onMouseEnter={() => handleFaqHover(3, true)}
+                onMouseLeave={() => handleFaqHover(3, false)}
+                className="w-full p-6 text-left transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -960,9 +1158,9 @@ export default function Home() {
           {/* FAQ CTA */}
           <div className="text-center mt-10">
             <p className="text-gray-600 mb-4">Still have questions?</p>
-            <Link href="/contact" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+            <button onClick={openChatbot} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
               Contact Support <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -984,7 +1182,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">XXXXXX</h3>
+              <h3 className="text-xl font-bold text-white mb-4">Confiido</h3>
               <p className="text-gray-400">Connecting ambitious professionals with industry experts for career acceleration.</p>
             </div>
             <div>
@@ -1014,10 +1212,190 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400">©2025 XXXXX. All rights reserved.</p>
+            <p className="text-gray-400">©2025 Confiido. All rights reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* Floating Support Button */}
+      {!isChatbotOpen && (
+        <button
+          onClick={openChatbot}
+          className="fixed bottom-4 right-4 z-40 w-14 h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Chatbot */}
+      {isChatbotOpen && (
+        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] h-[600px]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden h-full flex flex-col">
+            {/* Chatbot Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <MessageCircle className="w-5 h-5" />
+                <h3 className="font-semibold">Support Chat</h3>
+              </div>
+              <button
+                onClick={closeChatbot}
+                className="text-white hover:text-gray-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Welcome Message */}
+            <div className="p-4 text-center border-b border-gray-100">
+              <h4 className="text-lg font-semibold text-gray-800">Welcome to Confiido</h4>
+              <p className="text-sm text-gray-600 mt-1">How can we help you today?</p>
+            </div>
+
+            {/* Chatbot Content */}
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              {/* Progress Indicator */}
+              <div className="flex space-x-2">
+                {['email', 'subject', 'query'].map((step, index) => (
+                  <div
+                    key={step}
+                    className={`w-8 h-2 rounded-full ${
+                      index <= ['email', 'subject', 'query'].indexOf(chatbotStep)
+                        ? 'bg-blue-600'
+                        : 'bg-gray-200'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Chat Messages / Success */}
+              {!isSubmitted ? (
+              <div className="space-y-3">
+                {/* Bot Message */}
+                <div className="flex items-start space-x-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="bg-gray-100 rounded-lg p-3 max-w-xs">
+                    <p className="text-sm text-gray-700">
+                      {chatbotStep === 'email' && "Hi! I'm here to help. What's your email address?"}
+                      {chatbotStep === 'subject' && "Great! What's the subject of your inquiry?"}
+                      {chatbotStep === 'query' && "Perfect! Please describe your query in detail."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* User Input */}
+                <div className="flex items-start space-x-2 justify-end">
+                  <div className="bg-blue-600 text-white rounded-lg p-3 max-w-xs">
+                    <p className="text-sm">
+                      {chatbotStep === 'email' && (chatbotData.email || 'Entering email...')}
+                      {chatbotStep === 'subject' && (chatbotData.subject || 'Entering subject...')}
+                      {chatbotStep === 'query' && (chatbotData.query || 'Entering query...')}
+                    </p>
+                  </div>
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-semibold text-gray-600">U</span>
+                  </div>
+                </div>
+              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full py-10">
+                  <div className="relative">
+                    <CheckCircle className="w-16 h-16 text-green-500" />
+                    <div className="absolute inset-0 rounded-full border-4 border-green-300 animate-ping" />
+                  </div>
+                  <h5 className="mt-4 text-lg font-semibold text-gray-800">Your response has been submitted</h5>
+                  <p className="text-sm text-gray-600 mt-1 text-center">We will get back to you at {chatbotData.email}</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* Input / Actions - Fixed at bottom */}
+            <div className="p-4 border-t border-gray-100 space-y-3">
+              {isSubmitted ? (
+                <button
+                  onClick={closeChatbot}
+                  className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Close
+                </button>
+              ) : (<>
+              {chatbotStep === 'email' && (
+                <>
+                  <input
+                    type="email"
+                    value={chatbotData.email}
+                    onChange={(e) => handleChatbotInput(e.target.value)}
+                    placeholder="Enter your email address"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      chatbotData.email && !isValidEmailForSupport(chatbotData.email)
+                        ? 'border-red-400'
+                        : 'border-gray-300'
+                    }`}
+                    autoFocus
+                  />
+                  {/* Helper message intentionally hidden; validation still enforced via disabled Next button */}
+                </>
+              )}
+              
+              {chatbotStep === 'subject' && (
+                <input
+                  type="text"
+                  value={chatbotData.subject}
+                  onChange={(e) => handleChatbotInput(e.target.value)}
+                  placeholder="Enter the subject of your inquiry"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoFocus
+                />
+              )}
+              
+              {chatbotStep === 'query' && (
+                <textarea
+                  value={chatbotData.query}
+                  onChange={(e) => handleChatbotInput(e.target.value)}
+                  placeholder="Describe your query in detail..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  autoFocus
+                />
+              )}
+
+              {/* Action Buttons */}
+               <div className="flex space-x-2">
+                 {chatbotStep !== 'query' ? (
+                  <button
+                    onClick={nextChatbotStep}
+                     disabled={! (chatbotData as any)[chatbotStep] || (chatbotStep === 'email' && !isValidEmailForSupport(chatbotData.email))}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={submitSupportRequest}
+                    disabled={!chatbotData.query || isSubmitting}
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Submit Request</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+              </>)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
