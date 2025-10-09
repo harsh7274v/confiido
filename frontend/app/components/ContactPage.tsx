@@ -23,29 +23,73 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
+  const isValidEmailForSupport = (email: string): boolean => {
+    const trimmed = (email || '').trim().toLowerCase();
+    if (!trimmed.includes('@')) return false;
+    const dotCount = (trimmed.match(/\./g) || []).length;
+    if (dotCount > 2) return false;
+    const allowedDomains = ['gmail.com', 'outlook.com', 'icloud.com', 'hotmail.com'];
+    const domain = trimmed.split('@')[1] || '';
+    if (!allowedDomains.includes(domain)) return false;
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email
+    if (!isValidEmailForSupport(formData.email)) {
+      setError('Please enter a valid email address ending with gmail.com, outlook.com, icloud.com, or hotmail.com');
+      return;
+    }
+    
     setIsSubmitting(true);
+    setError('');
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 3000);
+    try {
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          subject: formData.subject,
+          query: `Name: ${formData.name}\n\nMessage:\n${formData.message}`
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+      if (data.ok) {
+        setIsSubmitted(true);
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          setIsSubmitted(false);
+          setFormData({ name: '', email: '', subject: '', message: '' });
+        }, 3000);
+      } else {
+        throw new Error('Failed to send message');
+      }
+      
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      setError('There was an error sending your message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const supportChannels = [
@@ -118,6 +162,15 @@ export default function ContactPage() {
                 <p className="text-gray-600">Thank you for reaching out. We'll get back to you within 24 hours.</p>
               </div>
             ) : (
+              <>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center">
+                      <div className="h-5 w-5 text-red-600 mr-2">⚠</div>
+                      <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                  </div>
+                )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
@@ -146,7 +199,11 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                        formData.email && !isValidEmailForSupport(formData.email)
+                          ? 'border-red-400'
+                          : 'border-gray-300'
+                      }`}
                       placeholder="Enter your email"
                     />
                   </div>
@@ -191,7 +248,7 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isValidEmailForSupport(formData.email)}
                   className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
@@ -207,6 +264,7 @@ export default function ContactPage() {
                   )}
                 </button>
               </form>
+              </>
             )}
           </div>
 
