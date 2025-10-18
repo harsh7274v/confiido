@@ -140,8 +140,13 @@ export default function Signup() {
       <div className="max-w-2xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center mb-6 transition-colors text-black font-bold uppercase">
-            CONFIIDO
+          <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
+            <img 
+              src="/icons/icon-96x96.png" 
+              alt="Confiido Logo" 
+              className="h-10 w-10 object-contain"
+            />
+            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase">CONFIIDO</span>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">
             Create your account

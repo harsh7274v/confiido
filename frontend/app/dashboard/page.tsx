@@ -703,13 +703,24 @@ export default function DashboardPage() {
 
   return (
   <div>
-    <style jsx>{`
+    <style jsx global>{`
       .scrollbar-hide {
         -ms-overflow-style: none;  /* Internet Explorer 10+ */
         scrollbar-width: none;  /* Firefox */
       }
       .scrollbar-hide::-webkit-scrollbar { 
         display: none;  /* Safari and Chrome */
+      }
+      /* Hide all scrollbars in dashboard */
+      body {
+        overflow: hidden;
+      }
+      *::-webkit-scrollbar {
+        display: none;
+      }
+      * {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     `}</style>
     {/* Popup logic fixed with fragment */}
@@ -732,10 +743,10 @@ export default function DashboardPage() {
         )}
       </>
     )}
-    <div className="min-h-screen bg-[#f5f5f5] translucent-bg">
+    <div className="min-h-screen bg-[#f5f5f5] translucent-bg overflow-hidden">
       {/* Semi-transparent overlay for better content readability */}
       <div className="absolute inset-0 bg-white/20 pointer-events-none z-0"></div>
-      <div className="flex h-full relative z-20">
+      <div className="flex h-screen relative z-20 overflow-hidden">
         {/* Sidebar */}
                 <Sidebar
           userName={userDisplayName}
@@ -749,7 +760,7 @@ export default function DashboardPage() {
         />
         
         {/* Main content */}
-        <main className="flex-1 lg:ml-0">
+        <main className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen">
           {currentView === 'transactions' ? (
             <div className="w-full">
               <TransactionsPage />

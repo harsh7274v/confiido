@@ -7,9 +7,24 @@ import { TimeoutProvider } from "./contexts/TimeoutContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lumina - Connect with Experts",
+  title: "Confiido - Connect with Experts",
   description: "Book 1-on-1 calls with industry experts, mentors, and professionals. Monetize your expertise and connect with people who need your guidance.",
   keywords: "expert consultation, 1-on-1 calls, mentorship, professional services, booking platform",
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    other: [
+      { rel: 'icon', url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { rel: 'icon', url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -19,6 +34,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#9333ea" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Confiido" />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <TimeoutProvider>
