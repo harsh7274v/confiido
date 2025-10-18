@@ -9,7 +9,6 @@ import {
   CreditCard, 
   Coins, 
   CheckCircle,
-  Loader2,
   AlertCircle,
   Sparkles,
   Gift,
@@ -484,7 +483,9 @@ export default function CompleteTransactionPopup({
             >
               {processing ? (
                 <>
-                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                  <video autoPlay loop muted playsInline className="h-5 w-5 sm:h-6 sm:w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                    <source src="/spinner.webm" type="video/webm" />
+                  </video>
                   <span className="hidden sm:inline">Processing Payment...</span>
                   <span className="sm:hidden">Processing...</span>
                 </>

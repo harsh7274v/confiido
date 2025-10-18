@@ -4,7 +4,7 @@ import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronU
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PropagateLoader } from 'react-spinners';
+import VideoSpinner from './components/ui/VideoSpinner';
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -434,7 +434,7 @@ export default function Home() {
       `}</style>
       {showSpinner && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <PropagateLoader color="#9333ea" />
+          <VideoSpinner size="lg" />
         </div>
       )}
       {/* Navigation */}
@@ -1379,7 +1379,9 @@ export default function Home() {
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <video autoPlay loop muted playsInline className="w-5 h-5 object-contain" style={{ pointerEvents: 'none' }}>
+                          <source src="/spinner.webm" type="video/webm" />
+                        </video>
                         <span>Submitting...</span>
                       </>
                     ) : (

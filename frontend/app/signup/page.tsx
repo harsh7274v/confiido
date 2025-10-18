@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
-import { BarLoader } from 'react-spinners';
+import VideoSpinner from '../components/ui/VideoSpinner';
 
 export default function Signup() {
   const router = useRouter();
@@ -140,12 +140,9 @@ export default function Signup() {
       <div className="max-w-2xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center mb-2 transition-colors text-black font-bold uppercase">
+          <Link href="/" className="inline-flex items-center mb-6 transition-colors text-black font-bold uppercase">
             CONFIIDO
           </Link>
-          <div className="flex justify-center mb-6">
-            <BarLoader color="#9333ea" />
-          </div>
           <h2 className="text-3xl font-bold text-gray-900">
             Create your account
           </h2>
@@ -379,7 +376,11 @@ export default function Signup() {
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  <div className="mr-2">
+                    <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                      <source src="/spinner.webm" type="video/webm" />
+                    </video>
+                  </div>
                   Creating Account...
                 </>
               ) : (

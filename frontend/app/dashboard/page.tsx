@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
 import React, { useEffect, useMemo, useState, useLayoutEffect } from 'react';
-import { PropagateLoader } from 'react-spinners';
+import VideoSpinner from '../components/ui/VideoSpinner';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
@@ -1029,7 +1029,7 @@ export default function DashboardPage() {
                     <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {sessionsLoading ? (
                         <div className="flex items-center justify-center h-full">
-                          <PropagateLoader color="#9333ea" />
+                          <VideoSpinner size="md" />
                         </div>
                       ) : sessionsError ? (
                         <div className="text-center py-12">

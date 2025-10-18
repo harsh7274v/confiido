@@ -47,13 +47,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           if (response.ok) {
-            const data = await response.json();
-            console.log('User synced with backend:', data);
-            
-            // Store the JWT token in localStorage for API calls
-            if (data.data?.token) {
-              localStorage.setItem('token', data.data.token);
-              console.log('JWT token stored in localStorage');
+            try {
+              const data = await response.json();
+              console.log('User synced with backend:', data);
+              
+              // Store the JWT token in localStorage for API calls
+              if (data.data?.token) {
+                localStorage.setItem('token', data.data.token);
+                console.log('JWT token stored in localStorage');
+              }
+            } catch (jsonError) {
+              console.error('Failed to parse backend response:', jsonError);
+              // Clear any existing token if parsing fails
+              localStorage.removeItem('token');
             }
           } else {
             console.error('Failed to verify user with backend:', response.status);
@@ -99,14 +105,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           if (response.ok) {
-            const data = await response.json();
-            const userRole = data.data?.user?.role;
-            
-            // Redirect based on role
-            if (userRole === "expert") {
-              router.push("/mentor/dashboard");
-            } else {
-              router.push("/dashboard");
+            try {
+              const data = await response.json();
+              const userRole = data.data?.user?.role;
+              
+              // Redirect based on role
+              if (userRole === "expert") {
+                router.push("/mentor/dashboard");
+              } else {
+                router.push("/dashboard");
+              }
+            } catch (jsonError) {
+              console.error('Failed to parse role verification response:', jsonError);
+              // Fallback to regular dashboard
+              router.push('/dashboard');
             }
           } else {
             // Fallback to regular dashboard if verification fails

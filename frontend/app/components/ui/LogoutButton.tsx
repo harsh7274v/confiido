@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { LogOut, Loader2, CheckCircle } from 'lucide-react';
+import { LogOut, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LogoutOverlay from './LogoutOverlay';
 
@@ -73,7 +73,9 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
       >
         {logoutLoading ? (
           <>
-            <Loader2 className="animate-spin h-4 w-4" />
+            <video autoPlay loop muted playsInline className="h-4 w-4 object-contain" style={{ pointerEvents: 'none' }}>
+              <source src="/spinner.webm" type="video/webm" />
+            </video>
             <span>Logging out...</span>
           </>
         ) : (

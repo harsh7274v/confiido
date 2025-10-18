@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { LogOut, Loader2, CheckCircle, X } from 'lucide-react';
+import { LogOut, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LogoutOverlayProps {
@@ -76,12 +76,10 @@ const LogoutOverlay: React.FC<LogoutOverlayProps> = ({
           {/* Icon and Status */}
           <div className="flex justify-center">
             {logoutLoading ? (
-              <div className="relative">
-                <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
-                <div className="absolute inset-0 w-16 h-16 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <LogOut className="h-6 w-6 text-blue-600" />
-                </div>
+              <div className="relative w-20 h-20">
+                <video autoPlay loop muted playsInline className="w-full h-full object-contain" style={{ pointerEvents: 'none' }}>
+                  <source src="/spinner.webm" type="video/webm" />
+                </video>
               </div>
             ) : showSuccess ? (
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">

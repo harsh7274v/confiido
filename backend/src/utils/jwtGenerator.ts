@@ -28,8 +28,11 @@ export const generateUserIdToken = (userId: string): string => {
 export const verifyJWTToken = (token: string): string | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    console.log('[JWT] Decoded token:', decoded);
+    console.log('[JWT] Extracted user_id:', decoded.id);
     return decoded.id;
   } catch (error) {
+    console.log('[JWT] Verification failed:', error instanceof Error ? error.message : error);
     return null;
   }
 };

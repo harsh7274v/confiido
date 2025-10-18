@@ -20,7 +20,6 @@ import {
   Mail,
   Hash,
   CheckCircle2,
-  Loader2,
   Sparkles,
   RefreshCw
 } from 'lucide-react';
@@ -31,7 +30,7 @@ import bookingApi from '../services/bookingApi';
 import { useAuth } from '../contexts/AuthContext';
 import CompleteTransactionPopup from './CompleteTransactionPopup';
 import { useTimeout } from '../contexts/TimeoutContext';
-import { PropagateLoader } from 'react-spinners';
+import VideoSpinner from './ui/VideoSpinner';
 
 export default function PaymentsPage() {
   // Generate unique instance ID for debugging
@@ -669,7 +668,7 @@ export default function PaymentsPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
-            <PropagateLoader color="#9333ea" />
+            <VideoSpinner size="lg" />
           </div>
         </div>
       </div>
@@ -839,7 +838,9 @@ export default function PaymentsPage() {
                             >
                               {isCompleting ? (
                                 <>
-                                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                  <video autoPlay loop muted playsInline className="h-4 w-4 sm:h-5 sm:w-5 object-contain" style={{ pointerEvents: 'none' }}>
+                                    <source src="/spinner.webm" type="video/webm" />
+                                  </video>
                                   <span className="hidden sm:inline">Completing...</span>
                                   <span className="sm:hidden">...</span>
                                 </>

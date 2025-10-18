@@ -1,5 +1,5 @@
 "use client";
-import { PropagateLoader } from 'react-spinners';
+import VideoSpinner from './ui/VideoSpinner';
 
 import React, { useState, useEffect } from 'react';
 import { rewardsApi, type RewardAccount } from '../services/rewardsApi';
@@ -169,7 +169,7 @@ export default function RewardsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <PropagateLoader color="#9333ea" />
+            <VideoSpinner size="lg" />
           </div>
         ) : (
 

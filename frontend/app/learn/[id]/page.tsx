@@ -130,7 +130,9 @@ export default function LearnPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+        <video autoPlay loop muted playsInline className="h-16 w-16 object-contain" style={{ pointerEvents: 'none' }}>
+          <source src="/spinner.webm" type="video/webm" />
+        </video>
       </div>
     );
   }

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
-import { PropagateLoader, BarLoader } from 'react-spinners';
+import VideoSpinner from '../components/ui/VideoSpinner';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -287,18 +287,15 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       {redirecting && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <PropagateLoader color="#9333ea" />
+          <VideoSpinner size="lg" />
         </div>
       )}
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center mb-2 transition-colors text-black font-bold uppercase">
+          <Link href="/" className="inline-flex items-center mb-6 transition-colors text-black font-bold uppercase">
             CONFIIDO
           </Link>
-          <div className="flex justify-center mb-6">
-            <BarLoader color="#9333ea" />
-          </div>
           <h2 className="text-3xl font-bold text-gray-900">
             Welcome back
           </h2>
@@ -347,7 +344,11 @@ export default function Login() {
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                        <div className="mr-2">
+                          <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                            <source src="/spinner.webm" type="video/webm" />
+                          </video>
+                        </div>
                         Checking...
                       </>
                     ) : (
@@ -495,7 +496,11 @@ export default function Login() {
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                        <div className="mr-2">
+                          <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                            <source src="/spinner.webm" type="video/webm" />
+                          </video>
+                        </div>
                         {isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'}
                       </>
                     ) : (
@@ -523,7 +528,11 @@ export default function Login() {
                         >
                           {otpLoading ? (
                             <>
-                              <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                              <div className="mr-2">
+                                <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                                  <source src="/spinner.webm" type="video/webm" />
+                                </video>
+                              </div>
                               Sending code...
                             </>
                           ) : (

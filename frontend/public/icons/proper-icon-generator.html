@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Confiido Icon Generator - Proper Sizes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        canvas { border: 1px solid #ccc; margin: 5px; }
+        .icon-container { display: inline-block; margin: 10px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; margin: 20px 0; }
+        .downloads { margin-top: 20px; }
+        .download-link { display: block; margin: 5px; padding: 5px; background: #f0f0f0; text-decoration: none; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Confiido PWA Icon Generator - Proper Sizes</h1>
+    <p>This will generate proper high-quality icons with the correct dimensions for your PWA.</p>
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    <div id="icons"></div>
+    <div id="downloads" class="downloads"></div>
+
+    <script>
+        const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateAllIcons() {
+            const iconsDiv = document.getElementById('icons');
+            const downloadsDiv = document.getElementById('downloads');
+            
+            sizes.forEach(size => {
+                const container = document.createElement('div');
+                container.className = 'icon-container';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                canvas.id = 'canvas' + size;
+                container.appendChild(canvas);
+                
+                const label = document.createElement('div');
+                label.textContent = size + 'x' + size + ' (' + size + 'px)';
+                container.appendChild(label);
+                
+                iconsDiv.appendChild(container);
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#3b82f6');
+                gradient.addColorStop(1, '#8b5cf6');
+                
+                // Fill background
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+                
+                // Add rounded corners
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.2);
+                ctx.fill();
+                
+                // Reset composite operation
+                ctx.globalCompositeOperation = 'source-over';
+                
+                // Add "C" text
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold ' + (size * 0.6) + 'px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('C', size/2, size/2);
+                
+                // Create download link
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'icon-' + size + 'x' + size + '.png';
+                    link.textContent = 'Download ' + size + 'x' + size + ' (' + blob.size + ' bytes)';
+                    link.className = 'download-link';
+                    downloadsDiv.appendChild(link);
+                }, 'image/png');
+            });
+        }
+    </script>
+</body>
+</html>

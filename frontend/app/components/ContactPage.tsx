@@ -253,7 +253,9 @@ export default function ContactPage() {
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
+                        <source src="/spinner.webm" type="video/webm" />
+                      </video>
                       Sending Message...
                     </>
                   ) : (
