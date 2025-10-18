@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
 import User from '../models/User';
+import { generateUniqueUserId } from '../utils/userIdGenerator';
+import Reward from '../models/Reward';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -38,6 +40,11 @@ export const verifyFirebaseToken = async (
       } else {
         // Create new Firebase user
         const nameParts = decodedToken.name?.split(' ') || ['', ''];
+        
+        // Generate unique user_id
+        const user_id = await generateUniqueUserId();
+        console.log(`🆔 Generated user_id for Firebase user: ${user_id}`);
+        
           user = new User({
             firebaseUid: decodedToken.uid,
             email: decodedToken.email,
@@ -66,7 +73,7 @@ export const verifyFirebaseToken = async (
               timezone: 'UTC'
             },
             bio: '',
-            user_id: null,
+            user_id: user_id, // Use generated user_id instead of null
             preferences: {
               notifications: {
                 email: true,
@@ -85,6 +92,31 @@ export const verifyFirebaseToken = async (
             }
           });
         await user.save();
+        console.log(`✅ Firebase user created successfully with user_id: ${user.user_id}`);
+        
+        // Create initial rewards for new Firebase user
+        try {
+          await Reward.create({
+            userId: user._id,
+            user_id: user.user_id,
+            points: 0,
+            totalEarned: 0,
+            totalSpent: 0,
+            history: [
+              {
+                type: 'earned',
+                description: 'Welcome bonus for Firebase user registration',
+                points: 0,
+                status: 'completed',
+                date: new Date(),
+              },
+            ],
+          });
+          console.log(`✅ Rewards created for new Firebase user: ${user.email} (${user.user_id})`);
+        } catch (rewardError) {
+          console.error('❌ Failed to create rewards for Firebase user:', rewardError);
+          // Don't fail registration if rewards creation fails
+        }
       }
     } else {
       // Update last login for existing Firebase user

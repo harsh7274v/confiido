@@ -22,7 +22,6 @@ const UserIdCounterSchema = new Schema<IUserIdCounter>({
   _id: false
 });
 
-// Create a unique index to ensure only one counter document exists
-UserIdCounterSchema.index({ _id: 1 }, { unique: true });
+// No need to create index on _id - MongoDB does this automatically
 
 export default mongoose.model<IUserIdCounter>('UserIdCounter', UserIdCounterSchema);
