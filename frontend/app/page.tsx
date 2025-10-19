@@ -599,7 +599,7 @@ export default function Home() {
                     {/* Quote */}
                     <div className="bg-blue-50 p-4 rounded-lg mb-6">
                       <p className="text-gray-700 text-sm leading-relaxed italic">
-                        "{mentors[currentMentorIndex].quote}"
+                        &quot;{mentors[currentMentorIndex].quote}&quot;
                       </p>
                     </div>
 
@@ -1138,7 +1138,7 @@ export default function Home() {
                     <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center mr-3">
                       <span className="text-white text-sm font-bold">?</span>
                     </div>
-                    Will this help me if I'm an introvert?
+                    Will this help me if I&apos;m an introvert?
                   </h3>
                   {openFaq === 3 ? (
                     <ChevronUp className="h-5 w-5 text-gray-500" />

@@ -61,6 +61,8 @@ class RazorpayApi {
       } else if (error.response?.status === 400) {
         const errorMessage = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'Invalid request';
         throw new Error(`Payment setup failed: ${errorMessage}`);
+      } else if (error.response?.status === 429) {
+        throw new Error('Too many payment requests. Please wait a moment and try again.');
       } else if (error.response?.status === 500) {
         throw new Error('Payment service is temporarily unavailable. Please try again later.');
       } else {
@@ -99,6 +101,8 @@ class RazorpayApi {
       } else if (error.response?.status === 400) {
         const errorMessage = error.response?.data?.message || 'Invalid payment data';
         throw new Error(`Payment verification failed: ${errorMessage}`);
+      } else if (error.response?.status === 429) {
+        throw new Error('Too many verification requests. Please wait a moment and try again.');
       } else if (error.response?.status === 404) {
         throw new Error('Payment verification service not found. Please contact support.');
       } else if (error.code === 'NETWORK_ERROR' || !error.response) {

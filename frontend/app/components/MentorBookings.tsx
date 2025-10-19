@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, DollarSign, CheckCircle, AlertCircle, Phone, Mail, MapPin, Video, Mic, MessageSquare, Users, Briefcase, Globe, MapPin as LocationIcon, UserCheck, Calendar as CalendarIcon, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, Clock, User, DollarSign, CheckCircle, AlertCircle, Phone, Mail, Video, Mic, MessageSquare, Users, Briefcase, Globe, MapPin as LocationIcon, UserCheck, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
 import LoadingSpinner from "./ui/LoadingSpinner";
 import { bookingApi } from "../services/bookingApi";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -69,17 +70,7 @@ interface Booking {
   __v: number;
 }
 
-interface MentorBookingsData {
-  bookings: Booking[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
-
-const MentorBookings = () => {
+const MentorBookings: React.FC = () => {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -160,6 +151,7 @@ const MentorBookings = () => {
     if (user && !userLoading) {
       fetchBookings();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading]);
 
   const formatDate = (dateString: string) => {
@@ -223,22 +215,6 @@ const MentorBookings = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'cancelled':
-      case 'no-show':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -251,22 +227,6 @@ const MentorBookings = () => {
         return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'confirmed':
-        return <Calendar className="h-4 w-4" />;
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
-      case 'cancelled':
-      case 'no-show':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <Calendar className="h-4 w-4" />;
     }
   };
 
@@ -354,7 +314,7 @@ const MentorBookings = () => {
         <div className="text-center py-12">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Bookings Found</h3>
-          <p className="text-gray-600">You don't have any paid bookings yet.</p>
+          <p className="text-gray-600">You don&apos;t have any paid bookings yet.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -369,11 +329,13 @@ const MentorBookings = () => {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-100">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                   <div className="flex items-start space-x-4">
-                    <div className="relative">
-                      <img
-                        src={booking.clientId.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${booking.clientId.firstName} ${booking.clientId.lastName}`}
+                    <div className="relative w-20 h-20">
+                      <Image
+                        src={(booking.clientId.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${booking.clientId.firstName} ${booking.clientId.lastName}`).trimEnd()}
                         alt={`${booking.clientId.firstName} ${booking.clientId.lastName}`}
-                        className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+                        width={80}
+                        height={80}
+                        className="rounded-full object-cover border-4 border-white shadow-md"
                       />
                       <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
                         <CheckCircle className="h-3 w-3 text-white" />
@@ -607,7 +569,7 @@ const MentorBookings = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {booking.sessions.map((session, index) => (
+                      {booking.sessions.map((session) => (
                         <tr key={session.sessionId} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -661,7 +623,7 @@ const MentorBookings = () => {
                 {/* Mobile Card View */}
                 {expandedSessionBookings.has(booking._id) && (
                 <div className="md:hidden space-y-4">
-                  {booking.sessions.map((session, index) => (
+                  {booking.sessions.map((session) => (
                     <div key={session.sessionId} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">

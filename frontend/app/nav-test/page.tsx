@@ -29,10 +29,10 @@ export default function NavTest() {
         <div className="bg-white p-4 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Instructions</h2>
           <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>Click "Go to Login" - should take you to the login page</li>
-            <li>Click "Go to Signup" - should take you to the signup page</li>
-            <li>Click "Go to Home" - should take you back to the homepage</li>
-            <li>If any link doesn't work, there's a routing issue</li>
+            <li>Click &quot;Go to Login&quot; - should take you to the login page</li>
+            <li>Click &quot;Go to Signup&quot; - should take you to the signup page</li>
+            <li>Click &quot;Go to Home&quot; - should take you back to the homepage</li>
+            <li>If any link doesn&apos;t work, there&apos;s a routing issue</li>
           </ol>
         </div>
       </div>

@@ -35,10 +35,9 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
   const [mentorsLoading, setMentorsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [bookingData, setBookingData] = useState<any>(null);
   
   // Use the timeout context
-  const { addTimeout, formatCountdown } = useTimeout();
+  const { addTimeout } = useTimeout();
   const router = useRouter();
 
   // Get the duration for the selected service
@@ -85,16 +84,11 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
     setInfo('');
     setFromTime(undefined);
     setToTime(undefined);
-    // Clear toTimeSlots when service changes
-    setToTimeSlots([]);
     // Show info message about service change
     if (service) {
       setInfo(`Service changed to ${service}. Please reselect your time slots.`);
-      // Fetch consecutive slots for the new service duration
-      if (mentor && date) {
-        fetchAvailableSlots();
-      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service]);
 
   // Clear error when time selections change
@@ -153,8 +147,9 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
           setConsecutiveSlots([]);
         }
       }
-    } catch (error: any) {
-      console.error('❌ Error fetching available slots:', error);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('❌ Error fetching available slots:', err);
       setError('Failed to fetch available slots. Please try again.');
       setAvailableSlots([]);
       setConsecutiveSlots([]);
@@ -162,6 +157,14 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
       setLoading(false);
     }
   };
+
+  // Fetch slots when mentor, date, or service changes
+  useEffect(() => {
+    if (mentor && date) {
+      fetchAvailableSlots();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mentor, date, service]);
 
   // Generate time slots for the "To" dropdown based on selected "From" time
   const generateToTimeSlots = () => {
@@ -204,13 +207,11 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
   };
 
   // Use useEffect to recalculate toTimeSlots when dependencies change
-  const [toTimeSlots, setToTimeSlots] = useState<Array<{ time: string; displayTime: string; available: boolean }>>([]);
-
   useEffect(() => {
     console.log('🔄 useEffect: Recalculating toTimeSlots', { fromTime, availableSlotsLength: availableSlots.length, service });
     const slots = generateToTimeSlots();
-    setToTimeSlots(slots);
     console.log('✅ useEffect: Updated toTimeSlots', slots);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromTime, availableSlots, service]);
 
 
@@ -299,7 +300,6 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
       const response = await bookingApi.createBooking(bookingData);
       
       if (response.success) {
-        setBookingData(response.data);
         setBookingSuccess(true);
         
         // Add timeout to localStorage for persistence
@@ -313,7 +313,9 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
         
         // Show success briefly then redirect to payments page
         setTimeout(() => {
-          try { onClose(); } catch (_) {}
+          try { onClose(); } catch (e) {
+            console.error('Error closing popup:', e);
+          }
           const bookingId = response.data?.booking?._id;
           try {
             if (typeof window !== 'undefined') {
@@ -328,9 +330,10 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
           }
         }, 1500);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string; message?: string } } };
       console.error('❌ [FRONTEND] Error creating booking:', error);
-      setError(error.response?.data?.error || error.response?.data?.message || 'Failed to create booking. Please try again.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to create booking. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

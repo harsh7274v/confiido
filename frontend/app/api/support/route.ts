@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-// @ts-ignore - nodemailer types
+// @ts-expect-error - nodemailer types
 import nodemailer from 'nodemailer';
 
 // Ensure this route runs on node runtime

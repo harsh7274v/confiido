@@ -37,7 +37,6 @@ import {
   Zap,
   X,
 } from 'lucide-react';
-import { type DashboardData, type SetupStep } from '../services/dashboardApi';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
@@ -61,6 +60,7 @@ interface Goal {
     fullName: string;
     handle: string;
     email: string;
+    avatar?: string;
     profileUrl: string;
     userType: 'expert' | 'seeker';
   };
@@ -284,8 +284,10 @@ export default function DashboardPage() {
         console.log('Bookings found:', bookings.length);
         
         // Extract all sessions from all bookings
-        const allSessions = bookings.flatMap(booking => 
-          booking.sessions.map(session => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const allSessions = bookings.flatMap((booking: any) => 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          booking.sessions.map((session: any) => ({
             id: session.sessionId || session._id,
             title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertId?.title || 'Expert'}`,
             date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
@@ -308,7 +310,8 @@ export default function DashboardPage() {
         console.log('All sessions:', allSessions);
         
         // Debug: Show the first few sessions in detail
-        allSessions.slice(0, 3).forEach((session, index) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        allSessions.slice(0, 3).forEach((session: any, index: number) => {
           console.log(`Session ${index + 1} details:`, {
             id: session.id,
             scheduledDate: session.scheduledDate,
@@ -319,7 +322,8 @@ export default function DashboardPage() {
         });
         
         // Filter for paid sessions only
-        const paidSessions = allSessions.filter(session => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const paidSessions = allSessions.filter((session: any) => {
           const isPaid = session.paymentStatus === 'paid';
           if (!isPaid) {
             console.log(`Skipping unpaid session: ${session.id} (status: ${session.paymentStatus})`);
@@ -340,7 +344,8 @@ export default function DashboardPage() {
         console.log('Test future date:', testFutureDate.toISOString());
         console.log('Is test future date > now?', testFutureDate > now);
         
-        const upcoming = paidSessions.filter(session => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const upcoming = paidSessions.filter((session: any) => {
           const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
           
           console.log(`Session ${session.id}:`, {
@@ -356,7 +361,8 @@ export default function DashboardPage() {
           return sessionDateTime > now;
         });
         
-        const completed = paidSessions.filter(session => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const completed = paidSessions.filter((session: any) => {
           const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
           
           // Only use date/time comparison, ignore backend status
@@ -369,8 +375,10 @@ export default function DashboardPage() {
         // Debug: Show which sessions are in which category
         console.log('=== SESSION CATEGORIZATION (DATE-BASED ONLY) ===');
         console.log('Note: Categorization is based ONLY on scheduledDate + time, ignoring backend status');
-        console.log('Upcoming sessions:', upcoming.map(s => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
-        console.log('Completed sessions:', completed.map(s => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.log('Upcoming sessions:', upcoming.map((s: any) => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.log('Completed sessions:', completed.map((s: any) => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
         
         const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
         console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
@@ -553,6 +561,7 @@ export default function DashboardPage() {
             averageRating: 0,
             totalReviews: 0
           },
+          sessions: [],
           recentActivity: [
             {
               id: '1',

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { 
   Mail, 
   MessageCircle, 
-  Phone, 
   Send, 
   CheckCircle,
   Clock,
@@ -143,7 +142,7 @@ export default function ContactPage() {
             <h1 className="text-4xl font-bold text-gray-900">Contact Us</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We're here to help! Reach out to us through any of our support channels or send us a message.
+            We&apos;re here to help! Reach out to us through any of our support channels or send us a message.
           </p>
         </div>
 
@@ -152,14 +151,14 @@ export default function ContactPage() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Send us a Message</h2>
-              <p className="text-gray-600">Fill out the form below and we'll get back to you as soon as possible.</p>
+              <p className="text-gray-600">Fill out the form below and we&apos;ll get back to you as soon as possible.</p>
             </div>
 
             {isSubmitted ? (
               <div className="text-center py-12">
                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent!</h3>
-                <p className="text-gray-600">Thank you for reaching out. We'll get back to you within 24 hours.</p>
+                <p className="text-gray-600">Thank you for reaching out. We&apos;ll get back to you within 24 hours.</p>
               </div>
             ) : (
               <>

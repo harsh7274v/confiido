@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export interface MentorData {
 		name: string;
@@ -25,8 +26,8 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, mentor }) 
 			document.body.style.overflow = '';
 		};
 	}, []);
-					const [aboutExpanded, setAboutExpanded] = React.useState(false);
-							return (
+
+	return (
 										<div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-md">
 											<div className="relative w-full max-w-2xl animate-popup-in">
 												{/* Accent Bar */}
@@ -43,8 +44,14 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, mentor }) 
 													{/* Left: Mentor Image and Buttons */}
 													<div className="flex flex-col items-center justify-start bg-[#e0e0e0] p-8 w-1/3 min-w-[220px] border-r border-[#e0e0e0] shadow-xl relative">
 																	<div className="relative mb-6 flex flex-col items-center">
-																							<div className="relative">
-																								<img src={mentor.image} alt={mentor.name} className="w-32 h-32 object-cover rounded-xl border-4 border-[#e0e0e0] shadow-2xl" />
+																							<div className="relative w-32 h-32">
+																								<Image 
+																									src={mentor.image} 
+																									alt={mentor.name} 
+																									width={128}
+																									height={128}
+																									className="object-cover rounded-xl border-4 border-[#e0e0e0] shadow-2xl" 
+																								/>
 																								{/* Golden star badge at bottom right of profile picture */}
 																								<div className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center">
 																									<span className="w-8 h-8 flex items-center justify-center">

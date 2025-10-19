@@ -1038,7 +1038,7 @@ export default function PaymentsPage() {
           }}
           payment={selectedPayment}
           onPaymentSuccess={handlePaymentSuccess}
-          user={user}
+          user={user ? user as any : undefined}
         />
       </div>
     </div>

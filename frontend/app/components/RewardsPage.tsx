@@ -339,7 +339,7 @@ export default function RewardsPage() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">More Rewards Coming Soon!</h3>
                 <p className="text-gray-600 mb-4">
-                  We're constantly adding new rewards and exclusive offers. Keep earning points to unlock more amazing benefits!
+                  We&apos;re constantly adding new rewards and exclusive offers. Keep earning points to unlock more amazing benefits!
                 </p>
                 <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
                   <span>🎁 Exclusive merchandise</span>

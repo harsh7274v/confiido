@@ -3,15 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  User, 
   Calendar, 
   Clock, 
   CreditCard, 
   Coins, 
-  CheckCircle,
   AlertCircle,
   Sparkles,
-  Gift,
   Video
 } from 'lucide-react';
 import { Payment } from '../services/paymentsApi';
@@ -24,7 +21,13 @@ interface CompleteTransactionPopupProps {
   onClose: () => void;
   payment: Payment | null;
   onPaymentSuccess: (paymentId: string, loyaltyPointsUsed: number) => void;
-  user?: any; // Add user as optional prop
+  user?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
 }
 
 export default function CompleteTransactionPopup({
@@ -41,7 +44,14 @@ export default function CompleteTransactionPopup({
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cachedOrder, setCachedOrder] = useState<any>(null);
+  const [cachedOrder, setCachedOrder] = useState<{
+    id: string;
+    amount: number;
+    currency: string;
+    receipt: string;
+    status: string;
+    created_at: number;
+  } | null>(null);
   const [orderCreatedAt, setOrderCreatedAt] = useState<number | null>(null);
   const { user: authUser } = useAuth();
   
@@ -61,9 +71,9 @@ export default function CompleteTransactionPopup({
     console.log('🪟 [POPUP] CompleteTransactionPopup state changed:', {
       isOpen,
       payment: payment ? { id: payment._id, price: payment.price } : null,
-      propUser: propUser ? { id: (propUser as any)._id, name: `${(propUser as any).firstName} ${(propUser as any).lastName}` } : null,
-      authUser: authUser ? { id: (authUser as any)._id, name: `${(authUser as any).firstName} ${(authUser as any).lastName}` } : null,
-      finalUser: user ? { id: (user as any)._id, name: `${(user as any).firstName} ${(user as any).lastName}` } : null
+      propUser: propUser ? { id: propUser._id, name: `${propUser.firstName} ${propUser.lastName}` } : null,
+      authUser: authUser ? { id: authUser.uid } : null,
+      finalUser: user
     });
   }, [isOpen, payment, propUser, authUser, user]);
 
@@ -89,8 +99,9 @@ export default function CompleteTransactionPopup({
       setError(null);
       const account: RewardAccount = await rewardsApi.getMyRewards();
       setLoyaltyPoints(account.points);
-    } catch (err: any) {
-      console.error('Error fetching loyalty points:', err);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error('Error fetching loyalty points:', error);
       setError('Failed to load loyalty points');
     } finally {
       setLoading(false);
@@ -238,7 +249,7 @@ export default function CompleteTransactionPopup({
           {
             payment_id: payment._id,
             expert_id: payment.expertId?._id,
-            session_type: (payment as any).type || 'session',
+            session_type: (payment as { type?: string }).type || 'session',
             loyalty_points_used: useLoyaltyPoints ? loyaltyPointsToUse : 0
           }
         );
@@ -254,9 +265,9 @@ export default function CompleteTransactionPopup({
       await razorpayApi.initializePayment(
         order,
         {
-          name: `${(currentUser as any).firstName || 'User'} ${(currentUser as any).lastName || ''}`,
-          email: (currentUser as any).email || 'user@example.com',
-          contact: (currentUser as any).phone || '1234567890'
+          name: `${(currentUser as { firstName?: string; lastName?: string }).firstName || 'User'} ${(currentUser as { firstName?: string; lastName?: string }).lastName || ''}`,
+          email: (currentUser as { email?: string }).email || 'user@example.com',
+          contact: (currentUser as { phone?: string }).phone || '1234567890'
         },
         async (paymentResponse) => {
           console.log('🎉 Payment successful:', paymentResponse);
@@ -288,15 +299,16 @@ export default function CompleteTransactionPopup({
             setError('Payment processed but there was an error updating your account. Please contact support.');
           }
         },
-        (error) => {
+        (error: { message?: string }) => {
           console.error('❌ Razorpay payment error:', error);
           setError(error.message || 'Payment failed. Please try again.');
         }
       );
       
-    } catch (err: any) {
-      console.error('❌ Payment error:', err);
-      setError(err.message || 'Payment failed. Please try again.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error('❌ Payment error:', error);
+      setError(error.message || 'Payment failed. Please try again.');
     } finally {
       setProcessing(false);
     }

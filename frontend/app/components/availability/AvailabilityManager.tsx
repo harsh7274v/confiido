@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { availabilityApi, type TimeSlot, type DateRange, type Availability, type AvailabilityPeriod } from '../../services/availabilityApi';
+import { availabilityApi, type TimeSlot, type AvailabilityPeriod } from '../../services/availabilityApi';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 const AvailabilityManager: React.FC = () => {
@@ -34,9 +34,10 @@ const AvailabilityManager: React.FC = () => {
       console.log('🔍 [FRONTEND] Availability array:', response.data.availability);
       console.log('🔍 [FRONTEND] Array length:', response.data.availability?.length);
       setAvailabilityPeriods(response.data.availability);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       console.error('❌ [FRONTEND] Error loading availabilities:', error);
-      setError('Failed to load availability: ' + (error.response?.data?.error || error.message));
+      setError('Failed to load availability: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -102,8 +103,9 @@ const AvailabilityManager: React.FC = () => {
       
       // Hide success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
-    } catch (error: any) {
-      setError(error.response?.data?.error || error.message || 'Failed to save availability');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      setError(err.response?.data?.error || err.message || 'Failed to save availability');
     } finally {
       setLoading(false);
     }
@@ -134,9 +136,10 @@ const AvailabilityManager: React.FC = () => {
       setSuccess('Availability deleted successfully!');
       await loadAvailabilities();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
       console.error('❌ [FRONTEND] Error deleting availability:', error);
-      setError('Failed to delete availability: ' + (error.response?.data?.error || error.message));
+      setError('Failed to delete availability: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -153,7 +156,7 @@ const AvailabilityManager: React.FC = () => {
     setError('');
   };
 
-  const updateTimeSlot = (dayOfWeek: number, field: keyof TimeSlot, value: any) => {
+  const updateTimeSlot = (dayOfWeek: number, field: keyof TimeSlot, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       timeSlots: prev.timeSlots.map(slot =>

@@ -28,7 +28,7 @@ export const useBookingStats = () => {
 
       try {
         // Fetch all bookings for the expert
-        const response = await bookingApi.getExpertBookings(user.user_id, undefined, 1, 1000);
+        const response = await bookingApi.getUserBookings(undefined, 1, 1000);
         
         if (response.success) {
           const bookings = response.data.bookings;
@@ -39,7 +39,7 @@ export const useBookingStats = () => {
           const pendingBookings = bookings.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
           
           // Count unique clients
-          const uniqueClients = new Set(bookings.map(b => b.clientId._id));
+          const uniqueClients = new Set(bookings.map(b => b.clientId));
           const activeStudents = uniqueClients.size;
 
           setStats({

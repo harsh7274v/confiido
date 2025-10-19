@@ -16,7 +16,7 @@ export const useRecentBookings = () => {
 
       try {
         // Fetch recent bookings (last 5)
-        const response = await bookingApi.getExpertBookings(user.user_id, undefined, 1, 5);
+        const response = await bookingApi.getUserBookings(undefined, 1, 5);
         
         if (response.success) {
           setRecentBookings(response.data.bookings);
