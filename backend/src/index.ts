@@ -94,6 +94,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
+// Ensure database connection for serverless (before each request)
+if (process.env['VERCEL'] === '1') {
+  app.use(async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      console.error('Database connection error in request:', error);
+      res.status(500).json({ error: 'Database connection failed' });
+    }
+  });
+}
+
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -187,15 +200,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
-// Connect to database for serverless (Vercel)
-if (process.env['VERCEL'] === '1') {
-  connectDB().then(() => {
-    console.log('✅ Database connected for serverless environment');
-  }).catch((err) => {
-    console.error('❌ Database connection failed:', err);
-  });
-}
 
 // Only start server if not in Vercel serverless environment
 if (process.env['VERCEL'] !== '1') {
