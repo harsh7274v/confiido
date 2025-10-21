@@ -54,9 +54,29 @@ const socketService = new SocketService(server);
 
 // Security middleware
 app.use(helmet());
+
+// CORS Configuration - Allow multiple origins
+const allowedOrigins = [
+  'https://confiido.in',
+  'https://www.confiido.in',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
 app.use(cors({
-  origin: process.env['FRONTEND_URL'] || 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Rate limiting
