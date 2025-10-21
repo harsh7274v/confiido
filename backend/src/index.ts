@@ -94,19 +94,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
-// Ensure database connection for serverless (before each request)
-if (process.env['VERCEL'] === '1') {
-  app.use(async (req, res, next) => {
-    try {
-      await connectDB();
-      next();
-    } catch (error) {
-      console.error('Database connection error in request:', error);
-      res.status(500).json({ error: 'Database connection failed' });
-    }
-  });
-}
-
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -134,6 +121,20 @@ app.get('/api/health', (_req, res) => {
 // Handle favicon.ico requests
 app.get('/favicon.ico', (_req, res) => {
   res.status(204).end(); // No content
+});
+
+// Database connection middleware for API routes (serverless)
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB(); // Will reuse existing connection if available
+    next();
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return res.status(503).json({ 
+      success: false,
+      error: 'Service temporarily unavailable - database connection failed' 
+    });
+  }
 });
 
 // API Routes
@@ -200,6 +201,14 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Initialize database connection for serverless
+if (process.env['VERCEL'] === '1') {
+  connectDB().catch((err) => {
+    console.error('❌ Failed to connect to database on startup:', err);
+    // Don't exit, let individual requests handle connection
+  });
+}
 
 // Only start server if not in Vercel serverless environment
 if (process.env['VERCEL'] !== '1') {
