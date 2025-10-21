@@ -3,8 +3,38 @@ import { body, param, query, validationResult } from 'express-validator';
 import { protect } from '../middleware/auth';
 import { CalendarIntegration, AvailabilityRule, AvailabilitySlot, CalendarEvent } from '../models/Calendar';
 import Expert from '../models/Expert';
+import {
+  createCalendarEvent,
+  listCalendarEvents,
+  getCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent
+} from '../controllers/calendarController';
 
 const router = express.Router();
+
+// ===========================
+// Google Calendar Event CRUD
+// ===========================
+
+// Create calendar event with Google Meet
+router.post('/events', protect, createCalendarEvent);
+
+// List calendar events
+router.get('/events', protect, listCalendarEvents);
+
+// Get single event
+router.get('/events/:eventId', protect, getCalendarEvent);
+
+// Update calendar event
+router.put('/events/:eventId', protect, updateCalendarEvent);
+
+// Delete calendar event
+router.delete('/events/:eventId', protect, deleteCalendarEvent);
+
+// ===========================
+// Calendar Integration Routes
+// ===========================
 
 // @route   GET /api/calendar/integrations
 // @desc    Get user's calendar integrations

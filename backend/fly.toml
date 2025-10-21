@@ -1,0 +1,64 @@
+# Fly.io Configuration for Lumina Backend
+# Generated for deployment to Fly.io
+# Learn more: https://fly.io/docs/reference/configuration/
+
+app = "lumina-backend"
+primary_region = "ord" # Chicago - Change to closest region
+
+[build]
+  builder = "heroku/buildpacks:20"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+
+[processes]
+  app = "node dist/index.js"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  processes = ["app"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "1s"
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "get"
+    path = "/api/health"
+    protocol = "http"
+    tls_skip_verify = false
+
+# Uncomment for autoscaling (requires paid plan)
+# [[services.http_checks]]
+#   interval = "10s"
+#   timeout = "2s"
+#   grace_period = "5s"
+#   method = "get"
+#   path = "/api/health"
+
+# [http_service]
+#   internal_port = 8080
+#   force_https = true
+#   auto_stop_machines = true
+#   auto_start_machines = true
+#   min_machines_running = 0

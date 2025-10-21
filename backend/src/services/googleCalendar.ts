@@ -72,6 +72,16 @@ export async function createMeetEventForSession(params: CreateMeetEventParams): 
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI
   );
+
+  // Listen for token refresh events (auto-refresh access tokens)
+  oauth2Client.on('tokens', (tokens) => {
+    if (tokens.refresh_token) {
+      console.log('🔄 New refresh token received:', tokens.refresh_token);
+    }
+    if (tokens.access_token) {
+      console.log('✅ Access token refreshed automatically');
+    }
+  });
   
   let calendarIdToUse: string | undefined;
   let timeZoneToUse = 'UTC';

@@ -25,7 +25,8 @@
     "insert:megha": "ts-node src/scripts/insertUserMegha.ts",
     "reset:megha": "ts-node src/scripts/resetMeghaPassword.ts",
     "debug:megha": "ts-node src/scripts/debugCheckMegha.ts",
-    "test:google-calendar": "ts-node src/scripts/testGoogleCalendar.ts"
+    "test:google-calendar": "ts-node src/scripts/testGoogleCalendar.ts",
+    "test:google-calendar-integration": "ts-node src/scripts/testGoogleCalendarIntegration.ts"
   },
   "keywords": [
     "expert",

@@ -4,9 +4,10 @@ export const connectDB = async (): Promise<void> => {
   try {
     const mongoURI = process.env['MONGODB_URI'] || 'mongodb://localhost:27017/lumina';
     const isAtlas = mongoURI.includes('mongodb+srv://');
+    
     const connOptions: mongoose.ConnectOptions = {
       // High concurrency connection options
-      serverSelectionTimeoutMS: 5000, // Reduced for faster failover
+      serverSelectionTimeoutMS: 10000, // Increased timeout for better stability
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       maxPoolSize: 100, // Increased for high concurrency
@@ -14,16 +15,28 @@ export const connectDB = async (): Promise<void> => {
       heartbeatFrequencyMS: 10000,
       retryWrites: true,
       retryReads: true,
-      // SSL/TLS configuration for production
-      tls: isAtlas ? true : undefined,
-      tlsAllowInvalidCertificates: false,
-      tlsAllowInvalidHostnames: false,
-      // Connection retry configuration (handled by mongoose internally)
       // Read preference for better performance
       readPreference: 'primaryPreferred',
     };
 
-    console.log('🔌 Connecting to MongoDB...', { isAtlas, uriPreview: mongoURI.replace(/(:)([^:@/]+)(@)/, '$1****$3') });
+    // Add SSL/TLS options only for Atlas connections
+    // For Node.js v18+ with OpenSSL 3.0, use more permissive settings in development
+    if (isAtlas) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      Object.assign(connOptions, {
+        ssl: true,
+        tls: true,
+        tlsAllowInvalidCertificates: isDevelopment, // Allow in dev to bypass SSL errors
+        tlsAllowInvalidHostnames: isDevelopment,
+      });
+    }
+
+    console.log('🔌 Connecting to MongoDB...', { 
+      isAtlas, 
+      nodeVersion: process.version,
+      uriPreview: mongoURI.replace(/(:)([^:@/]+)(@)/, '$1****$3') 
+    });
+    
     await mongoose.connect(mongoURI, connOptions);
     
     console.log('✅ MongoDB connected successfully');

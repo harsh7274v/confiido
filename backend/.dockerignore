@@ -1,0 +1,14 @@
+# Add Dockerfile-specific ignores
+node_modules
+npm-debug.log
+dist
+dist-worker
+.env
+.env.*
+.git
+.github
+.vscode
+*.md
+coverage
+.DS_Store
+uploads
