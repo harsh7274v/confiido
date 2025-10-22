@@ -111,6 +111,13 @@ const connectDB = async () => {
     await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      bufferCommands: false, // Disable mongoose buffering
+      maxPoolSize: 1, // Maintain up to 1 socket connection for serverless
+      minPoolSize: 0, // Close connections when not in use
+      maxIdleTimeMS: 10000, // Close connections after 10 seconds of inactivity
     });
     
     isConnected = true;
@@ -127,9 +134,11 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (error) {
+    console.error('Database connection failed:', error.message);
     res.status(500).json({
       success: false,
-      error: 'Database connection failed'
+      error: 'Database connection failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
