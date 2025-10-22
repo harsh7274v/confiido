@@ -1,4 +1,5 @@
 // Vercel serverless function entry point - Complete API Integration
+require('dotenv').config(); // Load environment variables
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -96,36 +97,69 @@ app.use(limiter);
 
 // Database connection for Vercel serverless
 let isConnected = false;
+let connectionPromise = null;
 
 const connectDB = async () => {
-  if (isConnected) {
+  // If already connected, return immediately
+  if (isConnected && mongoose.connection.readyState === 1) {
     return;
   }
   
-  try {
-    const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
-    if (!mongoUri) {
-      throw new Error('MongoDB URI not found in environment variables');
-    }
-    
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      bufferCommands: false, // Disable mongoose buffering
-      maxPoolSize: 1, // Maintain up to 1 socket connection for serverless
-      minPoolSize: 0, // Close connections when not in use
-      maxIdleTimeMS: 10000, // Close connections after 10 seconds of inactivity
-    });
-    
-    isConnected = true;
-    console.log('MongoDB connected successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error;
+  // If connection is in progress, wait for it
+  if (connectionPromise) {
+    return connectionPromise;
   }
+  
+  connectionPromise = (async () => {
+    try {
+      // Check if already connected
+      if (mongoose.connection.readyState === 1) {
+        isConnected = true;
+        return;
+      }
+      
+      // Get MongoDB URI from environment variables
+      const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
+      console.log('MongoDB URI found:', !!mongoUri);
+      console.log('Environment:', process.env.NODE_ENV);
+      
+      if (!mongoUri) {
+        throw new Error('MongoDB URI not found in environment variables. Please check MONGODB_URI in Vercel settings.');
+      }
+      
+      // Close any existing connection first
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.disconnect();
+      }
+      
+      // Connect with serverless-optimized settings
+      await mongoose.connect(mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 10000, // Increased timeout for serverless
+        socketTimeoutMS: 45000,
+        bufferMaxEntries: 0, // Disable mongoose buffering
+        bufferCommands: false, // Disable mongoose buffering
+        maxPoolSize: 1, // Maintain up to 1 socket connection for serverless
+        minPoolSize: 0, // Close connections when not in use
+        maxIdleTimeMS: 10000, // Close connections after 10 seconds of inactivity
+        connectTimeoutMS: 10000, // Connection timeout
+        heartbeatFrequencyMS: 10000, // Heartbeat frequency
+      });
+      
+      isConnected = true;
+      console.log('✅ MongoDB connected successfully');
+      console.log('Connection state:', mongoose.connection.readyState);
+      
+    } catch (error) {
+      console.error('❌ MongoDB connection error:', error);
+      isConnected = false;
+      connectionPromise = null; // Reset promise so we can retry
+      throw error;
+    }
+  })();
+  
+  return connectionPromise;
 };
 
 // Health check endpoint (before DB middleware)
@@ -142,6 +176,24 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/debug/db', async (_req, res) => {
   try {
     const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
+    const connectionState = mongoose.connection.readyState;
+    const connectionStates = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
+    
+    // Try to connect if not already connected
+    let connectionTest = null;
+    if (connectionState !== 1) {
+      try {
+        await connectDB();
+        connectionTest = 'success';
+      } catch (error) {
+        connectionTest = error.message;
+      }
+    }
     
     res.json({
       success: true,
@@ -150,13 +202,17 @@ app.get('/api/debug/db', async (_req, res) => {
         mongoUriPrefix: mongoUri ? mongoUri.substring(0, 20) + '...' : 'Not set',
         environment: process.env.NODE_ENV,
         isConnected: isConnected,
-        timestamp: new Date().toISOString()
+        connectionState: connectionStates[connectionState] || 'unknown',
+        connectionTest: connectionTest,
+        timestamp: new Date().toISOString(),
+        allEnvVars: Object.keys(process.env).filter(key => key.includes('MONGO'))
       }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -173,10 +229,12 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Database connection failed:', error.message);
+    console.error('Full error:', error);
     res.status(500).json({
       success: false,
       error: 'Database connection failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      timestamp: new Date().toISOString()
     });
   }
 });
