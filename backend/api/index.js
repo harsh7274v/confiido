@@ -128,27 +128,7 @@ const connectDB = async () => {
   }
 };
 
-// Connect to database on first request (only for routes that need DB)
-app.use(async (req, res, next) => {
-  // Skip DB connection for health and debug endpoints
-  if (req.path === '/api/health' || req.path === '/api/debug/db') {
-    return next();
-  }
-  
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error('Database connection failed:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Database connection failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-});
-
-// Health check endpoint
+// Health check endpoint (before DB middleware)
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
     status: 'success',
@@ -158,7 +138,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Database diagnostic endpoint
+// Database diagnostic endpoint (before DB middleware)
 app.get('/api/debug/db', async (_req, res) => {
   try {
     const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
@@ -177,6 +157,26 @@ app.get('/api/debug/db', async (_req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+// Connect to database on first request (only for routes that need DB)
+app.use(async (req, res, next) => {
+  // Skip DB connection for health and debug endpoints
+  if (req.path === '/api/health' || req.path === '/api/debug/db') {
+    return next();
+  }
+  
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Database connection failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
