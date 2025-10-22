@@ -34,6 +34,10 @@ app.use(cors({
   maxAge: 86400 // 24 hours
 }));
 
+// Parse JSON bodies
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Security middleware
 app.use(helmet());
 app.use(compression());
@@ -72,6 +76,45 @@ app.get('/', (req, res) => {
     status: 'running',
     timestamp: new Date().toISOString()
   });
+});
+
+// Login endpoint
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Basic validation
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and password are required'
+      });
+    }
+    
+    // For now, return a mock response to test connectivity
+    // TODO: Replace with actual authentication logic
+    res.json({
+      success: true,
+      message: 'Login endpoint is working',
+      data: {
+        user: {
+          id: 'test-user-id',
+          email: email,
+          firstName: 'Test',
+          lastName: 'User',
+          role: 'user',
+          isExpert: false,
+          isVerified: true
+        },
+        token: 'mock-jwt-token'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
 });
 
 // Export for Vercel
