@@ -1,11 +1,12 @@
-// Vercel Serverless Function Entry Point
-// This file handles all API routes for the Lumina backend
+// Comprehensive Serverless Backend for Vercel
+// This file contains all backend logic optimized for serverless deployment
 
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
 
 // Initialize Express app
 const app = express();
@@ -13,10 +14,88 @@ const app = express();
 // Set Vercel environment flag
 process.env.VERCEL = '1';
 
+// ============================================================================
+// DATABASE CONNECTION (Serverless Optimized)
+// ============================================================================
+
+let cachedConnection = null;
+
+const connectDB = async () => {
+  // Reuse existing connection in serverless environments
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    console.log('♻️  Reusing existing MongoDB connection');
+    return;
+  }
+
+  try {
+    const mongoURI = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
+    
+    if (!mongoURI) {
+      throw new Error('MongoDB URI not configured. Please set MONGODB_URI environment variable.');
+    }
+
+    const isAtlas = mongoURI.includes('mongodb+srv://');
+    
+    console.log('🔌 Connecting to MongoDB...', { 
+      isAtlas,
+      isServerless: true,
+      nodeVersion: process.version,
+      uriPreview: mongoURI.replace(/(:)([^:@/]+)(@)/, '$1****$3') 
+    });
+    
+    const connOptions = {
+      // Serverless-optimized connection options
+      serverSelectionTimeoutMS: 3000,
+      socketTimeoutMS: 20000,
+      connectTimeoutMS: 3000,
+      maxPoolSize: 5, // Very low pool size for serverless
+      minPoolSize: 0, // No minimum for serverless
+      heartbeatFrequencyMS: 10000,
+      retryWrites: true,
+      retryReads: true,
+      readPreference: 'primaryPreferred',
+      bufferCommands: false,
+      bufferMaxEntries: 0,
+    };
+
+    // Add SSL/TLS options for Atlas connections
+    if (isAtlas) {
+      Object.assign(connOptions, {
+        ssl: true,
+        tls: true,
+        tlsAllowInvalidCertificates: process.env.NODE_ENV === 'development',
+        tlsAllowInvalidHostnames: process.env.NODE_ENV === 'development',
+      });
+    }
+
+    cachedConnection = await mongoose.connect(mongoURI, connOptions);
+    console.log('✅ MongoDB connected successfully');
+    
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+      cachedConnection = null;
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+      cachedConnection = null;
+    });
+    
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
+// MIDDLEWARE SETUP
+// ============================================================================
+
 // Security middleware
 app.use(helmet());
 
-// CORS Configuration - Allow multiple origins
+// CORS Configuration
 const allowedOrigins = [
   'https://confiido.in',
   'https://www.confiido.in',
@@ -26,7 +105,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -37,13 +115,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // 24 hours
+  maxAge: 86400
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
@@ -61,27 +139,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Lumina API is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'production',
-    vercel: process.env.VERCEL === '1'
-  });
-});
+// ============================================================================
+// DATABASE CONNECTION MIDDLEWARE
+// ============================================================================
 
-// Handle favicon.ico requests
-app.get('/favicon.ico', (req, res) => {
-  res.status(204).end(); // No content
-});
-
-// Database connection middleware for API routes (serverless)
 app.use('/api', async (req, res, next) => {
   try {
-    const { connectDB } = require('../dist/config/database');
-    await connectDB(); // Will reuse existing connection if available
+    await connectDB();
     next();
   } catch (error) {
     console.error('Database connection error:', error);
@@ -93,12 +157,14 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
-// Load and register all routes
+// ============================================================================
+// ROUTE LOADING
+// ============================================================================
+
 let routesLoaded = 0;
 let routesFailed = 0;
 const routeErrors = [];
 
-// Function to safely load routes
 const loadRoute = (routePath, routeName) => {
   try {
     const routeModule = require(routePath);
@@ -117,6 +183,17 @@ const loadRoute = (routePath, routeName) => {
     routesFailed++;
     routeErrors.push(`${routeName}: ${error.message}`);
     console.error(`❌ Failed to load ${routeName} routes:`, error.message);
+    
+    // Create a fallback route for failed routes
+    app.use(`/api/${routeName}`, (req, res) => {
+      res.status(503).json({
+        success: false,
+        error: 'Service temporarily unavailable',
+        message: `${routeName} routes failed to load`,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    });
+    
     return false;
   }
 };
@@ -158,7 +235,10 @@ if (routeErrors.length > 0) {
   routeErrors.forEach(error => console.log(`  - ${error}`));
 }
 
-// Load error handling middleware
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
 let errorHandler, notFound;
 try {
   errorHandler = require('../dist/middleware/errorHandler').errorHandler;
@@ -187,11 +267,26 @@ try {
   };
 }
 
-// Error handling middleware (must be last)
-app.use(notFound);
-app.use(errorHandler);
+// ============================================================================
+// ENDPOINTS
+// ============================================================================
 
-// Enhanced health check with route status
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Lumina API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production',
+    vercel: process.env.VERCEL === '1',
+    database: {
+      connected: mongoose.connection.readyState === 1,
+      state: mongoose.connection.readyState
+    }
+  });
+});
+
+// Detailed health check
 app.get('/api/health/detailed', (req, res) => {
   res.status(200).json({
     status: 'success',
@@ -205,9 +300,18 @@ app.get('/api/health/detailed', (req, res) => {
       errors: routeErrors
     },
     database: {
-      connected: true // Will be updated by connection middleware
+      connected: mongoose.connection.readyState === 1,
+      state: mongoose.connection.readyState,
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+      name: mongoose.connection.name
     }
   });
+});
+
+// Handle favicon.ico requests
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
 });
 
 // Root endpoint
@@ -225,5 +329,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// Export the app for Vercel
+// Error handling middleware (must be last)
+app.use(notFound);
+app.use(errorHandler);
+
+// ============================================================================
+// EXPORT FOR VERCEL
+// ============================================================================
+
 module.exports = app;

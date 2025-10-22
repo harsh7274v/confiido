@@ -6,8 +6,7 @@ const isFirebaseConfigured = () => {
     process.env.FIREBASE_PROJECT_ID &&
     process.env.FIREBASE_PRIVATE_KEY &&
     process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY !== 'test-key' && // Not a test value
-    process.env.FIREBASE_PRIVATE_KEY.includes('-----BEGIN PRIVATE KEY-----') // Valid format
+    process.env.FIREBASE_PRIVATE_KEY !== 'test-key' // Not a test value
   );
 };
 
@@ -54,7 +53,7 @@ export const getAuth = () => {
   return auth;
 };
 
-// Export auth for backward compatibility (will throw error if not initialized)
+// Export auth for backward compatibility
 export { auth };
 
 // Export admin with fallback

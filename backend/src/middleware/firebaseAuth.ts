@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../config/firebase';
+import { getAuth } from '../config/firebase';
 import User from '../models/User';
 import { generateUniqueUserId } from '../utils/userIdGenerator';
 import Reward from '../models/Reward';
@@ -20,6 +20,7 @@ export const verifyFirebaseToken = async (
       return res.status(401).json({ message: 'No token provided' });
     }
 
+    const auth = getAuth();
     const decodedToken = await auth.verifyIdToken(token);
     
     // Find user by Firebase UID first

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler';
 import User from '../models/User';
 import Reward from '../models/Reward';
-import { auth } from '../config/firebase';
+import { getAuth } from '../config/firebase';
 import { generateUniqueUserId, ensureUserId } from '../utils/userIdGenerator';
 import { verifyJWTToken } from '../utils/jwtGenerator';
 
@@ -58,6 +58,7 @@ export const protect = async (
     
     // First, try to verify as Firebase token
     try {
+        const auth = getAuth();
         const decodedToken = await auth.verifyIdToken(token);
         
         // Find user by Firebase UID first
@@ -226,6 +227,7 @@ export const optionalAuth = async (
 
     // Try Firebase token first
     try {
+      const auth = getAuth();
       const decodedToken = await auth.verifyIdToken(token);
       user = await User.findOne({ firebaseUid: decodedToken.uid });
       

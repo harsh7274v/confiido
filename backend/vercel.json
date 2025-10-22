@@ -2,16 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "api/serverless-robust.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.js"
+      "dest": "api/serverless-robust.js"
     }
   ],
   "buildCommand": "npm run build",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "env": {
+    "NODE_ENV": "production",
+    "VERCEL": "1"
+  },
+  "functions": {
+    "api/serverless-robust.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
 }
