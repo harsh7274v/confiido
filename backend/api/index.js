@@ -7,6 +7,34 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
+// Import database connection
+const { connectDB } = require('../dist/config/database');
+
+// Import route modules (compiled from TypeScript)
+const authRoutes = require('../dist/routes/auth');
+const userRoutes = require('../dist/routes/users');
+const expertRoutes = require('../dist/routes/experts');
+const bookingRoutes = require('../dist/routes/bookings');
+const messageRoutes = require('../dist/routes/messages');
+const reviewRoutes = require('../dist/routes/reviews');
+const paymentRoutes = require('../dist/routes/payments');
+const notificationRoutes = require('../dist/routes/notifications');
+const courseRoutes = require('../dist/routes/courses');
+const enrollmentRoutes = require('../dist/routes/enrollments');
+const webinarRoutes = require('../dist/routes/webinars');
+const bundleRoutes = require('../dist/routes/bundles');
+const digitalProductRoutes = require('../dist/routes/digitalProducts');
+const analyticsRoutes = require('../dist/routes/analytics');
+const availabilityRoutes = require('../dist/routes/availability');
+const calendarRoutes = require('../dist/routes/calendar');
+const rewardsRoutes = require('../dist/routes/rewards');
+const dashboardRoutes = require('../dist/routes/dashboard');
+const transactionsRoutes = require('../dist/routes/transactions');
+
+// Import middleware
+const { errorHandler } = require('../dist/middleware/errorHandler');
+const { notFound } = require('../dist/middleware/notFound');
+
 // Import your existing app configuration
 const app = express();
 
@@ -78,6 +106,47 @@ app.get('/', (req, res) => {
   });
 });
 
+// Database connection middleware for API routes (serverless)
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB(); // Will reuse existing connection if available
+    next();
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return res.status(503).json({ 
+      success: false,
+      error: 'Service temporarily unavailable - database connection failed' 
+    });
+  }
+});
+
+// Register all API routes
+app.use('/api/auth', authRoutes.default || authRoutes);
+app.use('/api/users', userRoutes.default || userRoutes);
+app.use('/api/experts', expertRoutes.default || expertRoutes);
+app.use('/api/bookings', bookingRoutes.default || bookingRoutes);
+app.use('/api/messages', messageRoutes.default || messageRoutes);
+app.use('/api/reviews', reviewRoutes.default || reviewRoutes);
+app.use('/api/payments', paymentRoutes.default || paymentRoutes);
+app.use('/api/notifications', notificationRoutes.default || notificationRoutes);
+app.use('/api/courses', courseRoutes.default || courseRoutes);
+app.use('/api/enrollments', enrollmentRoutes.default || enrollmentRoutes);
+app.use('/api/webinars', webinarRoutes.default || webinarRoutes);
+app.use('/api/bundles', bundleRoutes.default || bundleRoutes);
+app.use('/api/digital-products', digitalProductRoutes.default || digitalProductRoutes);
+app.use('/api/analytics', analyticsRoutes.default || analyticsRoutes);
+app.use('/api/availability', availabilityRoutes.default || availabilityRoutes);
+app.use('/api/calendar', calendarRoutes.default || calendarRoutes);
+app.use('/api/dashboard', dashboardRoutes.default || dashboardRoutes);
+app.use('/api/transactions', transactionsRoutes.default || transactionsRoutes);
+app.use('/api/rewards', rewardsRoutes.default || rewardsRoutes);
+
+// Error handling middleware (must be last)
+app.use(notFound.default || notFound);
+app.use(errorHandler.default || errorHandler);
+
+// REMOVE THE MOCK ENDPOINTS BELOW - they are replaced by the real routes above
+/* 
 // Login endpoint
 app.post('/api/auth/login', (req, res) => {
   try {
@@ -311,6 +380,7 @@ app.post('/api/auth/logout', (req, res) => {
     });
   }
 });
+*/
 
 // Export for Vercel
 module.exports = app;
