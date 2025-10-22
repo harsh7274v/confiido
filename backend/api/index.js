@@ -117,5 +117,200 @@ app.post('/api/auth/login', (req, res) => {
   }
 });
 
+// Firebase token verification endpoint
+app.post('/api/auth/verify', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'No valid authorization header'
+      });
+    }
+    
+    // For now, return a mock response
+    // TODO: Replace with actual Firebase token verification
+    res.json({
+      success: true,
+      message: 'Firebase token verified',
+      data: {
+        user: {
+          id: 'firebase-user-id',
+          email: 'user@example.com',
+          firstName: 'Firebase',
+          lastName: 'User',
+          role: 'user',
+          isExpert: false,
+          isVerified: true
+        },
+        token: 'mock-jwt-token'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// OTP request endpoint
+app.post('/api/auth/request-otp', (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+    
+    // For now, return a mock response
+    // TODO: Replace with actual OTP sending logic
+    res.json({
+      success: true,
+      message: 'OTP sent successfully',
+      data: {
+        email: email,
+        otpSent: true
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// OTP verification endpoint
+app.post('/api/auth/verify-otp', (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and OTP are required'
+      });
+    }
+    
+    // For now, return a mock response
+    // TODO: Replace with actual OTP verification logic
+    res.json({
+      success: true,
+      message: 'OTP verified successfully',
+      data: {
+        user: {
+          id: 'otp-user-id',
+          email: email,
+          firstName: 'OTP',
+          lastName: 'User',
+          role: 'user',
+          isExpert: false,
+          isVerified: true
+        },
+        token: 'mock-jwt-token'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// User registration endpoint
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        error: 'All fields are required'
+      });
+    }
+    
+    // For now, return a mock response
+    // TODO: Replace with actual registration logic
+    res.json({
+      success: true,
+      message: 'User registered successfully',
+      data: {
+        user: {
+          id: 'new-user-id',
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          role: 'user',
+          isExpert: false,
+          isVerified: true
+        },
+        token: 'mock-jwt-token'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Get current user endpoint
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'No valid authorization header'
+      });
+    }
+    
+    // For now, return a mock response
+    // TODO: Replace with actual user retrieval logic
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: 'current-user-id',
+          email: 'user@example.com',
+          firstName: 'Current',
+          lastName: 'User',
+          role: 'user',
+          isExpert: false,
+          isVerified: true
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  try {
+    // For now, return a mock response
+    // TODO: Replace with actual logout logic (token blacklisting, etc.)
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 // Export for Vercel
 module.exports = app;
