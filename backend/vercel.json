@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
   "builds": [
     {
       "src": "api/index.js",
@@ -13,14 +12,6 @@
       "dest": "api/index.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production",
-    "VERCEL": "1"
-  },
-  "functions": {
-    "api/index.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  "buildCommand": "npm run build",
+  "installCommand": "npm install"
 }
