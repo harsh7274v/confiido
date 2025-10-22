@@ -128,8 +128,13 @@ const connectDB = async () => {
   }
 };
 
-// Connect to database on first request
+// Connect to database on first request (only for routes that need DB)
 app.use(async (req, res, next) => {
+  // Skip DB connection for health and debug endpoints
+  if (req.path === '/api/health' || req.path === '/api/debug/db') {
+    return next();
+  }
+  
   try {
     await connectDB();
     next();
@@ -151,6 +156,29 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env['NODE_ENV']
   });
+});
+
+// Database diagnostic endpoint
+app.get('/api/debug/db', async (_req, res) => {
+  try {
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_URI_PROD;
+    
+    res.json({
+      success: true,
+      data: {
+        hasMongoUri: !!mongoUri,
+        mongoUriPrefix: mongoUri ? mongoUri.substring(0, 20) + '...' : 'Not set',
+        environment: process.env.NODE_ENV,
+        isConnected: isConnected,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Handle favicon.ico requests
