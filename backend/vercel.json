@@ -1,12 +1,10 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/**", "api/**"]
-      }
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -19,5 +17,10 @@
     "NODE_ENV": "production",
     "VERCEL": "1"
   },
-  "installCommand": "npm install && npm run build"
+  "functions": {
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
 }

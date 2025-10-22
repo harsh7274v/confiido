@@ -6,34 +6,58 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
+
+// Check if dist folder exists
+const distPath = path.join(__dirname, '../dist');
+const distExists = fs.existsSync(distPath);
+
+if (!distExists) {
+  console.error('❌ ERROR: dist folder not found! TypeScript may not have been compiled.');
+  console.error('Expected path:', distPath);
+}
 
 // Import database connection
-const { connectDB } = require('../dist/config/database');
+let connectDB, authRoutes, userRoutes, expertRoutes, bookingRoutes, messageRoutes;
+let reviewRoutes, paymentRoutes, notificationRoutes, courseRoutes, enrollmentRoutes;
+let webinarRoutes, bundleRoutes, digitalProductRoutes, analyticsRoutes, availabilityRoutes;
+let calendarRoutes, rewardsRoutes, dashboardRoutes, transactionsRoutes;
+let errorHandler, notFound;
 
-// Import route modules (compiled from TypeScript)
-const authRoutes = require('../dist/routes/auth');
-const userRoutes = require('../dist/routes/users');
-const expertRoutes = require('../dist/routes/experts');
-const bookingRoutes = require('../dist/routes/bookings');
-const messageRoutes = require('../dist/routes/messages');
-const reviewRoutes = require('../dist/routes/reviews');
-const paymentRoutes = require('../dist/routes/payments');
-const notificationRoutes = require('../dist/routes/notifications');
-const courseRoutes = require('../dist/routes/courses');
-const enrollmentRoutes = require('../dist/routes/enrollments');
-const webinarRoutes = require('../dist/routes/webinars');
-const bundleRoutes = require('../dist/routes/bundles');
-const digitalProductRoutes = require('../dist/routes/digitalProducts');
-const analyticsRoutes = require('../dist/routes/analytics');
-const availabilityRoutes = require('../dist/routes/availability');
-const calendarRoutes = require('../dist/routes/calendar');
-const rewardsRoutes = require('../dist/routes/rewards');
-const dashboardRoutes = require('../dist/routes/dashboard');
-const transactionsRoutes = require('../dist/routes/transactions');
-
-// Import middleware
-const { errorHandler } = require('../dist/middleware/errorHandler');
-const { notFound } = require('../dist/middleware/notFound');
+try {
+  // Import modules with error handling
+  ({ connectDB } = require('../dist/config/database'));
+  
+  // Import route modules (compiled from TypeScript)
+  authRoutes = require('../dist/routes/auth');
+  userRoutes = require('../dist/routes/users');
+  expertRoutes = require('../dist/routes/experts');
+  bookingRoutes = require('../dist/routes/bookings');
+  messageRoutes = require('../dist/routes/messages');
+  reviewRoutes = require('../dist/routes/reviews');
+  paymentRoutes = require('../dist/routes/payments');
+  notificationRoutes = require('../dist/routes/notifications');
+  courseRoutes = require('../dist/routes/courses');
+  enrollmentRoutes = require('../dist/routes/enrollments');
+  webinarRoutes = require('../dist/routes/webinars');
+  bundleRoutes = require('../dist/routes/bundles');
+  digitalProductRoutes = require('../dist/routes/digitalProducts');
+  analyticsRoutes = require('../dist/routes/analytics');
+  availabilityRoutes = require('../dist/routes/availability');
+  calendarRoutes = require('../dist/routes/calendar');
+  rewardsRoutes = require('../dist/routes/rewards');
+  dashboardRoutes = require('../dist/routes/dashboard');
+  transactionsRoutes = require('../dist/routes/transactions');
+  
+  // Import middleware
+  ({ errorHandler } = require('../dist/middleware/errorHandler'));
+  ({ notFound } = require('../dist/middleware/notFound'));
+  
+  console.log('✅ Successfully loaded all route modules');
+} catch (error) {
+  console.error('❌ ERROR loading modules:', error.message);
+  console.error('Stack:', error.stack);
+}
 
 // Import your existing app configuration
 const app = express();
@@ -88,7 +112,29 @@ app.get('/api/health', (_req, res) => {
     status: 'success',
     message: 'Lumina API is running',
     timestamp: new Date().toISOString(),
-    environment: process.env['NODE_ENV']
+    environment: process.env['NODE_ENV'],
+    distExists: distExists,
+    routesLoaded: {
+      auth: !!authRoutes,
+      users: !!userRoutes,
+      experts: !!expertRoutes,
+      bookings: !!bookingRoutes,
+      messages: !!messageRoutes,
+      reviews: !!reviewRoutes,
+      payments: !!paymentRoutes,
+      notifications: !!notificationRoutes,
+      courses: !!courseRoutes,
+      enrollments: !!enrollmentRoutes,
+      webinars: !!webinarRoutes,
+      bundles: !!bundleRoutes,
+      digitalProducts: !!digitalProductRoutes,
+      analytics: !!analyticsRoutes,
+      availability: !!availabilityRoutes,
+      calendar: !!calendarRoutes,
+      dashboard: !!dashboardRoutes,
+      transactions: !!transactionsRoutes,
+      rewards: !!rewardsRoutes
+    }
   });
 });
 
@@ -109,7 +155,9 @@ app.get('/', (req, res) => {
 // Database connection middleware for API routes (serverless)
 app.use('/api', async (req, res, next) => {
   try {
-    await connectDB(); // Will reuse existing connection if available
+    if (connectDB) {
+      await connectDB(); // Will reuse existing connection if available
+    }
     next();
   } catch (error) {
     console.error('Database connection error:', error);
@@ -120,30 +168,93 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
-// Register all API routes
-app.use('/api/auth', authRoutes.default || authRoutes);
-app.use('/api/users', userRoutes.default || userRoutes);
-app.use('/api/experts', expertRoutes.default || expertRoutes);
-app.use('/api/bookings', bookingRoutes.default || bookingRoutes);
-app.use('/api/messages', messageRoutes.default || messageRoutes);
-app.use('/api/reviews', reviewRoutes.default || reviewRoutes);
-app.use('/api/payments', paymentRoutes.default || paymentRoutes);
-app.use('/api/notifications', notificationRoutes.default || notificationRoutes);
-app.use('/api/courses', courseRoutes.default || courseRoutes);
-app.use('/api/enrollments', enrollmentRoutes.default || enrollmentRoutes);
-app.use('/api/webinars', webinarRoutes.default || webinarRoutes);
-app.use('/api/bundles', bundleRoutes.default || bundleRoutes);
-app.use('/api/digital-products', digitalProductRoutes.default || digitalProductRoutes);
-app.use('/api/analytics', analyticsRoutes.default || analyticsRoutes);
-app.use('/api/availability', availabilityRoutes.default || availabilityRoutes);
-app.use('/api/calendar', calendarRoutes.default || calendarRoutes);
-app.use('/api/dashboard', dashboardRoutes.default || dashboardRoutes);
-app.use('/api/transactions', transactionsRoutes.default || transactionsRoutes);
-app.use('/api/rewards', rewardsRoutes.default || rewardsRoutes);
+// Register all API routes with error handling
+if (authRoutes) {
+  app.use('/api/auth', authRoutes.default || authRoutes);
+} else {
+  console.error('❌ authRoutes not loaded');
+}
+
+if (userRoutes) {
+  app.use('/api/users', userRoutes.default || userRoutes);
+}
+
+if (expertRoutes) {
+  app.use('/api/experts', expertRoutes.default || expertRoutes);
+}
+
+if (bookingRoutes) {
+  app.use('/api/bookings', bookingRoutes.default || bookingRoutes);
+}
+
+if (messageRoutes) {
+  app.use('/api/messages', messageRoutes.default || messageRoutes);
+}
+
+if (reviewRoutes) {
+  app.use('/api/reviews', reviewRoutes.default || reviewRoutes);
+}
+
+if (paymentRoutes) {
+  app.use('/api/payments', paymentRoutes.default || paymentRoutes);
+}
+
+if (notificationRoutes) {
+  app.use('/api/notifications', notificationRoutes.default || notificationRoutes);
+}
+
+if (courseRoutes) {
+  app.use('/api/courses', courseRoutes.default || courseRoutes);
+}
+
+if (enrollmentRoutes) {
+  app.use('/api/enrollments', enrollmentRoutes.default || enrollmentRoutes);
+}
+
+if (webinarRoutes) {
+  app.use('/api/webinars', webinarRoutes.default || webinarRoutes);
+}
+
+if (bundleRoutes) {
+  app.use('/api/bundles', bundleRoutes.default || bundleRoutes);
+}
+
+if (digitalProductRoutes) {
+  app.use('/api/digital-products', digitalProductRoutes.default || digitalProductRoutes);
+}
+
+if (analyticsRoutes) {
+  app.use('/api/analytics', analyticsRoutes.default || analyticsRoutes);
+}
+
+if (availabilityRoutes) {
+  app.use('/api/availability', availabilityRoutes.default || availabilityRoutes);
+}
+
+if (calendarRoutes) {
+  app.use('/api/calendar', calendarRoutes.default || calendarRoutes);
+}
+
+if (dashboardRoutes) {
+  app.use('/api/dashboard', dashboardRoutes.default || dashboardRoutes);
+}
+
+if (transactionsRoutes) {
+  app.use('/api/transactions', transactionsRoutes.default || transactionsRoutes);
+}
+
+if (rewardsRoutes) {
+  app.use('/api/rewards', rewardsRoutes.default || rewardsRoutes);
+}
 
 // Error handling middleware (must be last)
-app.use(notFound.default || notFound);
-app.use(errorHandler.default || errorHandler);
+if (notFound) {
+  app.use(notFound.default || notFound);
+}
+
+if (errorHandler) {
+  app.use(errorHandler.default || errorHandler);
+}
 
 // REMOVE THE MOCK ENDPOINTS BELOW - they are replaced by the real routes above
 /* 

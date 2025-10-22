@@ -14,5 +14,3 @@ src/scripts/
 src/examples/
 *.test.ts
 *.spec.ts
-nodemon.json
-tsconfig.json
