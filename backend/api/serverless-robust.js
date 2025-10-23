@@ -204,10 +204,22 @@ app.use('/api', async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Database connection error:', error);
+    console.error('Environment check:', {
+      hasMongoURI: !!process.env.MONGODB_URI,
+      hasMongoURIProd: !!process.env.MONGODB_URI_PROD,
+      nodeEnv: process.env.NODE_ENV,
+      vercel: process.env.VERCEL
+    });
     return res.status(503).json({ 
       success: false,
       error: 'Service temporarily unavailable - database connection failed',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      debug: {
+        hasMongoURI: !!process.env.MONGODB_URI,
+        hasMongoURIProd: !!process.env.MONGODB_URI_PROD,
+        errorType: error.name,
+        errorMessage: error.message
+      }
     });
   }
 });
@@ -222,6 +234,7 @@ const routeErrors = [];
 
 const loadRoute = (routePath, routeName) => {
   try {
+    console.log(`🔄 Loading ${routeName} routes from ${routePath}`);
     const routeModule = require(routePath);
     // Handle both CommonJS and ES6 default exports
     const route = routeModule.default || routeModule;
@@ -238,6 +251,8 @@ const loadRoute = (routePath, routeName) => {
     routesFailed++;
     routeErrors.push(`${routeName}: ${error.message}`);
     console.error(`❌ Failed to load ${routeName} routes:`, error.message);
+    console.error(`❌ Route path: ${routePath}`);
+    console.error(`❌ Error details:`, error);
     
     // Create a fallback route for failed routes
     app.use(`/api/${routeName}`, (req, res) => {
@@ -247,7 +262,12 @@ const loadRoute = (routePath, routeName) => {
         message: `${routeName} routes failed to load`,
         details: process.env.NODE_ENV === 'development' ? error.message : undefined,
         firebaseStatus: firebaseInitialized ? 'initialized' : 'not initialized',
-        firebaseError: firebaseError
+        firebaseError: firebaseError,
+        debug: {
+          routePath,
+          errorType: error.name,
+          errorMessage: error.message
+        }
       });
     });
     
