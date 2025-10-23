@@ -183,3 +183,4 @@ app.listen(PORT, () => {
   console.log(`🗄️  Database debug: http://localhost:${PORT}/api/debug/db`);
   console.log(`🔗 Database test: http://localhost:${PORT}/api/test/db`);
 });
+
