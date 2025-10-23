@@ -1,6 +1,6 @@
-// Firebase Serverless Patch
-// This file ensures Firebase is properly initialized for serverless deployment
-// Matches the exact logic from the local firebase.ts configuration
+// Serverless Firebase Fix
+// This file overrides the Firebase configuration for serverless deployment
+// to ensure it matches the local configuration exactly
 
 const admin = require('firebase-admin');
 
@@ -73,3 +73,29 @@ module.exports.getAdmin = () => {
   }
   return admin;
 };
+
+// Override the require cache to ensure all imports use this configuration
+const path = require('path');
+const firebaseConfigPath = path.resolve(__dirname, '../dist/config/firebase.js');
+
+// Clear the require cache for the firebase config
+if (require.cache[firebaseConfigPath]) {
+  delete require.cache[firebaseConfigPath];
+}
+
+// Override the firebase config module
+require.cache[firebaseConfigPath] = {
+  exports: {
+    getAuth,
+    auth,
+    getAdmin: () => {
+      if (!firebaseInitialized) {
+        throw new Error('Firebase not initialized. Please check your Firebase credentials.');
+      }
+      return admin;
+    },
+    default: admin
+  }
+};
+
+console.log('✅ Firebase configuration overridden for serverless deployment');
