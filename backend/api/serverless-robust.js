@@ -275,33 +275,171 @@ const loadRoute = (routePath, routeName) => {
   }
 };
 
+// Check if dist folder exists and show build status
+const fs = require('fs');
+const path = require('path');
+
+console.log('🔍 Checking build status...');
+const distPath = path.join(__dirname, '../dist');
+const distExists = fs.existsSync(distPath);
+console.log(`📁 Dist folder exists: ${distExists}`);
+if (distExists) {
+  const distContents = fs.readdirSync(distPath);
+  console.log(`📁 Dist contents: ${distContents.join(', ')}`);
+  
+  const routesPath = path.join(distPath, 'routes');
+  const routesExists = fs.existsSync(routesPath);
+  console.log(`📁 Routes folder exists: ${routesExists}`);
+  if (routesExists) {
+    const routeFiles = fs.readdirSync(routesPath);
+    console.log(`📁 Route files: ${routeFiles.join(', ')}`);
+  }
+}
+
 // Load all API routes
 console.log('Loading API routes...');
 
-// Core routes
-loadRoute('../dist/routes/auth', 'auth');
-loadRoute('../dist/routes/users', 'users');
-loadRoute('../dist/routes/experts', 'experts');
-loadRoute('../dist/routes/bookings', 'bookings');
-loadRoute('../dist/routes/messages', 'messages');
-loadRoute('../dist/routes/reviews', 'reviews');
-loadRoute('../dist/routes/payments', 'payments');
-loadRoute('../dist/routes/notifications', 'notifications');
+// Try multiple possible paths for compiled routes
+const tryLoadRoute = (routeName, possiblePaths) => {
+  for (const path of possiblePaths) {
+    try {
+      console.log(`🔄 Trying to load ${routeName} from ${path}`);
+      const routeModule = require(path);
+      const route = routeModule.default || routeModule;
+      
+      if (typeof route !== 'function') {
+        throw new Error(`Route is not a function, got ${typeof route}`);
+      }
+      
+      app.use(`/api/${routeName}`, route);
+      routesLoaded++;
+      console.log(`✅ Loaded ${routeName} routes from ${path}`);
+      return true;
+    } catch (error) {
+      console.log(`❌ Failed to load ${routeName} from ${path}: ${error.message}`);
+      continue;
+    }
+  }
+  
+  // If all paths failed, create fallback
+  routesFailed++;
+  routeErrors.push(`${routeName}: All paths failed`);
+  console.error(`❌ Failed to load ${routeName} routes from all paths`);
+  
+  app.use(`/api/${routeName}`, (req, res) => {
+    res.status(503).json({
+      success: false,
+      error: 'Service temporarily unavailable',
+      message: `${routeName} routes failed to load - compiled files not found`,
+      debug: {
+        triedPaths: possiblePaths,
+        buildStatus: 'TypeScript compilation may have failed'
+      }
+    });
+  });
+  
+  return false;
+};
+
+// Core routes - try multiple possible paths
+tryLoadRoute('auth', [
+  '../dist/routes/auth',
+  './dist/routes/auth',
+  '../src/routes/auth',
+  './src/routes/auth'
+]);
+
+tryLoadRoute('users', [
+  '../dist/routes/users',
+  './dist/routes/users'
+]);
+
+tryLoadRoute('experts', [
+  '../dist/routes/experts',
+  './dist/routes/experts'
+]);
+
+tryLoadRoute('bookings', [
+  '../dist/routes/bookings',
+  './dist/routes/bookings'
+]);
+
+tryLoadRoute('messages', [
+  '../dist/routes/messages',
+  './dist/routes/messages'
+]);
+
+tryLoadRoute('reviews', [
+  '../dist/routes/reviews',
+  './dist/routes/reviews'
+]);
+
+tryLoadRoute('payments', [
+  '../dist/routes/payments',
+  './dist/routes/payments'
+]);
+
+tryLoadRoute('notifications', [
+  '../dist/routes/notifications',
+  './dist/routes/notifications'
+]);
 
 // Course and education routes
-loadRoute('../dist/routes/courses', 'courses');
-loadRoute('../dist/routes/enrollments', 'enrollments');
-loadRoute('../dist/routes/webinars', 'webinars');
-loadRoute('../dist/routes/bundles', 'bundles');
-loadRoute('../dist/routes/digitalProducts', 'digital-products');
+tryLoadRoute('courses', [
+  '../dist/routes/courses',
+  './dist/routes/courses'
+]);
+
+tryLoadRoute('enrollments', [
+  '../dist/routes/enrollments',
+  './dist/routes/enrollments'
+]);
+
+tryLoadRoute('webinars', [
+  '../dist/routes/webinars',
+  './dist/routes/webinars'
+]);
+
+tryLoadRoute('bundles', [
+  '../dist/routes/bundles',
+  './dist/routes/bundles'
+]);
+
+tryLoadRoute('digital-products', [
+  '../dist/routes/digitalProducts',
+  './dist/routes/digitalProducts'
+]);
 
 // Business and analytics routes
-loadRoute('../dist/routes/analytics', 'analytics');
-loadRoute('../dist/routes/availability', 'availability');
-loadRoute('../dist/routes/calendar', 'calendar');
-loadRoute('../dist/routes/dashboard', 'dashboard');
-loadRoute('../dist/routes/transactions', 'transactions');
-loadRoute('../dist/routes/rewards', 'rewards');
+tryLoadRoute('analytics', [
+  '../dist/routes/analytics',
+  './dist/routes/analytics'
+]);
+
+tryLoadRoute('availability', [
+  '../dist/routes/availability',
+  './dist/routes/availability'
+]);
+
+tryLoadRoute('calendar', [
+  '../dist/routes/calendar',
+  './dist/routes/calendar'
+]);
+
+tryLoadRoute('dashboard', [
+  '../dist/routes/dashboard',
+  './dist/routes/dashboard'
+]);
+
+tryLoadRoute('transactions', [
+  '../dist/routes/transactions',
+  './dist/routes/transactions'
+]);
+
+tryLoadRoute('rewards', [
+  '../dist/routes/rewards',
+  './dist/routes/rewards'
+]);
 
 console.log(`\n📊 Route Loading Summary:`);
 console.log(`✅ Successfully loaded: ${routesLoaded} routes`);
