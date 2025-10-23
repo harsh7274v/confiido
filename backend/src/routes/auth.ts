@@ -336,11 +336,12 @@ router.post('/login', [
 // @access  Public
 router.post('/verify', verifyFirebaseToken, async (req, res, next) => {
   try {
-    // Generate JWT token using user's userId (4-digit)
-    const jwtToken = generateJWTToken(req.user.user_id);
+    // Use JWT token from middleware if available, otherwise generate new one
+    const jwtToken = (req as any).jwtToken || generateJWTToken(req.user.user_id);
     
     res.json({
       success: true,
+      message: 'Firebase token verified successfully',
       data: { 
         user: {
           id: req.user._id,

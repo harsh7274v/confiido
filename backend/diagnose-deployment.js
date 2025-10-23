@@ -172,3 +172,4 @@ if (issues.length === 0) {
 
 console.log('\n💡 If deployment still fails, check Vercel logs for specific error messages!');
 
+

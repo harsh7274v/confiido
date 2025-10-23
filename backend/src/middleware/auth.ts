@@ -5,7 +5,7 @@ import User from '../models/User';
 import Reward from '../models/Reward';
 import { getAuth } from '../config/firebase';
 import { generateUniqueUserId, ensureUserId } from '../utils/userIdGenerator';
-import { verifyJWTToken } from '../utils/jwtGenerator';
+import { verifyJWTToken, generateJWTToken } from '../utils/jwtGenerator';
 
 // Extend Express Request interface to include user
 declare global {
@@ -98,6 +98,11 @@ export const protect = async (
             await user.save();
             console.log(`Firebase user created successfully with user_id: ${userId}`);
             
+            // Generate JWT token immediately for new Firebase user
+            const jwtToken = generateJWTToken(user.user_id);
+            (req as any).jwtToken = jwtToken;
+            console.log(`🔑 JWT token generated for new Firebase user in auth middleware: ${user.user_id}`);
+            
             // Create initial rewards for the new Firebase user (same as traditional users)
             try {
               await Reward.create({
@@ -128,6 +133,11 @@ export const protect = async (
           // Ensure user has userId
           await ensureUserId(user);
           await user.save();
+          
+          // Generate JWT token for existing Firebase user as well
+          const jwtToken = generateJWTToken(user.user_id);
+          (req as any).jwtToken = jwtToken;
+          console.log(`🔑 JWT token generated for existing Firebase user in auth middleware: ${user.user_id}`);
         }
       } catch (firebaseError) {
         console.log('Firebase verification failed, trying JWT');

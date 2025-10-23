@@ -3,9 +3,11 @@ import { getAuth } from '../config/firebase';
 import User from '../models/User';
 import { generateUniqueUserId } from '../utils/userIdGenerator';
 import Reward from '../models/Reward';
+import { generateJWTToken } from '../utils/jwtGenerator';
 
 interface AuthRequest extends Request {
   user?: any;
+  jwtToken?: string;
 }
 
 export const verifyFirebaseToken = async (
@@ -95,6 +97,11 @@ export const verifyFirebaseToken = async (
         await user.save();
         console.log(`✅ Firebase user created successfully with user_id: ${user.user_id}`);
         
+        // Generate JWT token immediately for new Firebase user
+        const jwtToken = generateJWTToken(user.user_id);
+        req.jwtToken = jwtToken;
+        console.log(`🔑 JWT token generated for new Firebase user: ${user.user_id}`);
+        
         // Create initial rewards for new Firebase user
         try {
           await Reward.create({
@@ -123,6 +130,11 @@ export const verifyFirebaseToken = async (
       // Update last login for existing Firebase user
       user.lastLogin = new Date();
       await user.save();
+      
+      // Generate JWT token for existing Firebase user as well
+      const jwtToken = generateJWTToken(user.user_id);
+      req.jwtToken = jwtToken;
+      console.log(`🔑 JWT token generated for existing Firebase user: ${user.user_id}`);
     }
 
     req.user = user;
