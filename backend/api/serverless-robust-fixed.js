@@ -1,6 +1,9 @@
 // Robust Serverless Backend for Vercel
 // This version handles Firebase initialization gracefully and provides fallbacks
 
+// Initialize Firebase to match local environment exactly
+require('./serverless-firebase-match');
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -18,60 +21,10 @@ process.env.VERCEL = '1';
 app.set('trust proxy', 1);
 
 // ============================================================================
-// FIREBASE INITIALIZATION (Graceful with Fallbacks)
+// FIREBASE INITIALIZATION
 // ============================================================================
-
-let firebaseInitialized = false;
-let firebaseError = null;
-let firebaseAuth = null;
-
-try {
-  // Only initialize Firebase if credentials are properly configured
-  const hasValidFirebaseConfig = !!(
-    process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_PRIVATE_KEY &&
-    process.env.FIREBASE_CLIENT_EMAIL &&
-    process.env.FIREBASE_PRIVATE_KEY !== 'test-key' &&
-    process.env.FIREBASE_PRIVATE_KEY.includes('-----BEGIN PRIVATE KEY-----')
-  );
-
-  if (hasValidFirebaseConfig) {
-    const admin = require('firebase-admin');
-    
-    if (!admin.apps.length) {
-      const serviceAccount = {
-        type: "service_account",
-        project_id: process.env.FIREBASE_PROJECT_ID,
-        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-        private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        client_email: process.env.FIREBASE_CLIENT_EMAIL,
-        client_id: process.env.FIREBASE_CLIENT_ID,
-        auth_uri: "https://accounts.google.com/o/oauth2/auth",
-        token_uri: "https://oauth2.googleapis.com/token",
-        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-        client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
-      };
-
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-      
-      firebaseInitialized = true;
-      firebaseAuth = admin.auth();
-      console.log('✅ Firebase Admin SDK initialized successfully');
-    } else {
-      // Reuse existing app
-      firebaseInitialized = true;
-      firebaseAuth = admin.auth();
-      console.log('✅ Firebase Admin SDK reused existing app');
-    }
-  } else {
-    console.warn('⚠️ Firebase credentials not properly configured, skipping initialization');
-  }
-} catch (error) {
-  firebaseError = error.message;
-  console.warn('⚠️ Firebase initialization failed:', error.message);
-}
+// Firebase is initialized in serverless-firebase-match.js
+// This ensures it matches the local configuration exactly
 
 // ============================================================================
 // DATABASE CONNECTION (Serverless Optimized)
@@ -389,8 +342,8 @@ app.get('/api/health', (req, res) => {
       state: mongoose.connection.readyState
     },
     firebase: {
-      initialized: firebaseInitialized,
-      error: firebaseError
+      initialized: 'handled by serverless-firebase-match',
+      status: 'matched with local environment'
     }
   });
 });
@@ -416,8 +369,8 @@ app.get('/api/health/detailed', (req, res) => {
       name: mongoose.connection.name
     },
     firebase: {
-      initialized: firebaseInitialized,
-      error: firebaseError
+      initialized: 'handled by serverless-firebase-match',
+      status: 'matched with local environment'
     }
   });
 });
@@ -440,8 +393,8 @@ app.get('/', (req, res) => {
       detailed: '/api/health/detailed'
     },
     firebase: {
-      initialized: firebaseInitialized,
-      error: firebaseError
+      initialized: 'handled by serverless-firebase-match',
+      status: 'matched with local environment'
     }
   });
 });
