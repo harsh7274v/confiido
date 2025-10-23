@@ -3,7 +3,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/serverless-fixed.js"
+      "dest": "api/serverless-robust-fixed.js"
     }
   ],
   "buildCommand": "npm run build",
@@ -13,7 +13,7 @@
     "VERCEL": "1"
   },
   "functions": {
-    "api/serverless-fixed.js": {
+    "api/serverless-robust-fixed.js": {
       "memory": 1024,
       "maxDuration": 30
     }
