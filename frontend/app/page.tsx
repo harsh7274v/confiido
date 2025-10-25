@@ -245,38 +245,45 @@ export default function Home() {
     {
       id: 1,
       name: "Megha Upadhyay",
-      title: "Public Speaking Coach",
-      company: "ABP News Alumni",
+      title: "Journalist",
+      company: "Ex-ABP News, IIMC Alumni",
       experience: "4+ years experience",
       rating: 4.9,
       reviews: 127,
-      price: "Rs 500/session",
+      price: "Rs 750/session",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Replace with actual video URL
       videoDuration: "2 min video",
-      quote: "I used to be uncomfortable speaking in public. Now I help students/professional find their authentic voice and speak with confidence.",
+      quote: "I started on Confiido to help students/professional find their authentic voice and speak with confidence.",
       skills: [
-        "Overcoming speaking anxiety",
-        "Building executive presence", 
-        "Presentation skills for work"
+        "Overcoming speaking anxiety", 
+        "Confident on-camera communication",
+        "Voice modulation and tone control",
+        "Structuring impactful speeches",
+        "Storytelling for influence",
+        "Interview performance coaching",
+        "Handling stage fright and impromptu speaking"
       ],
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h=400&fit=crop&crop=face"
     },
     {
       id: 2,
-      name: "Marcus Rodriguez",
-      title: "Leadership Communication Expert",
-      company: "Microsoft Alumni",
-      experience: "15+ years experience",
+      name: "Ajatika Singh",
+      title: "Journalist",
+      company: "ABP News",
+      experience: "8+ years experience",
       rating: 4.8,
       reviews: 203,
-      price: "$200/session",
+      price: "Rs 750/session",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Replace with actual video URL
       videoDuration: "3 min video",
       quote: "Leadership is about inspiring others through clear, confident communication. Let me show you how.",
       skills: [
         "Leadership communication",
-        "Team meeting confidence",
-        "Executive storytelling"
+          "Impromptu speaking and Q&A mastery",
+          "Crafting memorable introductions",
+          "Non-verbal communication and body language",
+          "Persuasive storytelling for impact",
+          "Structuring complex ideas simply"
       ],
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=400&fit=crop&crop=face"
     }
@@ -367,61 +374,81 @@ export default function Home() {
     {
       name: "Rahul Vansh",
       avatar: "RV",
-      content: "Before joining, I wasn't that confident about interviews for AI based roles, though I did have good enough understanding of concepts but 'what I don't know' was stopping me to apply for such roles. Ma'am made it realised that it's an iterative process, I'll learn to tackle my loopholes by actually giving interviews.",
+      content: "Before joining, I wasn't that confident about interviews for on-camera roles, though I did have good enough understanding of concepts but 'what I don't know' was stopping me to apply for such roles. Ma'am made it realised that it's an iterative process, I'll learn to tackle my loopholes by actually giving interviews.",
       mentor: {
-        name: "Pooja Palod",
-        title: "Machine learning engineer, Uber",
-        avatar: "PP"
+        name: "Megha Updadhyay",
+        title: "Ex-ABP News",
+        avatar: "MU"
       }
     },
     {
       name: "Pradeep M",
       avatar: "PM",
-      content: "Just wanted to say a big thank you for your insightful guidance. Your clear advice on improving my data analyst skills was exactly what I needed. I appreciate your genuine interest in my growth, and I'm excited to start working on your suggestions.",
+      content: "Just wanted to say a big thank you for your insightful guidance. Your clear advice on improving my speaking and writing skills was exactly what I needed. I appreciate your genuine interest in my growth, and I'm excited to start working on your suggestions.",
       mentor: {
-        name: "Tajamul Khan",
-        title: "Advanced Data Scientist, Eastman",
-        avatar: "TK"
+        name: "Ajatika Singh",
+        title: "ABP News",
+        avatar: "AS"
       }
     },
     {
-      name: "Sarah Johnson",
-      avatar: "SJ",
-      content: "The mentorship program exceeded my expectations. The personalized guidance helped me transition from a junior developer to a team lead within 6 months. The structured approach and regular feedback sessions were invaluable.",
+      name: "Kirti Sharma",
+      avatar: "KS",
+      content: "Happy to talk to you!! I loved the way she was clearing my doubts related to my career. She is frank, loving and motivating person. I recommend everyone to take advice from her as she is very genuine and realistic in nature.",
       mentor: {
-        name: "Alex Chen",
-        title: "Senior Software Engineer, Google",
-        avatar: "AC"
+        name: "Megha Updadhyay",
+        title: "Ex-ABP News",
+        avatar: "MU"
       }
     },
     {
-      name: "Michael Rodriguez",
-      avatar: "MR",
-      content: "Working with my mentor transformed my approach to product management. The weekly sessions and practical frameworks helped me secure a senior PM role at a Fortune 500 company. Couldn't have done it without this guidance.",
+      name: "Abhijeet Pathak",
+      avatar: "AP",
+      content: "I recently had a conversation with a Megha Didi who guided me regarding my career and shared valuable advice. she patiently answered all my questions and motivated me to work hard and stay focused. The guidance I received has given me clarity and confidence to move forward in life, not just in my career but in every field. I am truly grateful for their time and support. Thank so much didi for being such a positive influence.🙏🏻❤️I am always grateful to you.",
       mentor: {
-        name: "Emily Zhang",
-        title: "Senior Product Manager, Meta",
-        avatar: "EZ"
+        name: "Megha Upadhyay",
+        title: "Ex-ABP News",
+        avatar: "MU"
       }
     },
     {
-      name: "Jessica Lee",
-      avatar: "JL",
-      content: "The marketing strategies and growth hacking techniques I learned through mentoring sessions directly led to a 300% increase in our startup's user acquisition. The ROI on this investment was incredible.",
+      name: "Harjeet Kaur",
+      avatar: "HK",
+      content: "The call is really worth it. And very helpful. I could say she is the best person to guide in the caarer.",
       mentor: {
-        name: "David Park",
-        title: "Growth Marketing Lead, Spotify",
-        avatar: "DP"
+        name: "Ajatika Singh",
+        title: "ABP News",
+        avatar: "AS"
       }
     },
     {
-      name: "Ahmed Hassan",
-      avatar: "AH",
-      content: "As someone transitioning into cybersecurity, the hands-on guidance and industry insights were game-changing. My mentor helped me land my dream job at a top security firm within 4 months of starting our sessions.",
+      name: "Arvind",
+      avatar: "AR",
+      content: "It was nice talking to Megha. She patiently clarified each and every doubt I had. Thank you, Megha.",
       mentor: {
-        name: "Lisa Thompson",
-        title: "Cybersecurity Director, Microsoft",
-        avatar: "LT"
+        name: "Megha Upadhyay",
+        title: "Ex-ABP News",
+        avatar: "MU"
+      }
+    },
+    {
+      name: "Shruti Suman",
+      avatar: "SS",
+      content: "The session was extremely wonderful! Being a fresher it always seems to be hard or almost impossible to get in touch with the people who are already on a good note or position. It was truly grateful of maam , the way she thought and explained me the things in such a friendly and easy manner that made me comfortable to express and put on my points and queries freely , along with that she really helped me overcome finding a solution for me. Thanks to her! I would really suggest the students to have a session with her , you will really be amazed and happy finding it very helpful.",
+      mentor: {
+        name: "Megha Upadhyay",
+        title: "Ex-ABP News",
+        avatar: "MU"
+      }
+    },
+    {
+      name: "Sunny Shukla",
+      avatar: "SS",
+      content: "It was nice talking to Ajatika Ma'am. She patiently clarified each and every doubt I had. Thank you ma'am.",
+      mentor: {
+        name: "Ajatika Singh",
+        title: "ABP News",
+        avatar: "AS"
       }
     }
   ];
@@ -493,8 +520,8 @@ export default function Home() {
         title1="Speak with Confidence"
         title2="Lead with Clarity"
         description="Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable."
-        buttonText="Book a Free Trial"
-        onButtonClick={handleSignupClick}
+        buttonText="Book your Session"
+        onButtonClick={() => router.push('/signup')}
       />
 
       {/* Meet Your Mentors Section */}
@@ -1040,7 +1067,7 @@ export default function Home() {
           <p className="text-xl text-white/90 mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Join thousands of professionals who have accelerated their careers with mentorship</p>
           <div className="flex justify-center">
             <Link href="/signup" className="bg-white text-gray-800 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onClick={handleSignupClick}>
-              Book a Free Trial
+              Book your Session
             </Link>
           </div>
         </div>
