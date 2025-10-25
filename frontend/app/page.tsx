@@ -1177,7 +1177,7 @@ export default function Home() {
           <p className="text-xl text-white/90 mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Join thousands of professionals who have accelerated their careers with mentorship</p>
           <div className="flex justify-center">
             <Link href="/signup" className="bg-white text-gray-800 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onClick={handleSignupClick}>
-              Book a Free Trial
+              Book your Session
             </Link>
           </div>
         </div>
