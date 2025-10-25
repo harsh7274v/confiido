@@ -494,11 +494,11 @@ export default function Home() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead with Clarity</span>
             </h1>
             <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto">
-              1-on-1 coaching and self-placed courses to build unshakable public speaking skills.
+              Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-12">
               <Link href="/signup" className="bg-gray-800 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors" onClick={handleSignupClick}>
-                Book a Free Trial
+                Book your Session
               </Link>
             </div>
             
