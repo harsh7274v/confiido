@@ -752,9 +752,9 @@ export default function DashboardPage() {
         )}
       </>
     )}
-    <div className="min-h-screen bg-[#f5f5f5] translucent-bg overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 overflow-hidden">
       {/* Semi-transparent overlay for better content readability */}
-      <div className="absolute inset-0 bg-white/20 pointer-events-none z-0"></div>
+      <div className="absolute inset-0 bg-white/10 pointer-events-none z-0"></div>
       <div className="flex h-screen relative z-20 overflow-hidden">
         {/* Sidebar */}
                 <Sidebar
@@ -798,11 +798,11 @@ export default function DashboardPage() {
                     <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
                       <User className="h-5 w-5 text-white" />
                     </div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight" style={{ fontFamily: "'Rubik', sans-serif" }}>
                       Welcome back, <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
                     </h2>
                   </div>
-                  <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12">Ready to accelerate your career journey?</span>
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to accelerate your career journey?</span>
                 </div>
                 <div className="flex-shrink-0 flex items-center gap-3 relative py-2">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl transition-all duration-300">
@@ -857,8 +857,8 @@ export default function DashboardPage() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
                 {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
                 <div className="flex-1 order-2 lg:order-1">
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-black mb-2">Next in Your Career Journey</h2>
-                  <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-black mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>Next in Your Career Journey</h2>
+                  <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
                   <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-gentle">
@@ -869,8 +869,8 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black">Not sure what direction to take?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Book a career exploration session</button>
+                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Not sure what direction to take?</div>
+                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Book a career exploration session</button>
                     </div>
                     {/* Card 2 */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10 animate-float-slow">
@@ -881,8 +881,8 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">🚲</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black">Need help creating a strong first resume?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Resume review for freshers</button>
+                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Need help creating a strong first resume?</div>
+                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Resume review for freshers</button>
                     </div>
                     {/* Card 3 */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-fast">
@@ -893,8 +893,8 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black">Applied to a few jobs but no response?</div>
-                      <button className="w-full bg-gray-900 text-white font-semibold py-2 rounded-lg mt-2 text-sm">Audit your job strategy</button>
+                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Applied to a few jobs but no response?</div>
+                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Audit your job strategy</button>
                     </div>
                   </div>
                 </div>
@@ -905,13 +905,13 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
                       <button 
                         type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-purple-600 text-white hover:bg-purple-700"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-gradient-to-r from-gray-600 to-gray-800 text-white hover:from-gray-700 hover:to-gray-900"
                         onClick={() => setShowBookSessionPopup(true)}
                         style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="text-lg font-semibold mb-1">Book a session</p>
@@ -924,13 +924,13 @@ export default function DashboardPage() {
 
                       <button
                         type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-gradient-to-r from-gray-500 to-gray-700 text-white hover:from-gray-600 hover:to-gray-800"
                         onClick={() => setShowMessageToast(true)}
                         style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="text-lg font-semibold mb-1">Open messages</p>
@@ -975,10 +975,10 @@ export default function DashboardPage() {
                   {/* Find Your Mentor Section (outer box/background removed, cards retained) */}
                   <div className="mt-6 w-full">
                     <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black">Find Your Mentor</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Find Your Mentor</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       {mentors.map((mentor) => (
@@ -1027,20 +1027,20 @@ export default function DashboardPage() {
                   {/* Sessions box */}
                   <div id="sessions-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                     <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black">Sessions</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Sessions</h2>
                     </div>
                     <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         onClick={() => setSessionTab('upcoming')}
                       >
                         Upcoming
                       </button>
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         onClick={() => setSessionTab('completed')}
                       >
                         Completed
@@ -1160,10 +1160,10 @@ export default function DashboardPage() {
                   {/* Goals box */}
                   <div id="goals-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                     <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
                         <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black">Goals</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Goals</h2>
                     </div>
                     
                     {/* Add Goal Input */}
@@ -1174,13 +1174,13 @@ export default function DashboardPage() {
                           value={newGoal}
                           onChange={(e) => setNewGoal(e.target.value)}
                           placeholder="Enter your goal..."
-                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:border-purple-500 focus:outline-none transition-all duration-300 text-sm sm:text-base"
+                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:border-gray-500 focus:outline-none transition-all duration-300 text-sm sm:text-base"
                           onKeyPress={(e) => e.key === 'Enter' && addGoal()}
                         />
                         <button
                           onClick={addGoal}
                           disabled={saving || !newGoal.trim()}
-                          className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 text-white rounded-xl sm:rounded-2xl font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
+                          className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-xl sm:rounded-2xl font-semibold hover:from-gray-700 hover:to-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
                         >
                           {saving ? 'Adding...' : 'Add'}
                         </button>
@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
                     <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {goals.length === 0 ? (
                         <div className="text-center py-12">
-                          <Target className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+                          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                           <div className="text-gray-500 text-lg">No goals yet</div>
                           <p className="text-gray-400 mt-2">Add your first goal to get started!</p>
                         </div>
@@ -1206,7 +1206,7 @@ export default function DashboardPage() {
                                     className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
                                       goal.completed
                                         ? 'bg-green-500 border-green-500 text-white'
-                                        : 'border-gray-300 hover:border-purple-500'
+                                        : 'border-gray-300 hover:border-gray-500'
                                     }`}
                                   >
                                     {goal.completed && (

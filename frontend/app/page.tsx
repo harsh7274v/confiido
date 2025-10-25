@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import VideoSpinner from './components/ui/VideoSpinner';
+import Testimonials from './components/ui/testimonials';
+import { HeroGeometric } from './components/ui/shape-landing-hero';
 import '/public/WEB/css/clash-grotesk.css';
 import '/public/web1/css/bespoke-stencil.css';
 import '/public/web1/css/clash-display.css';
@@ -429,7 +431,9 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden relative" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      {/* Modern background pattern - visible but subtle */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-50 pointer-events-none" style={{ zIndex: -1 }}></div>
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
@@ -485,44 +489,16 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
-              <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>Speak Confidently</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead Confidently</span>
-            </h1>
-            <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto">
-              1-on-1 coaching and self-placed courses to build unshakable public speaking skills.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-12">
-              <Link href="/signup" className="bg-gray-800 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors" onClick={handleSignupClick}>
-                Book a Free Trial
-              </Link>
-            </div>
-            
-            {/* Trust indicators */}
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-xs sm:text-sm text-gray-500 mb-6 sm:mb-8">
-              <div className="flex items-center">
-                <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                <span>No Payment Required</span>
-              </div>
-              <div className="flex items-center">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                <span>Verified Mentors Only</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                <span>Reschedule Anytime</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroGeometric 
+        title1="Speak with Confidence"
+        title2="Lead with Clarity"
+        description="Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable."
+        buttonText="Book a Free Trial"
+        onButtonClick={handleSignupClick}
+      />
 
       {/* Meet Your Mentors Section */}
-      <section id="mentors-section" className="py-8 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
+      <section id="mentors-section" className="py-8 bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-full text-sm font-medium mb-4">
@@ -662,7 +638,7 @@ export default function Home() {
       </section>
 
       {/* Get Started in 3 Easy Steps Section */}
-      <section id="mentors" className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
+      <section id="mentors" className="py-16 bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Get Started in 3 Easy Steps</h2>
@@ -707,126 +683,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Love & Praise by The Mentees Section */}
-      <section id="testimonials-section" className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Love & Praise by <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">The Mentees</span></h2>
-            <p className="text-xl text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Get inspired by the real-life experiences of our students and their journey to success with Confiido.</p>
-          </div>
-
-          {/* Black Frame Container for Continuous Scrolling */}
-          <div className="relative max-w-7xl mx-auto">
-            <div 
-              className="bg-gray-900 p-4 sm:p-8 rounded-3xl overflow-hidden shadow-2xl"
-              onMouseEnter={() => setIsTestimonialPaused(true)}
-              onMouseLeave={() => setIsTestimonialPaused(false)}
-            >
-              {/* Continuous Scrolling Animation */}
-              <div 
-                className="flex"
-                style={{ 
-                  transform: `translateX(-${isMobile ? (currentTestimonialSlide * 16.67) : (currentTestimonialSlide * 8.33)}%)`,
-                  width: '200%', // Double width to accommodate seamless loop
-                  transition: 'transform 0.15s ease-out' // Smooth micro-transitions between updates
-                }}
-              >
-                {/* First set of testimonials */}
-                {testimonials.map((testimonial, slideIndex) => (
-                  <div key={slideIndex} className="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 flex-shrink-0 px-2 sm:px-4">
-                    <div className={`${getRandomBackgroundColor(slideIndex)} rounded-xl p-2 sm:p-6 shadow-lg ${getRandomShadowColor(slideIndex)} border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105`}>
-                      {/* User Avatar and Name */}
-                      <div className="flex items-start space-x-2 mb-3">
-                        <div className="w-6 sm:w-10 h-6 sm:h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                          {testimonial.avatar}
-                        </div>
-                        <div>
-                          <h4 className="text-xs sm:text-base font-bold text-gray-900">{testimonial.name}</h4>
-                        </div>
-                      </div>
-
-                      {/* Testimonial Content */}
-                      <div className="mb-3 sm:mb-6 flex-1">
-                        <p className="text-gray-700 text-xs sm:text-sm leading-relaxed line-clamp-3">
-                          {testimonial.content.length > 80 
-                            ? `${testimonial.content.substring(0, 80)}...` 
-                            : testimonial.content}
-                        </p>
-                      </div>
-
-                      {/* Mentor Information */}
-                      <div className="border-t border-gray-100 pt-2 sm:pt-4 mt-auto">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
-                            <div className="w-4 sm:w-8 h-4 sm:h-8 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                              {testimonial.mentor.avatar}
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-gray-900">{testimonial.mentor.name}</p>
-                              <p className="text-xs text-gray-500 truncate max-w-20 sm:max-w-none">{testimonial.mentor.title}</p>
-                            </div>
-                          </div>
-                          <span className="text-xs text-gray-600 font-medium bg-gray-100 px-1 sm:px-2 py-1 rounded-full">
-                            Mentor
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {/* Duplicate testimonials for seamless loop */}
-                {testimonials.map((testimonial, slideIndex) => (
-                  <div key={`duplicate-${slideIndex}`} className="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/6 flex-shrink-0 px-2 sm:px-4">
-                    <div className={`${getRandomBackgroundColor(slideIndex)} rounded-xl p-2 sm:p-6 shadow-lg ${getRandomShadowColor(slideIndex)} border border-gray-100 h-64 sm:h-80 transform transition-all duration-300 hover:scale-105`}>
-                      {/* User Avatar and Name */}
-                      <div className="flex items-start space-x-2 mb-3">
-                        <div className="w-6 sm:w-10 h-6 sm:h-10 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                          {testimonial.avatar}
-                        </div>
-                        <div>
-                          <h4 className="text-xs sm:text-base font-bold text-gray-900">{testimonial.name}</h4>
-                        </div>
-                      </div>
-
-                      {/* Testimonial Content */}
-                      <div className="mb-3 sm:mb-6 flex-1">
-                        <p className="text-gray-700 text-xs sm:text-sm leading-relaxed line-clamp-3">
-                          {testimonial.content.length > 80 
-                            ? `${testimonial.content.substring(0, 80)}...` 
-                            : testimonial.content}
-                        </p>
-                      </div>
-
-                      {/* Mentor Information */}
-                      <div className="border-t border-gray-100 pt-2 sm:pt-4 mt-auto">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
-                            <div className="w-4 sm:w-8 h-4 sm:h-8 bg-gray-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
-                              {testimonial.mentor.avatar}
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-gray-900">{testimonial.mentor.name}</p>
-                              <p className="text-xs text-gray-500 truncate max-w-20 sm:max-w-none">{testimonial.mentor.title}</p>
-                            </div>
-                          </div>
-                          <span className="text-xs text-gray-600 font-medium bg-gray-100 px-1 sm:px-2 py-1 rounded-full">
-                            Mentor
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* New Testimonials Section */}
+      <Testimonials />
 
 
 
       {/* Who This is For Section */}
-      <section className="py-12 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
+      <section className="py-12 bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-10">
             <div className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium mb-3">
@@ -1013,7 +876,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
+      <section className="py-16 bg-gradient-to-br from-slate-50 via-white to-slate-100">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium mb-3">
