@@ -253,15 +253,13 @@ export default function Home() {
       videoDuration: "2 min video",
       quote: "I started on Confiido to help students/professional find their authentic voice and speak with confidence.",
       skills: [
-        "Overcoming speaking anxiety",
-        "Building executive presence", 
+        "Overcoming speaking anxiety", 
         "Confident on-camera communication",
         "Voice modulation and tone control",
         "Structuring impactful speeches",
         "Storytelling for influence",
         "Interview performance coaching",
-        "Handling stage fright and impromptu speaking",
-        "Developing clarity and articulation"
+        "Handling stage fright and impromptu speaking"
       ],
       image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h=400&fit=crop&crop=face"
     },
