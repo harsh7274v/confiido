@@ -406,7 +406,7 @@ export default function Home() {
       avatar: "AP",
       content: "I recently had a conversation with a Megha Didi who guided me regarding my career and shared valuable advice. she patiently answered all my questions and motivated me to work hard and stay focused. The guidance I received has given me clarity and confidence to move forward in life, not just in my career but in every field. I am truly grateful for their time and support. Thank so much didi for being such a positive influence.🙏🏻❤️I am always grateful to you.",
       mentor: {
-        name: "Megha Updadhyay",
+        name: "Megha Upadhyay",
         title: "Ex-ABP News",
         avatar: "MU"
       }
@@ -426,7 +426,7 @@ export default function Home() {
       avatar: "AR",
       content: "It was nice talking to Megha. She patiently clarified each and every doubt I had. Thank you, Megha.",
       mentor: {
-        name: "Megha Updadhyay",
+        name: "Megha Upadhyay",
         title: "Ex-ABP News",
         avatar: "MU"
       }
@@ -436,7 +436,7 @@ export default function Home() {
       avatar: "SS",
       content: "The session was extremely wonderful! Being a fresher it always seems to be hard or almost impossible to get in touch with the people who are already on a good note or position. It was truly grateful of maam , the way she thought and explained me the things in such a friendly and easy manner that made me comfortable to express and put on my points and queries freely , along with that she really helped me overcome finding a solution for me. Thanks to her! I would really suggest the students to have a session with her , you will really be amazed and happy finding it very helpful.",
       mentor: {
-        name: "Megha Updadhyay",
+        name: "Megha Upadhyay",
         title: "Ex-ABP News",
         avatar: "MU"
       }
