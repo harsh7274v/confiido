@@ -488,7 +488,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-3xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
+            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
               <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>Speak Confidently</span>
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead Confidently</span>
@@ -629,8 +629,8 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Bottom Section - Rating and Book Button */}
-                  <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                  {/* Bottom Section - Rating and Price */}
+                  <div className="flex items-center justify-center pt-6 border-t border-gray-100">
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <span className="flex items-center">
                         <Star className="h-4 w-4 text-yellow-400 mr-1" />
@@ -640,9 +640,6 @@ export default function Home() {
                         {mentors[currentMentorIndex].price}
                       </span>
                     </div>
-                    <button className="px-6 py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors">
-                      Book {mentors[currentMentorIndex].name.split(' ')[0]}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -683,9 +680,6 @@ export default function Home() {
               <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Choose your preferred coach and schedule a personalized 1-on-1 session at a time that works best for you.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
-                Book Session <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
             </div>
 
             {/* Step 2 - Gray */}
@@ -697,9 +691,6 @@ export default function Home() {
               <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Secure your session with our easy payment process. Multiple payment options available for your convenience.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
-                Make Payment <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
             </div>
 
             {/* Step 3 - Gray */}
@@ -711,9 +702,6 @@ export default function Home() {
               <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Connect with your mentor seamlessly through Google Meet for your personalized coaching session.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
-                Join Session <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
             </div>
           </div>
         </div>
