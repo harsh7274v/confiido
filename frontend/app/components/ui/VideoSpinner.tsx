@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface VideoSpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   text?: string;
   className?: string;
 }
@@ -15,7 +15,8 @@ const VideoSpinner: React.FC<VideoSpinnerProps> = ({
     sm: 'h-12 w-12',
     md: 'h-16 w-16',
     lg: 'h-24 w-24',
-    xl: 'h-32 w-32'
+    xl: 'h-32 w-32',
+    '2xl': 'h-48 w-48'
   };
 
   return (
@@ -30,7 +31,7 @@ const VideoSpinner: React.FC<VideoSpinnerProps> = ({
       >
         <source src="/spinner.webm" type="video/webm" />
         {/* Fallback for browsers that don't support webm */}
-        <div className="animate-spin rounded-full border-b-2 border-purple-600" style={{ width: '100%', height: '100%' }}></div>
+        <div className="animate-spin rounded-full border-b-2 border-gray-600" style={{ width: '100%', height: '100%' }}></div>
       </video>
       {text && (
         <p className="text-gray-600 text-sm mt-2">{text}</p>

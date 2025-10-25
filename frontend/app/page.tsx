@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import VideoSpinner from './components/ui/VideoSpinner';
+import '/public/WEB/css/clash-grotesk.css';
+import '/public/web1/css/bespoke-stencil.css';
+import '/public/web1/css/clash-display.css';
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -426,7 +429,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
@@ -434,37 +437,46 @@ export default function Home() {
       `}</style>
       {showSpinner && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <VideoSpinner size="lg" />
+          <VideoSpinner size="2xl" />
         </div>
       )}
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <img 
                 src="/icons/icon-96x96.png" 
                 alt="Confiido Logo" 
-                className="h-10 w-10 object-contain"
+                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
               />
-              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Confiido</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</h1>
             </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <button onClick={scrollToMentors} className="text-gray-700 hover:text-blue-600 transition-colors">
-                Explore Mentors
+            <div className="hidden md:flex items-center space-x-6">
+              <button 
+                onClick={scrollToMentors} 
+                className="relative group px-4 py-2 text-gray-700 hover:text-gray-900 transition-all duration-300 font-medium"
+                style={{ fontFamily: "'Rubik', sans-serif" }}
+              >
+                <span className="relative z-10">Explore Mentors</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gray-600 to-gray-800 group-hover:w-full transition-all duration-300"></div>
               </button>
-              {/* <Link href="#mentors" className="text-gray-700 hover:text-blue-600 transition-colors">
-                AI Mentors
-              </Link> */}
-              <button onClick={scrollToTestimonials} className="text-gray-700 hover:text-blue-600 transition-colors">
-                Success Stories
+              <button 
+                onClick={scrollToTestimonials} 
+                className="relative group px-4 py-2 text-gray-700 hover:text-gray-900 transition-all duration-300 font-medium"
+                style={{ fontFamily: "'Rubik', sans-serif" }}
+              >
+                <span className="relative z-10">Success Stories</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gray-600 to-gray-800 group-hover:w-full transition-all duration-300"></div>
               </button>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/login" className="text-gray-700 hover:text-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 px-3 py-2 rounded-lg hover:bg-blue-50" onClick={handleLoginClick}>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link href="/login" className="text-gray-700 hover:text-gray-900 transition-all duration-300 ease-in-out transform hover:scale-105 px-2 py-1 sm:px-4 sm:py-2 rounded-lg border-2 border-gray-300 hover:border-gray-600 hover:bg-gray-50 text-sm sm:text-base" onClick={handleLoginClick}>
                 Login
               </Link>
-              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg" onClick={handleSignupClick}>
+              <Link href="/signup" className="bg-gradient-to-r from-gray-600 to-gray-800 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg border border-gray-500 text-sm sm:text-base" onClick={handleSignupClick}>
                 Sign Up
               </Link>
             </div>
@@ -473,35 +485,35 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 py-24 sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-6xl font-bold tracking-tight sm:text-7xl mb-6">
-              <span className="text-gray-900">Speak Confidently</span>
+            <h1 className="text-3xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
+              <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>Speak Confidently</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Lead Confidently</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead Confidently</span>
             </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto">
               1-on-1 coaching and self-placed courses to build unshakable public speaking skills.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/signup" className="bg-gray-900 text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-gray-800 transition-colors" onClick={handleSignupClick}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-12">
+              <Link href="/signup" className="bg-gray-800 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors" onClick={handleSignupClick}>
                 Book a Free Trial
               </Link>
             </div>
             
             {/* Trust indicators */}
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500 mb-8">
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-xs sm:text-sm text-gray-500 mb-6 sm:mb-8">
               <div className="flex items-center">
-                <Shield className="h-5 w-5 mr-2 text-blue-600" />
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
                 <span>No Payment Required</span>
               </div>
               <div className="flex items-center">
-                <Users className="h-5 w-5 mr-2 text-blue-600" />
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
                 <span>Verified Mentors Only</span>
               </div>
               <div className="flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-blue-600" />
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
                 <span>Reschedule Anytime</span>
               </div>
             </div>
@@ -510,14 +522,14 @@ export default function Home() {
       </section>
 
       {/* Meet Your Mentors Section */}
-      <section id="mentors-section" className="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section id="mentors-section" className="py-8 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-4">
+            <div className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded-full text-sm font-medium mb-4">
               ✨ Meet Our Coaches
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Learn From <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Real Experts</span>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Learn From <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">Real Experts</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Get to know our speaking coaches through their personal stories and see how they can help you
@@ -588,7 +600,7 @@ export default function Home() {
                       <h3 className="text-3xl font-bold text-gray-900 mb-2">
                         {mentors[currentMentorIndex].name}
                       </h3>
-                      <p className="text-blue-600 font-semibold text-lg mb-1">
+                      <p className="text-gray-600 font-semibold text-lg mb-1">
                         {mentors[currentMentorIndex].title}
                       </p>
                       <p className="text-gray-500 text-sm mb-4">
@@ -597,7 +609,7 @@ export default function Home() {
                     </div>
 
                     {/* Quote */}
-                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <div className="bg-gray-100 p-4 rounded-lg mb-6">
                       <p className="text-gray-700 text-sm leading-relaxed italic">
                         &quot;{mentors[currentMentorIndex].quote}&quot;
                       </p>
@@ -628,7 +640,7 @@ export default function Home() {
                         {mentors[currentMentorIndex].price}
                       </span>
                     </div>
-                    <button className="px-6 py-3 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+                    <button className="px-6 py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-900 transition-colors">
                       Book {mentors[currentMentorIndex].name.split(' ')[0]}
                     </button>
                   </div>
@@ -643,7 +655,7 @@ export default function Home() {
                   key={index}
                   onClick={() => setCurrentMentorIndex(index)}
                   className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentMentorIndex ? 'bg-blue-600' : 'bg-gray-300'
+                    index === currentMentorIndex ? 'bg-gray-600' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -653,53 +665,53 @@ export default function Home() {
       </section>
 
       {/* Get Started in 3 Easy Steps Section */}
-      <section id="mentors" className="py-16 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section id="mentors" className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Get Started in 3 Easy Steps</h2>
-            <p className="text-xl text-gray-600">Follow these three simple steps to begin your speaking transformation journey</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Get Started in 3 Easy Steps</h2>
+            <p className="text-xl text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Follow these three simple steps to begin your speaking transformation journey</p>
           </div>
           
           {/* Steps Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {/* Step 1 - Red */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-red-200">
+              <div className="w-16 h-16 bg-gray-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-gray-300">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Your Session</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Book Your Session</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Choose your preferred coach and schedule a personalized 1-on-1 session at a time that works best for you.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors shadow-lg shadow-red-200" onClick={handleSignupClick}>
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
                 Book Session <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
-            {/* Step 2 - Yellow */}
+            {/* Step 2 - Gray */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-yellow-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-yellow-200">
+              <div className="w-16 h-16 bg-gray-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-gray-300">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Make Payment</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Make Payment</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Secure your session with our easy payment process. Multiple payment options available for your convenience.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors shadow-lg shadow-yellow-200" onClick={handleSignupClick}>
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
                 Make Payment <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
 
-            {/* Step 3 - Green */}
+            {/* Step 3 - Gray */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-green-200">
+              <div className="w-16 h-16 bg-gray-400 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6 shadow-lg shadow-gray-300">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Join via Google Meet</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Join via Google Meet</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Connect with your mentor seamlessly through Google Meet for your personalized coaching session.
               </p>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors shadow-lg shadow-green-200" onClick={handleSignupClick}>
+              <Link href="/signup" className="inline-flex items-center px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors shadow-lg shadow-gray-300" onClick={handleSignupClick}>
                 Join Session <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -708,11 +720,11 @@ export default function Home() {
       </section>
 
       {/* Love & Praise by The Mentees Section */}
-      <section id="testimonials-section" className="py-16 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section id="testimonials-section" className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Love & Praise by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">The Mentees</span></h2>
-            <p className="text-xl text-gray-600">Get inspired by the real-life experiences of our students and their journey to success with Confiido.</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Love & Praise by <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">The Mentees</span></h2>
+            <p className="text-xl text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Get inspired by the real-life experiences of our students and their journey to success with Confiido.</p>
           </div>
 
           {/* Black Frame Container for Continuous Scrolling */}
@@ -766,7 +778,7 @@ export default function Home() {
                               <p className="text-xs text-gray-500 truncate max-w-20 sm:max-w-none">{testimonial.mentor.title}</p>
                             </div>
                           </div>
-                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1 sm:px-2 py-1 rounded-full">
+                          <span className="text-xs text-gray-600 font-medium bg-gray-100 px-1 sm:px-2 py-1 rounded-full">
                             Mentor
                           </span>
                         </div>
@@ -809,7 +821,7 @@ export default function Home() {
                               <p className="text-xs text-gray-500 truncate max-w-20 sm:max-w-none">{testimonial.mentor.title}</p>
                             </div>
                           </div>
-                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1 sm:px-2 py-1 rounded-full">
+                          <span className="text-xs text-gray-600 font-medium bg-gray-100 px-1 sm:px-2 py-1 rounded-full">
                             Mentor
                           </span>
                         </div>
@@ -826,16 +838,16 @@ export default function Home() {
 
 
       {/* Who This is For Section */}
-      <section className="py-12 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section className="py-12 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium mb-3">
+            <div className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium mb-3">
               🎯 Perfect Match
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Who This is <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">For</span>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Who This is <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">For</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6" style={{ fontFamily: "'Rubik', sans-serif" }}>
               Help yourself identify if our coaching is the perfect fit for your journey
             </p>
             
@@ -845,7 +857,7 @@ export default function Home() {
                 onClick={() => setSelectedCategory('student')}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
                   selectedCategory === 'student'
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
                     : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
                 }`}
               >
@@ -855,7 +867,7 @@ export default function Home() {
                 onClick={() => setSelectedCategory('professional')}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
                   selectedCategory === 'professional'
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                    ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
                     : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
                 }`}
               >
@@ -863,7 +875,7 @@ export default function Home() {
               </button>
             </div>
 
-            <p className="text-base text-blue-600 font-semibold">
+            <p className="text-base text-gray-600 font-semibold" style={{ fontFamily: "'Rubik', sans-serif" }}>
               Confido is designed for those who want their voice to inspire, influence and impact.
             </p>
           </div>
@@ -1013,16 +1025,16 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      <section className="py-16 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium mb-3">
+            <div className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-medium mb-3">
               ❓ Questions & Answers
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Questions</span>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">Questions</span>
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
               Get answers to the most common questions about our coaching sessions
             </p>
           </div>
@@ -1163,7 +1175,7 @@ export default function Home() {
           {/* FAQ CTA */}
           <div className="text-center mt-10">
             <p className="text-gray-600 mb-4">Still have questions?</p>
-            <button onClick={openChatbot} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+            <button onClick={openChatbot} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-900 transition-all duration-300">
               Contact Support <ArrowRight className="ml-2 h-4 w-4" />
             </button>
           </div>
@@ -1171,12 +1183,12 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
+      <section className="bg-gradient-to-r from-gray-600 to-gray-800 py-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to supercharge your career?</h2>
-          <p className="text-xl text-white/90 mb-8">Join thousands of professionals who have accelerated their careers with mentorship</p>
+          <h2 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to supercharge your career?</h2>
+          <p className="text-xl text-white/90 mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Join thousands of professionals who have accelerated their careers with mentorship</p>
           <div className="flex justify-center">
-            <Link href="/signup" className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onClick={handleSignupClick}>
+            <Link href="/signup" className="bg-white text-gray-800 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors" onClick={handleSignupClick}>
               Book a Free Trial
             </Link>
           </div>
@@ -1187,8 +1199,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Confiido</h3>
-              <p className="text-gray-400">Connecting ambitious professionals with industry experts for career acceleration.</p>
+              <h3 className="text-xl font-bold text-white mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Confiido</h3>
+              <p className="text-gray-400" style={{ fontFamily: "'Rubik', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
@@ -1226,7 +1238,7 @@ export default function Home() {
       {!isChatbotOpen && (
         <button
           onClick={openChatbot}
-          className="fixed bottom-4 right-4 z-40 w-14 h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
+          className="fixed bottom-4 right-4 z-40 w-14 h-14 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
         >
           <MessageCircle className="w-6 h-6" />
         </button>
@@ -1237,7 +1249,7 @@ export default function Home() {
         <div className="fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)] h-[600px]">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden h-full flex flex-col">
             {/* Chatbot Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-gray-600 to-gray-800 text-white p-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <MessageCircle className="w-5 h-5" />
                 <h3 className="font-semibold">Support Chat</h3>
@@ -1372,7 +1384,7 @@ export default function Home() {
                   <button
                     onClick={nextChatbotStep}
                      disabled={! (chatbotData as any)[chatbotStep] || (chatbotStep === 'email' && !isValidEmailForSupport(chatbotData.email))}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   >
                     Next
                   </button>
@@ -1380,11 +1392,11 @@ export default function Home() {
                   <button
                     onClick={submitSupportRequest}
                     disabled={!chatbotData.query || isSubmitting}
-                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                    className="flex-1 bg-gray-700 text-white py-2 px-4 rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                   >
                     {isSubmitting ? (
                       <>
-                        <video autoPlay loop muted playsInline className="w-5 h-5 object-contain" style={{ pointerEvents: 'none' }}>
+                        <video autoPlay loop muted playsInline className="w-6 h-6 object-contain" style={{ pointerEvents: 'none' }}>
                           <source src="/spinner.webm" type="video/webm" />
                         </video>
                         <span>Submitting...</span>

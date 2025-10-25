@@ -284,10 +284,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {redirecting && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <VideoSpinner size="lg" />
+          <VideoSpinner size="2xl" />
         </div>
       )}
       <div className="max-w-md w-full space-y-8">
@@ -299,18 +304,18 @@ export default function Login() {
               alt="Confiido Logo" 
               className="h-10 w-10 object-contain"
             />
-            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase">CONFIIDO</span>
+            <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
             Welcome back
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
             Sign in to your account to continue your learning journey
           </p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
           {/* Error Message */}
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -337,7 +342,7 @@ export default function Login() {
                       onChange={handleInputChange}
                       required
                       suppressHydrationWarning
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -345,7 +350,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
                       <>
@@ -390,7 +395,7 @@ export default function Login() {
                           value={resetCode}
                           onChange={(e) => setResetCode(e.target.value)}
                           placeholder="Paste the code from your email"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <div>
@@ -400,7 +405,7 @@ export default function Login() {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="At least 8 characters, include a special character"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">Must be 8+ characters and include at least one special character.</p>
                       </div>
@@ -420,7 +425,7 @@ export default function Login() {
                             maxLength={1}
                             value={otpDigits[i]}
                             onChange={(e) => handleOtpInputChange(i, e.target.value)}
-                            className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
                           />
                         ))}
                       </div>
@@ -439,7 +444,7 @@ export default function Login() {
                           onChange={handleInputChange}
                           required
                           suppressHydrationWarning
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10"
                           placeholder="Enter your password"
                         />
                         <button
@@ -466,7 +471,7 @@ export default function Login() {
                         checked={formData.rememberMe}
                         onChange={handleInputChange}
                         suppressHydrationWarning
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                       />
                       <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                         Remember me
@@ -477,7 +482,7 @@ export default function Login() {
                         <button
                           type="button"
                           onClick={handleForgotClick}
-                          className="text-blue-600 hover:text-blue-700 font-medium"
+                          className="text-gray-600 hover:text-gray-800 font-medium"
                           disabled={forgotLoading}
                         >
                           {forgotLoading ? 'Sending code...' : 'Forgot password?'}
@@ -497,7 +502,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
                       <>
@@ -529,7 +534,7 @@ export default function Login() {
                           type="button"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); sendOtp(); }}
                           disabled={otpLoading}
-                          className="w-full inline-flex items-center justify-center px-4 py-3 bg-gray-600 text-white font-semibold text-sm rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
+                          className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold text-sm rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
                         >
                           {otpLoading ? (
                             <>
@@ -575,7 +580,7 @@ export default function Login() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/signup" className="text-gray-600 hover:text-gray-800 font-medium">
                 Sign up
               </Link>
             </p>
@@ -586,11 +591,11 @@ export default function Login() {
         <div className="text-center">
           <p className="text-xs text-gray-500">
             By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-blue-600 hover:text-blue-700">
+            <Link href="/terms" className="text-gray-600 hover:text-gray-800">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="text-blue-600 hover:text-blue-700">
+            <Link href="/privacy" className="text-gray-600 hover:text-gray-800">
               Privacy Policy
             </Link>
           </p>

@@ -136,7 +136,12 @@ export default function Signup() {
   const isConfirmPasswordValid = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <div className="max-w-2xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -146,12 +151,12 @@ export default function Signup() {
               alt="Confiido Logo" 
               className="h-10 w-10 object-contain"
             />
-            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase">CONFIIDO</span>
+            <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
             Join thousands of professionals and start your mentorship journey
           </p>
         </div>
@@ -163,7 +168,7 @@ export default function Signup() {
             onClick={() => setSelectedCategory('student')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
               selectedCategory === 'student'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
             }`}
           >
@@ -174,7 +179,7 @@ export default function Signup() {
             onClick={() => setSelectedCategory('professional')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
               selectedCategory === 'professional'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
             }`}
           >
@@ -202,11 +207,11 @@ export default function Signup() {
         )}
 
         {/* Signup Form */}
-        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Account Information</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -221,7 +226,7 @@ export default function Signup() {
                     required
                     disabled={isSubmitting}
                     suppressHydrationWarning
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -237,7 +242,7 @@ export default function Signup() {
                     required
                     disabled={isSubmitting}
                     suppressHydrationWarning
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -278,7 +283,7 @@ export default function Signup() {
                     onChange={handleInputChange}
                     required
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
@@ -319,7 +324,7 @@ export default function Signup() {
                     onChange={handleInputChange}
                     required
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
@@ -358,15 +363,15 @@ export default function Signup() {
                   type="checkbox"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                  className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded mt-1"
                 />
                 <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-gray-700">
                   I agree to the{' '}
-                  <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+                  <Link href="/terms" className="text-gray-600 hover:text-gray-800">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+                  <Link href="/privacy" className="text-gray-600 hover:text-gray-800">
                     Privacy Policy
                   </Link>
                   *
@@ -377,7 +382,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms || !isValidEmailForSupport(formData.email)}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
             >
               {isSubmitting ? (
                 <>
@@ -412,7 +417,7 @@ export default function Signup() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
+              <Link href="/login" className="text-gray-600 hover:text-gray-800 font-medium">
                 Sign in
               </Link>
             </p>
