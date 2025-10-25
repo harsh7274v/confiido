@@ -489,9 +489,9 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-5xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
-              <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>Speak Confidently</span>
+              <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>Speak with Confidence</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead Confidently</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>Lead with Clarity</span>
             </h1>
             <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto">
               1-on-1 coaching and self-placed courses to build unshakable public speaking skills.
