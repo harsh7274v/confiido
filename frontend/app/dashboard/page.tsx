@@ -173,19 +173,19 @@ export default function DashboardPage() {
   const mentors = [
     {
       id: '1',
-      name: 'Priya Sharma',
+      name: 'Megha Upadhyay',
       image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      title: 'Senior Product Manager',
-      company: 'Google',
-      location: 'Mumbai, India',
+      title: 'Ex-ABP News, IIMC Alumni',
+      company: 'Ex- ABP News',
+      location: 'NOIDA, India',
       rating: 4.8,
       reviews: 127,
-      hourlyRate: 2500,
-      expertise: ['Product Strategy', 'User Research', 'Agile', 'Data Analysis'],
-      bio: 'Experienced product manager with 8+ years in tech. I help professionals transition into product management and develop strategic thinking skills.',
-      experience: '8+ years in Product Management',
-      languages: ['English', 'Hindi', 'Marathi'],
-      availability: 'Weekdays 6-9 PM, Weekends 10 AM-2 PM'
+      hourlyRate: 'Starts from Rs750',
+      expertise: ['On-Camera Communication', 'Storytelling', 'Structuring thoughts', 'Confidence boosting'],
+      bio: 'Experienced journalist with 4+ years on field. I started on Confiido to help students/professional find their authentic voice and speak with confidence.',
+      experience: '4+ years in National Media/Journalism',
+      languages: ['English', 'Hindi'],
+      availability: 'Weekdays 11 AM-9 PM, Weekends 11 AM-7 PM'
     },
     {
       id: '2',
