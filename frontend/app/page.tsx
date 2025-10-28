@@ -11,6 +11,17 @@ import { MoonLoader } from 'react-spinners';
 import '/public/WEB/css/clash-grotesk.css';
 import '/public/web1/css/bespoke-stencil.css';
 import '/public/web1/css/clash-display.css';
+import {
+  Navbar,
+  NavBody,
+  NavItems,
+  MobileNav,
+  NavbarLogo,
+  NavbarButton,
+  MobileNavHeader,
+  MobileNavToggle,
+  MobileNavMenu,
+} from "./components/ui/resizable-navbar";
 
 // Spinner component - Defined outside to prevent re-renders
 const CenterSpinner = memo(() => (
@@ -32,6 +43,7 @@ export default function Home() {
   const [faqButtonColors, setFaqButtonColors] = useState<{ [key: number]: string }>({});
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [chatbotStep, setChatbotStep] = useState<'email' | 'subject' | 'query'>('email');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [chatbotData, setChatbotData] = useState({
     email: '',
     subject: '',
@@ -473,8 +485,21 @@ export default function Home() {
     "Career Guidance", "Public Speaking", "Debate", "Mentorship", "Others"
   ];
 
+  const navItems = [
+    {
+      name: "Explore Mentors",
+      link: "#mentors",
+      onClick: scrollToMentors
+    },
+    {
+      name: "Success Stories",
+      link: "#testimonials",
+      onClick: scrollToTestimonials
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-slate-50 overflow-x-hidden relative" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen overflow-x-hidden relative" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {/* Simple, performant background pattern */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-40"></div>
@@ -485,57 +510,77 @@ export default function Home() {
           display: none;
         }
       `}</style>
+      
       {/* Navigation */}
-      <nav className="bg-white/70 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img 
-                src="/icons/icon-96x96.png" 
-                alt="Confiido Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-              />
-              <h1 className="text-lg sm:text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</h1>
-            </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={scrollToMentors} 
-                className="relative group px-4 py-2 text-gray-700 hover:text-gray-900 transition-all duration-300 font-medium"
+      <Navbar>
+        {/* Desktop Navigation */}
+        <NavBody>
+          <NavbarLogo />
+          <NavItems items={navItems} />
+          <div className="flex items-center gap-3">
+            <NavbarButton variant="secondary" href="/login" onClick={handleLoginClick}>
+              Login
+            </NavbarButton>
+            <NavbarButton variant="primary" href="/signup" onClick={handleSignupClick}>
+              Sign Up
+            </NavbarButton>
+          </div>
+        </NavBody>
+
+        {/* Mobile Navigation */}
+        <MobileNav>
+          <MobileNavHeader>
+            <NavbarLogo />
+            <MobileNavToggle
+              isOpen={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            />
+          </MobileNavHeader>
+
+          <MobileNavMenu
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+          >
+            {navItems.map((item, idx) => (
+              <button
+                key={`mobile-link-${idx}`}
+                onClick={() => {
+                  item.onClick();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full text-left text-white/90 hover:text-white py-3 px-4 rounded-lg hover:bg-white/10 transition-colors duration-200"
                 style={{ fontFamily: "'Rubik', sans-serif" }}
               >
-                <span className="relative z-10">Explore Mentors</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gray-600 to-gray-800 group-hover:w-full transition-all duration-300"></div>
+                {item.name}
               </button>
-              <button 
-                onClick={scrollToTestimonials} 
-                className="relative group px-4 py-2 text-gray-700 hover:text-gray-900 transition-all duration-300 font-medium"
-                style={{ fontFamily: "'Rubik', sans-serif" }}
-              >
-                <span className="relative z-10">Success Stories</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-gray-600 to-gray-800 group-hover:w-full transition-all duration-300"></div>
-              </button>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link 
-                href="/login" 
-                className="text-gray-700 hover:text-gray-900 transition-all duration-300 ease-in-out transform hover:scale-105 px-2 py-1 sm:px-4 sm:py-2 rounded-lg border-2 border-gray-300 hover:border-gray-600 hover:bg-gray-50 text-sm sm:text-base" 
-                onClick={handleLoginClick}
+            ))}
+            <div className="flex w-full flex-col gap-3 pt-4 border-t border-white/10">
+              <NavbarButton
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLoginClick({} as any);
+                }}
+                variant="secondary"
+                className="w-full justify-center"
+                href="/login"
               >
                 Login
-              </Link>
-              <Link 
-                href="/signup" 
-                className="bg-gradient-to-r from-gray-600 to-gray-800 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md hover:shadow-lg border border-gray-500 text-sm sm:text-base" 
-                onClick={handleSignupClick}
+              </NavbarButton>
+              <NavbarButton
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleSignupClick({} as any);
+                }}
+                variant="primary"
+                className="w-full justify-center"
+                href="/signup"
               >
                 Sign Up
-              </Link>
+              </NavbarButton>
             </div>
-          </div>
-        </div>
-      </nav>
+          </MobileNavMenu>
+        </MobileNav>
+      </Navbar>
 
       {/* Hero Section */}
       <HeroGeometric 

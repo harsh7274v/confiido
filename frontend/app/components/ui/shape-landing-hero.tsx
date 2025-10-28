@@ -156,11 +156,11 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-3 sm:mb-4 md:mb-6 leading-tight">
-                            <span className="text-gray-900 block whitespace-nowrap" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>
+                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-3 sm:mb-4 md:mb-6 leading-tight px-4 sm:px-0">
+                            <span className="text-gray-900 block sm:whitespace-nowrap" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>
                                 {title1}
                             </span>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 block" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 block sm:whitespace-nowrap" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>
                                 {title2}
                             </span>
                         </h1>
