@@ -1,5 +1,4 @@
 "use client";
-import VideoSpinner from './ui/VideoSpinner';
 
 import React, { useState, useEffect } from 'react';
 import { rewardsApi, type RewardAccount } from '../services/rewardsApi';
@@ -168,8 +167,8 @@ export default function RewardsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <VideoSpinner size="lg" />
+          <div className="flex items-center justify-center py-16 text-gray-500">
+            Loading rewards...
           </div>
         ) : (
 

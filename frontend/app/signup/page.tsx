@@ -5,7 +5,6 @@ import { Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
-import VideoSpinner from '../components/ui/VideoSpinner';
 
 export default function Signup() {
   const router = useRouter();
@@ -384,18 +383,7 @@ export default function Signup() {
               disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms || !isValidEmailForSupport(formData.email)}
               className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="mr-2">
-                    <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                      <source src="/spinner.webm" type="video/webm" />
-                    </video>
-                  </div>
-                  Creating Account...
-                </>
-              ) : (
-                'Create Account'
-              )}
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 

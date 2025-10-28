@@ -30,7 +30,6 @@ import bookingApi from '../services/bookingApi';
 import { useAuth } from '../contexts/AuthContext';
 import CompleteTransactionPopup from './CompleteTransactionPopup';
 import { useTimeout } from '../contexts/TimeoutContext';
-import VideoSpinner from './ui/VideoSpinner';
 
 export default function PaymentsPage() {
   // Generate unique instance ID for debugging
@@ -667,8 +666,8 @@ export default function PaymentsPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <VideoSpinner size="lg" />
+          <div className="flex items-center justify-center h-64 text-gray-500">
+            Loading payments...
           </div>
         </div>
       </div>
@@ -838,9 +837,6 @@ export default function PaymentsPage() {
                             >
                               {isCompleting ? (
                                 <>
-                                  <video autoPlay loop muted playsInline className="h-4 w-4 sm:h-5 sm:w-5 object-contain" style={{ pointerEvents: 'none' }}>
-                                    <source src="/spinner.webm" type="video/webm" />
-                                  </video>
                                   <span className="hidden sm:inline">Completing...</span>
                                   <span className="sm:hidden">...</span>
                                 </>

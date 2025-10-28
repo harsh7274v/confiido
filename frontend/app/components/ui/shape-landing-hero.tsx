@@ -98,7 +98,7 @@ function HeroGeometric({
     };
 
     return (
-        <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+        <div className="relative min-h-[70vh] w-full flex items-center justify-center overflow-hidden bg-transparent py-12">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
@@ -149,19 +149,18 @@ function HeroGeometric({
             </div>
 
             <div className="relative z-10 container mx-auto px-4 md:px-6">
-                <div className="max-w-3xl mx-auto text-center">
+                <div className="max-w-5xl mx-auto text-center">
                     <motion.div
                         custom={1}
                         variants={fadeUpVariants}
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-5xl sm:text-6xl font-bold tracking-tight sm:text-7xl mb-4 sm:mb-6">
-                            <span className="text-gray-900 uppercase" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>
+                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-3 sm:mb-4 md:mb-6 leading-tight">
+                            <span className="text-gray-900 block whitespace-nowrap" style={{ fontFamily: "'ClashDisplay-Bold', sans-serif" }}>
                                 {title1}
                             </span>
-                            <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 uppercase" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800 block" style={{ fontFamily: "'ClashDisplay-Semibold', sans-serif" }}>
                                 {title2}
                             </span>
                         </h1>
@@ -173,7 +172,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto">
+                        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 md:mb-12 max-w-3xl mx-auto px-2 sm:px-0">
                             {description}
                         </p>
                     </motion.div>
@@ -183,37 +182,16 @@ function HeroGeometric({
                         variants={fadeUpVariants}
                         initial="hidden"
                         animate="visible"
-                        className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-12"
+                        className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 md:mb-12"
                     >
                         <button 
                             onClick={onButtonClick}
-                            className="bg-gray-800 text-white px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors"
+                            className="bg-gray-800 text-white px-8 py-3 sm:px-10 sm:py-4 text-sm sm:text-base md:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors inline-block mx-auto sm:mx-0"
                         >
                             {buttonText}
                         </button>
                     </motion.div>
                     
-                    {/* Trust indicators */}
-                    <motion.div 
-                        custom={4}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-xs sm:text-sm text-gray-500 mb-6 sm:mb-8"
-                    >
-                        <div className="flex items-center">
-                            <Circle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                            <span>No Payment Required</span>
-                        </div>
-                        <div className="flex items-center">
-                            <Circle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                            <span>Verified Mentors Only</span>
-                        </div>
-                        <div className="flex items-center">
-                            <Circle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-gray-600" />
-                            <span>Reschedule Anytime</span>
-                        </div>
-                    </motion.div>
                 </div>
             </div>
 

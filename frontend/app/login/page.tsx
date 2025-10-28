@@ -5,7 +5,6 @@ import { ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
-import VideoSpinner from '../components/ui/VideoSpinner';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -292,7 +291,7 @@ export default function Login() {
       `}</style>
       {redirecting && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <VideoSpinner size="2xl" />
+          <p className="text-gray-700 text-lg font-medium">Redirecting...</p>
         </div>
       )}
       <div className="max-w-md w-full space-y-8">
@@ -353,14 +352,7 @@ export default function Login() {
                     className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
-                      <>
-                        <div className="mr-2">
-                          <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                            <source src="/spinner.webm" type="video/webm" />
-                          </video>
-                        </div>
-                        Checking...
-                      </>
+                      'Checking...'
                     ) : (
                       'Continue'
                     )}
@@ -505,14 +497,7 @@ export default function Login() {
                     className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
-                      <>
-                        <div className="mr-2">
-                          <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                            <source src="/spinner.webm" type="video/webm" />
-                          </video>
-                        </div>
-                        {isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'}
-                      </>
+                      isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'
                     ) : (
                       isForgotMode ? 'Change Password' : isOtpMode ? 'Verify and Sign In' : 'Sign In'
                     )}
@@ -537,14 +522,7 @@ export default function Login() {
                           className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold text-sm rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
                         >
                           {otpLoading ? (
-                            <>
-                              <div className="mr-2">
-                                <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                                  <source src="/spinner.webm" type="video/webm" />
-                                </video>
-                              </div>
-                              Sending code...
-                            </>
+                            'Sending code...'
                           ) : (
                             'Email Sign-in code'
                           )}

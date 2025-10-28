@@ -251,12 +251,7 @@ export default function ContactPage() {
                   className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
-                    <>
-                      <video autoPlay loop muted playsInline className="h-6 w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                        <source src="/spinner.webm" type="video/webm" />
-                      </video>
-                      Sending Message...
-                    </>
+                    'Sending Message...'
                   ) : (
                     <>
                       <Send className="h-5 w-5" />

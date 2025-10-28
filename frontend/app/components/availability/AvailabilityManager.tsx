@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { availabilityApi, type TimeSlot, type AvailabilityPeriod } from '../../services/availabilityApi';
-import LoadingSpinner from '../ui/LoadingSpinner';
 
 const AvailabilityManager: React.FC = () => {
   const [availabilityPeriods, setAvailabilityPeriods] = useState<AvailabilityPeriod[]>([]);
@@ -170,7 +169,11 @@ const AvailabilityManager: React.FC = () => {
   };
 
   if (loading && availabilityPeriods.length === 0) {
-    return <LoadingSpinner size="lg" text="Loading availability..." />;
+    return (
+      <div className="py-12 text-center text-gray-600">
+        Loading availability...
+      </div>
+    );
   }
 
   return (
@@ -343,8 +346,7 @@ const AvailabilityManager: React.FC = () => {
               >
                 {loading ? (
                   <>
-                    <LoadingSpinner size="sm" />
-                    Saving...
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>

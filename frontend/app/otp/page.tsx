@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, KeyRound, AlertCircle, CheckCircle } from "lucide-react";
-import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const OTPPage = () => {
   const [email, setEmail] = useState("");
@@ -98,11 +97,6 @@ const OTPPage = () => {
               className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
               disabled={loading}
             >
-              {loading ? (
-                <video autoPlay loop muted playsInline className="h-6 w-6 mr-2 object-contain" style={{ pointerEvents: 'none' }}>
-                  <source src="/spinner.webm" type="video/webm" />
-                </video>
-              ) : null}
               {loading ? "Sending OTP..." : "Send OTP"}
             </button>
             {error && (
@@ -116,11 +110,9 @@ const OTPPage = () => {
             )}
           </form>
         ) : redirecting ? (
-          <LoadingSpinner 
-            size="lg" 
-            text="Redirecting to your dashboard..." 
-            className="py-8"
-          />
+          <div className="py-8 text-center text-gray-600">
+            Redirecting to your dashboard...
+          </div>
         ) : (
           <form onSubmit={verifyOTP} className="space-y-5">
             <div className="relative">
@@ -140,11 +132,6 @@ const OTPPage = () => {
               className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
               disabled={loading}
             >
-              {loading ? (
-                <video autoPlay loop muted playsInline className="h-6 w-6 mr-2 object-contain" style={{ pointerEvents: 'none' }}>
-                  <source src="/spinner.webm" type="video/webm" />
-                </video>
-              ) : null}
               {loading ? "Verifying..." : "Verify OTP"}
             </button>
             {error && (

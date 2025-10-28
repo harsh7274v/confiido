@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Users, MessageSquare, BookOpen, Settings, BarChart3, LogOut, ChevronUp, ChevronDown, DollarSign } from "lucide-react";
 import AvailabilityManager from "../../components/availability/AvailabilityManager";
 import MentorBookings from "../../components/MentorBookings";
-import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { bookingApi } from "../../services/bookingApi";
@@ -145,9 +144,8 @@ const MentorDashboard = () => {
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard Overview</h2>
             
             {overviewLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <LoadingSpinner size="lg" />
-                <span className="ml-3 text-gray-600">Loading overview data...</span>
+              <div className="flex items-center justify-center py-12 text-gray-600">
+                Loading overview data...
               </div>
             ) : overviewError ? (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -309,10 +307,7 @@ const MentorDashboard = () => {
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 w-full md:w-auto"
             >
               {logoutLoading ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  <span className="hidden sm:inline">Logging out...</span>
-                </>
+                <span>Logging out...</span>
               ) : (
                 <>
                   <LogOut className="h-4 w-4" />

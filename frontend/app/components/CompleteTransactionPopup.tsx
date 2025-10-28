@@ -494,13 +494,7 @@ export default function CompleteTransactionPopup({
               className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base"
             >
               {processing ? (
-                <>
-                  <video autoPlay loop muted playsInline className="h-5 w-5 sm:h-6 sm:w-6 object-contain" style={{ pointerEvents: 'none' }}>
-                    <source src="/spinner.webm" type="video/webm" />
-                  </video>
-                  <span className="hidden sm:inline">Processing Payment...</span>
-                  <span className="sm:hidden">Processing...</span>
-                </>
+                <span>Processing Payment...</span>
               ) : (
                 <>
                   <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />

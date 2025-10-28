@@ -1,5 +1,4 @@
 "use client";
-import VideoSpinner from '../components/ui/VideoSpinner';
 
 import React, { useEffect, useState } from 'react';
 import { 
@@ -125,7 +124,6 @@ export default function TransactionsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex justify-center"><VideoSpinner size="md" /></div>
           <p className="text-gray-600">Loading transactions...</p>
           <p className="text-sm text-gray-500 mt-2">Connecting to backend server</p>
         </div>

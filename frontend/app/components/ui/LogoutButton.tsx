@@ -72,12 +72,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         className={`${buttonClasses} group hover:scale-105 transition-transform duration-200`}
       >
         {logoutLoading ? (
-          <>
-            <video autoPlay loop muted playsInline className="h-4 w-4 object-contain" style={{ pointerEvents: 'none' }}>
-              <source src="/spinner.webm" type="video/webm" />
-            </video>
-            <span>Logging out...</span>
-          </>
+          <span>Logging out...</span>
         ) : (
           <>
             <LogOut className="h-4 w-4 transition-transform group-hover:scale-110" />

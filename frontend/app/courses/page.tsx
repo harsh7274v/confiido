@@ -170,12 +170,7 @@ export default function CoursesPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {loading ? (
             <div className="text-center py-12">
-              <div className="mx-auto mb-4 flex justify-center">
-                <video autoPlay loop muted playsInline className="h-16 w-16 object-contain" style={{ pointerEvents: 'none' }}>
-                  <source src="/spinner.webm" type="video/webm" />
-                </video>
-              </div>
-              <p className="text-gray-400 mt-4">Loading courses...</p>
+              <p className="text-gray-400">Loading courses...</p>
             </div>
           ) : courses.length === 0 ? (
             <div className="text-center py-12">

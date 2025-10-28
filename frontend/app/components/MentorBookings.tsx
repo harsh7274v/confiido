@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, User, DollarSign, CheckCircle, AlertCircle, Phone, Mail, Video, Mic, MessageSquare, Users, Briefcase, Globe, MapPin as LocationIcon, UserCheck, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
-import LoadingSpinner from "./ui/LoadingSpinner";
 import { bookingApi } from "../services/bookingApi";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
@@ -249,7 +248,7 @@ const MentorBookings: React.FC = () => {
   if (userLoading || loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <LoadingSpinner size="lg" />
+        <p className="text-gray-600">Loading bookings...</p>
       </div>
     );
   }

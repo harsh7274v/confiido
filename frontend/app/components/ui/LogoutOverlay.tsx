@@ -76,10 +76,8 @@ const LogoutOverlay: React.FC<LogoutOverlayProps> = ({
           {/* Icon and Status */}
           <div className="flex justify-center">
             {logoutLoading ? (
-              <div className="relative w-20 h-20">
-                <video autoPlay loop muted playsInline className="w-full h-full object-contain" style={{ pointerEvents: 'none' }}>
-                  <source src="/spinner.webm" type="video/webm" />
-                </video>
+              <div className="w-16 h-16 rounded-full border-2 border-blue-200 flex items-center justify-center text-blue-600 text-sm font-semibold animate-pulse">
+                Loading
               </div>
             ) : showSuccess ? (
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
