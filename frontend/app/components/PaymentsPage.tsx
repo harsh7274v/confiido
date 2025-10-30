@@ -851,108 +851,132 @@ export default function PaymentsPage() {
               const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
               
                 return (
-                <div key={payment._id} data-payment-id={payment._id} className="no-focus bg-white shadow-lg hover:bg-yellow-50 hover:shadow-xl transition-all duration-300 overflow-hidden" tabIndex={-1}>
+                <div 
+                  key={payment._id} 
+                  data-payment-id={payment._id} 
+                  className="no-focus bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 group" 
+                  tabIndex={-1}
+                  style={{ 
+                    transition: 'all 0.3s ease-in-out',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#E8FFD7';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Modern Header Bar */}
+                  <div className="h-2 bg-gradient-to-r from-gray-100 to-gray-200" style={{ background: isPending ? 'linear-gradient(90deg, #5E936C 0%, #3E5F44 100%)' : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
+                  
                   {/* Main Payment Card */}
-                  <div className="p-2 sm:p-3">
+                  <div className="p-4 sm:p-5">
                     {/* Mobile-first layout */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       {/* Expert Info Section */}
-                      <div className="flex items-start space-x-1.5 sm:space-x-2 flex-1 min-w-0">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
                         <div className="relative flex-shrink-0">
-                          {/* Modern Logo Design */}
-                          <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-gray-400 to-gray-600 shadow-lg flex items-center justify-center relative overflow-hidden">
+                          {/* Modern Avatar with Icon */}
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl shadow-lg flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #5E936C 0%, #3E5F44 100%)' }}>
                             {/* Background Pattern */}
                             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                            {/* Logo Icon */}
+                            {/* User Icon */}
                             <div className="relative z-10 flex items-center justify-center">
-                              <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white/90 rounded-full flex items-center justify-center">
-                                <Video className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-gray-600" />
-                              </div>
+                              <User className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                             </div>
                             {/* Shine Effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
                           </div>
                           {isPending && (
-                            <div className="absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                              <Clock className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-white" />
+                            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#3E5F44' }}>
+                              <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
                             </div>
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5">
-                            <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-base sm:text-lg font-bold truncate" style={{ color: '#3E5F44' }}>
                             {payment.expertId?.userId?.firstName || 'Expert'} {payment.expertId?.userId?.lastName || ''}
                           </h3>
                           </div>
                           
-                          <p className="text-gray-600 font-medium mb-1 text-xs">
+                          <p className="text-gray-600 font-medium mb-2 text-sm">
                             {payment.expertId?.title || 'Expert'} at {payment.expertId?.company || 'Company'}
                           </p>
                           
-                          <div className="flex flex-wrap items-center gap-0.5 sm:gap-1 text-xs text-gray-500">
-                            <span className="flex items-center gap-1 sm:gap-2">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                            <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
                               {getSessionTypeIcon(payment.sessionType)}
                               <span className="font-medium">{payment.sessionType} • {formatDuration(payment.duration)}</span>
                             </span>
-                            <span className="flex items-center gap-1 sm:gap-2">
-                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="hidden sm:inline">{formatDate(getPaymentEffectiveDate(payment))}</span>
-                              <span className="sm:hidden">{getPaymentEffectiveDate(payment).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline font-medium">{formatDate(getPaymentEffectiveDate(payment))}</span>
+                              <span className="sm:hidden font-medium">{getPaymentEffectiveDate(payment).toLocaleDateString()}</span>
                             </span>
                             {payment.expertUserId && (
-                              <span className="text-xs bg-gray-100 px-2 py-1 rounded-full font-mono">
-                                ID: {payment.expertUserId}
-                              </span>
-                            )}
-                            {/* Countdown Timer for Pending Payments */}
-                            {hasActiveCountdown && (
-                              <span className="flex items-center gap-1 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                                <span>⏰ {formatCountdown(timeout?.countdown || 0)}</span>
+                              <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200 font-mono">
+                                <Hash className="h-3 w-3" />
+                                {payment.expertUserId}
                               </span>
                             )}
                           </div>
+                          
+                          {/* Countdown Timer for Pending Payments */}
+                          {hasActiveCountdown && (
+                            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
+                              <Clock className="h-3.5 w-3.5" />
+                              <span className="font-semibold">{formatCountdown(timeout?.countdown || 0)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       {/* Price and Actions Section */}
-                      <div className="flex flex-col sm:flex-col items-start sm:items-end space-y-1.5 sm:space-y-2">
-                        <div className="flex items-center justify-between w-full sm:w-auto sm:flex-col sm:items-end">
-                          <p className="text-base sm:text-lg font-bold text-gray-900">
+                      <div className="flex flex-col items-start sm:items-end space-y-2.5">
+                        <div className="flex items-center justify-between w-full sm:w-auto sm:flex-col sm:items-end gap-2">
+                          <p className="text-xl sm:text-2xl font-bold" style={{ color: '#3E5F44' }}>
                             {formatCurrency(payment.price, payment.currency)}
                           </p>
                           {isExpired(payment.bookingId, payment._id) ? (
-                            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              <XCircle className="w-4 h-4 text-red-500" />
-                              <span className="ml-1">expired</span>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                              <XCircle className="w-4 h-4" />
+                              <span>Expired</span>
                             </span>
                           ) : (
-                          <span className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(payment.paymentStatus)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${getPaymentStatusColor(payment.paymentStatus)}`}>
                             {getPaymentStatusIcon(payment.paymentStatus)}
-                            <span className="ml-1 capitalize">{payment.paymentStatus}</span>
+                            <span className="capitalize">{payment.paymentStatus}</span>
                           </span>
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-1 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           {/* Complete Transaction Button - Only show for pending payments */}
                           {isPending && (
                             <button
                               onClick={() => handleCompleteTransaction(payment._id)}
                               disabled={isCompleting}
-                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-md hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-xs"
+                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-sm hover:scale-105"
+                              style={{ backgroundColor: isCompleting ? '#9CA3AF' : '#3E5F44' }}
+                              onMouseEnter={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
+                              onMouseLeave={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
                             >
                               {isCompleting ? (
                                 <>
-                                  <span className="hidden sm:inline">Completing...</span>
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                  <span className="hidden sm:inline">Processing...</span>
                                   <span className="sm:hidden">...</span>
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                                  <span className="hidden sm:inline">Complete Transaction</span>
-                                  <span className="sm:hidden">Complete</span>
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Complete Payment</span>
+                                  <span className="sm:hidden">Pay Now</span>
                                 </>
                               )}
                             </button>
@@ -960,10 +984,16 @@ export default function PaymentsPage() {
                           
                           <button 
                             onClick={() => toggleExpanded(payment._id)}
-                            className="no-focus p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-200 flex-shrink-0"
+                            className="no-focus p-2 text-gray-500 hover:text-white hover:bg-gray-100 rounded-xl transition-all duration-200 flex-shrink-0"
+                            style={{ 
+                              backgroundColor: isExpanded ? '#3E5F44' : '',
+                              color: isExpanded ? 'white' : ''
+                            }}
+                            onMouseEnter={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = '#F3F4F6'; } }}
+                            onMouseLeave={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = ''; } }}
                             title="View Details"
                           >
-                            {isExpanded ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />}
+                            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                           </button>
                         </div>
                       </div>
@@ -972,93 +1002,113 @@ export default function PaymentsPage() {
                     
                     {/* Expanded Details */}
                     {isExpanded && (
-                    <div className="bg-gray-50 p-2 sm:p-3">
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-5 rounded-xl mt-4 border-t-2" style={{ borderColor: '#3E5F44' }}>
                       {/* Countdown Timer Section */}
                       {hasActiveCountdown && (
-                        <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="mb-4 p-4 rounded-xl border-2" style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }}>
                           <div className="flex items-center justify-center gap-3 mb-3">
-                            <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
-                            <span className="text-lg font-semibold text-yellow-800">Payment Timeout</span>
+                            <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
+                            <span className="text-lg font-bold" style={{ color: '#92400E' }}>Payment Timeout</span>
                           </div>
                           <div className="text-center">
-                            <div className="text-3xl font-bold text-yellow-700 mb-2">
+                            <div className="text-4xl font-bold mb-2" style={{ color: '#B45309' }}>
                               {formatCountdown(timeout?.countdown || 0)}
                             </div>
-                            <p className="text-sm text-yellow-600">
+                            <p className="text-sm font-medium" style={{ color: '#92400E' }}>
                               Complete payment within this time or booking will be automatically cancelled
                             </p>
                           </div>
                         </div>
                       )}
                       
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <Hash className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#3E5F44' }}>
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: '#3E5F44' }}>
+                              <Hash className="h-4 w-4 text-white" />
+                            </div>
                             Session Details
                           </h4>
-                          <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
-                              <span className="text-gray-600 font-medium">Session ID:</span>
-                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg break-all">{payment._id}</span>
+                          <div className="space-y-2 text-sm bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Session ID:</span>
+                              <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment._id}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
-                              <span className="text-gray-600 font-medium">Booking ID:</span>
-                              <span className="font-mono text-xs bg-white px-2 sm:px-3 py-1 rounded-lg break-all">{payment.bookingId}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Booking ID:</span>
+                              <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment.bookingId}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
-                              <span className="text-gray-600 font-medium">Expert User ID:</span>
-                              <span className="font-mono text-xs sm:text-sm">{payment.expertUserId}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert User ID:</span>
+                              <span className="font-mono text-sm" style={{ color: '#3E5F44' }}>{payment.expertUserId}</span>
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-0.5 gap-1 sm:gap-0">
-                              <span className="text-gray-600 font-medium">Expert Email:</span>
-                              <span className="text-xs sm:text-sm break-all">{payment.expertEmail}</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert Email:</span>
+                              <span className="text-sm break-all" style={{ color: '#3E5F44' }}>{payment.expertEmail}</span>
                               </div>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2">
-                              <span className="text-gray-600 font-medium">Time:</span>
-                              <span className="text-xs sm:text-sm font-medium">{payment.startTime} - {payment.endTime}</span>
+                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Time:</span>
+                              <span className="text-sm font-bold" style={{ color: '#3E5F44' }}>{payment.startTime} - {payment.endTime}</span>
                             </div>
                             </div>
                           </div>
                           
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                        <div className="space-y-3">
+                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#3E5F44' }}>
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: '#3E5F44' }}>
+                              <AlertCircle className="h-4 w-4 text-white" />
+                            </div>
                             Additional Information
                           </h4>
-                          <div className="space-y-0.5 sm:space-y-1 text-xs sm:text-sm">
+                          <div className="space-y-3 text-sm">
                               {payment.notes && (
-                              <div className="bg-white p-1.5 sm:p-2 rounded-md border">
-                                <span className="text-gray-600 font-medium block mb-2">Notes:</span>
-                                <p className="text-gray-700">{payment.notes}</p>
+                              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
+                                  <MessageSquare className="h-4 w-4" style={{ color: '#3E5F44' }} />
+                                  Notes:
+                                </span>
+                                <p className="text-gray-700 leading-relaxed">{payment.notes}</p>
                                 </div>
                               )}
                               {payment.meetingLink && (
-                              <div className="bg-white p-1.5 sm:p-2 rounded-md border">
-                                <span className="text-gray-600 font-medium block mb-2">Meeting Link:</span>
+                              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
+                                  <Video className="h-4 w-4" style={{ color: '#3E5F44' }} />
+                                  Meeting Link:
+                                </span>
                                   <a 
                                     href={payment.meetingLink} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline font-medium break-all"
+                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white hover:shadow-lg transition-all text-sm"
+                                  style={{ backgroundColor: '#3E5F44' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
                                   >
-                                  Join Meeting →
+                                  <Video className="h-4 w-4" />
+                                  Join Meeting
                                   </a>
                                 </div>
                               )}
                               {payment.cancellationReason && (
-                              <div className="bg-red-50 p-1.5 sm:p-2 rounded-md border border-red-200">
-                                <span className="text-red-600 font-medium block mb-2">Cancellation Reason:</span>
-                                <p className="text-red-700">{payment.cancellationReason}</p>
+                              <div className="bg-red-50 p-3 rounded-xl border-2 border-red-200 shadow-sm">
+                                <span className="text-red-700 font-semibold mb-2 flex items-center gap-2">
+                                  <XCircle className="h-4 w-4" />
+                                  Cancellation Reason:
+                                </span>
+                                <p className="text-red-600 leading-relaxed">{payment.cancellationReason}</p>
                                   {payment.cancelledBy && (
-                                  <p className="text-xs text-red-600 mt-2">Cancelled by: {payment.cancelledBy}</p>
+                                  <p className="text-xs text-red-500 mt-2 font-medium">Cancelled by: <span className="font-bold">{payment.cancelledBy}</span></p>
                                   )}
                                 </div>
                               )}
                               {payment.refundAmount && payment.refundAmount > 0 && (
-                              <div className="bg-blue-50 p-1.5 sm:p-2 rounded-md border border-blue-200">
-                                <span className="text-blue-600 font-medium block mb-2">Refund Amount:</span>
-                                <span className="text-base sm:text-lg font-bold text-blue-700">{formatCurrency(payment.refundAmount, payment.currency)}</span>
+                              <div className="bg-blue-50 p-3 rounded-xl border-2 border-blue-200 shadow-sm">
+                                <span className="text-blue-700 font-semibold mb-2 flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  Refund Amount:
+                                </span>
+                                <span className="text-xl font-bold text-blue-700">{formatCurrency(payment.refundAmount, payment.currency)}</span>
                                 </div>
                               )}
                             </div>
@@ -1111,9 +1161,12 @@ export default function PaymentsPage() {
                     onClick={() => setCurrentPage(page)}
                     className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 ${
                       currentPage === page
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                        ? 'text-white shadow-lg'
                         : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
                     }`}
+                    style={currentPage === page ? { backgroundColor: '#3E5F44' } : {}}
+                    onMouseEnter={(e) => { if (currentPage === page) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
+                    onMouseLeave={(e) => { if (currentPage === page) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
                   >
                     {page}
                   </button>

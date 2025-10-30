@@ -167,7 +167,7 @@ export default function Signup() {
             onClick={() => setSelectedCategory('student')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
               selectedCategory === 'student'
-                ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
+                ? 'bg-black text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
             }`}
           >
@@ -178,7 +178,7 @@ export default function Signup() {
             onClick={() => setSelectedCategory('professional')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
               selectedCategory === 'professional'
-                ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-md'
+                ? 'bg-black text-white shadow-md'
                 : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
             }`}
           >
@@ -381,7 +381,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms || !isValidEmailForSupport(formData.email)}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
+              className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>

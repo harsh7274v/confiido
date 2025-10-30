@@ -186,7 +186,7 @@ function HeroGeometric({
                     >
                         <button 
                             onClick={onButtonClick}
-                            className="bg-gray-800 text-white px-8 py-3 sm:px-10 sm:py-4 text-sm sm:text-base md:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors inline-block mx-auto sm:mx-0"
+                            className="bg-black text-white px-8 py-3 sm:px-10 sm:py-4 text-sm sm:text-base md:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors inline-block mx-auto sm:mx-0"
                         >
                             {buttonText}
                         </button>

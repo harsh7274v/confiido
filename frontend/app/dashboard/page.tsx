@@ -39,6 +39,105 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
+// Skeleton Loader Component
+const SkeletonLoader = () => {
+  return (
+    <>
+      <style jsx>{`
+        .loader {
+          position: relative;
+          width: 100%;
+          height: 130px;
+          margin-bottom: 10px;
+          border: 1px solid #d3d3d3;
+          padding: 15px;
+          background-color: #e3e3e3;
+          overflow: hidden;
+          border-radius: 12px;
+        }
+
+        .loader:after {
+          content: "";
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          background: linear-gradient(110deg, rgba(227, 227, 227, 0) 0%, rgba(227, 227, 227, 0) 40%, rgba(227, 227, 227, 0.5) 50%, rgba(227, 227, 227, 0) 60%, rgba(227, 227, 227, 0) 100%);
+          animation: gradient-animation_2 1.2s linear infinite;
+        }
+
+        .loader .wrapper {
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+
+        .loader .wrapper > div {
+          background-color: #cacaca;
+        }
+
+        .loader .circle {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+        }
+
+        .loader .line-1 {
+          position: absolute;
+          top: 11px;
+          left: 58px;
+          height: 10px;
+          width: 100px;
+        }
+
+        .loader .line-2 {
+          position: absolute;
+          top: 34px;
+          left: 58px;
+          height: 10px;
+          width: 150px;
+        }
+
+        .loader .line-3 {
+          position: absolute;
+          top: 57px;
+          left: 0px;
+          height: 10px;
+          width: 100%;
+        }
+
+        .loader .line-4 {
+          position: absolute;
+          top: 80px;
+          left: 0px;
+          height: 10px;
+          width: 92%;
+        }
+
+        @keyframes gradient-animation_2 {
+          0% {
+            transform: translateX(-100%);
+          }
+
+          100% {
+            transform: translateX(100%);
+          }
+        }
+      `}</style>
+      <div className="loader">
+        <div className="wrapper">
+          <div className="circle"></div>
+          <div className="line-1"></div>
+          <div className="line-2"></div>
+          <div className="line-3"></div>
+          <div className="line-4"></div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // Define types locally
 interface Goal {
   id: string;
@@ -808,62 +907,68 @@ export default function DashboardPage() {
               <section className="relative overflow-hidden py-8 sm:py-10 translucent-bg">
               {/* Semi-transparent overlay for header */}
               <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
-              <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-6 flex flex-row items-center justify-between relative z-20">
-                <div className="flex flex-col items-start space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
-                      <User className="h-5 w-5 text-white" />
+              <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-6 relative z-20">
+                <div className="max-w-7xl mx-auto flex flex-row items-center justify-between">
+                  {/* Left side - Welcome text */}
+                  <div className="flex flex-col items-start space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                        {welcomeText} <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
+                      </h2>
                     </div>
-                    <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                      {welcomeText} <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
-                    </h2>
+                    <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to accelerate your career journey?</span>
                   </div>
-                  <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to accelerate your career journey?</span>
-                </div>
-                <div className="flex-shrink-0 flex items-center gap-3 relative py-2">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl transition-all duration-300">
-                    <User className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
-                      onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
-                    >
-                      <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
-                    </button>
-                    
-                    {/* Dropdown Menu */}
-                    {showThreeDotMenu && (
-                      <div className="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                  
+                  {/* Right side - Action icons aligned with Book a session button */}
+                  <div className="flex-shrink-0">
+                    <div className="w-full sm:min-w-[400px] sm:max-w-[500px]">
+                      <div className="w-4/5 mx-auto flex items-center justify-end gap-3 relative py-2">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
+                            onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
+                          >
+                            <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
+                          </button>
+                          
+                          {/* Dropdown Menu */}
+                          {showThreeDotMenu && (
+                            <div className="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                              <button
+                                type="button"
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors duration-200"
+                                onClick={async () => {
+                                  console.log('Logout button clicked');
+                                  try {
+                                    await logout();
+                                    console.log('Logout successful');
+                                    setShowThreeDotMenu(false);
+                                  } catch (error) {
+                                    console.error('Logout failed:', error);
+                                    setShowThreeDotMenu(false);
+                                  }
+                                }}
+                              >
+                                <LogOut className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm font-medium">Logout</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                         <button
                           type="button"
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors duration-200"
-                          onClick={async () => {
-                            console.log('Logout button clicked');
-                            try {
-                              await logout();
-                              console.log('Logout successful');
-                              setShowThreeDotMenu(false);
-                            } catch (error) {
-                              console.error('Logout failed:', error);
-                              setShowThreeDotMenu(false);
-                            }
-                          }}
+                          onClick={() => setShowProfilePopup(true)}
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
                         >
-                          <LogOut className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm font-medium">Logout</span>
+                          <Settings className="h-5 w-5 text-gray-600" />
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowProfilePopup(true)}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
-                  >
-                    <Settings className="h-5 w-5 text-gray-600" />
-                  </button>
                 </div>
               </div>
             </section>
@@ -958,27 +1063,6 @@ export default function DashboardPage() {
                           <div className="text-left flex-1 min-w-0">
                             <p className="text-lg font-semibold mb-1">Book a session</p>
                             <p className="text-xs opacity-90">Find a coach and schedule</p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/80 group-hover:text-white transition-colors flex-shrink-0" />
-                        </div>
-                      </button>
-
-
-                      <button
-                        type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer text-white"
-                        onClick={() => setShowMessageToast(true)}
-                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto', backgroundColor: '#3E5F44' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: '#3E5F44' }} />
-                          </div>
-                          <div className="text-left flex-1 min-w-0">
-                            <p className="text-lg font-semibold mb-1">Open messages</p>
-                            <p className="text-xs opacity-90">Chat with your coach</p>
                           </div>
                           <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/80 group-hover:text-white transition-colors flex-shrink-0" />
                         </div>
@@ -1094,8 +1178,10 @@ export default function DashboardPage() {
                     </div>
                     <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
                       {sessionsLoading ? (
-                        <div className="flex items-center justify-center h-full text-gray-500">
-                          Loading sessions...
+                        <div className="space-y-3">
+                          <SkeletonLoader />
+                          <SkeletonLoader />
+                          <SkeletonLoader />
                         </div>
                       ) : sessionsError ? (
                         <div className="text-center py-12">

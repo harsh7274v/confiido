@@ -93,37 +93,93 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeOut {
+          from {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateX(-10px);
+          }
+        }
+
+        .sidebar-container {
+          animation: slideIn 0.4s ease-out;
+        }
+
+        .sidebar-label-enter {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .sidebar-label-exit {
+          animation: fadeOut 0.2s ease-out forwards;
+        }
+
+        .collapse-transition {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
              {/* Desktop Sidebar */}
        <div className="hidden lg:block">
-                                                                           <div className={`bg-gray-200 h-full min-h-screen transition-all duration-300 ${
+                                                                           <div className={`sidebar-container bg-gray-200 h-full min-h-screen collapse-transition ${
               isCollapsed ? 'w-20' : 'w-64'
             } flex flex-col shadow-lg`}>
                      {/* Header with user name and collapse button */}
-           <div className={`border-b border-gray-200 ${isCollapsed ? 'p-3' : 'p-4'}`}>
+           <div className={`border-b border-gray-200 collapse-transition ${isCollapsed ? 'p-3' : 'p-4'}`}>
              <div className="flex items-center justify-between">
                {!isCollapsed && (
-                 <h2 className="text-lg font-bold text-gray-800">{userName}.</h2>
+                 <h2 className="text-lg font-bold text-gray-800 sidebar-label-enter">{userName}.</h2>
                )}
                <button
                  onClick={toggleCollapse}
-                 className={`p-2 rounded-full border transition-colors ${
+                 className={`p-2 rounded-full border collapse-transition hover:scale-110 active:scale-95 ${
                    isCollapsed ? 'mx-auto' : ''
                  }`}
                  style={{ borderColor: '#5E936C' }}
-                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5E936C20'}
-                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                 onMouseEnter={(e) => {
+                   e.currentTarget.style.backgroundColor = '#5E936C20';
+                   e.currentTarget.style.transform = 'scale(1.1) rotate(360deg)';
+                 }}
+                 onMouseLeave={(e) => {
+                   e.currentTarget.style.backgroundColor = 'transparent';
+                   e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+                 }}
                >
                 {isCollapsed ? (
-                  <ChevronRight className="w-4 h-4" style={{ color: '#5E936C' }} />
+                  <ChevronRight className="w-4 h-4 collapse-transition" style={{ color: '#5E936C' }} />
                 ) : (
-                  <ChevronLeft className="w-4 h-4" style={{ color: '#5E936C' }} />
+                  <ChevronLeft className="w-4 h-4 collapse-transition" style={{ color: '#5E936C' }} />
                 )}
               </button>
             </div>
           </div>
 
                      {/* Navigation items */}
-           <nav className={`flex-1 space-y-2 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+           <nav className={`flex-1 space-y-2 collapse-transition ${isCollapsed ? 'p-2' : 'p-4'}`}>
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeItem === item.id;
@@ -132,18 +188,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                   <button
                    key={item.id}
                    onClick={() => handleItemClick(item.id)}
-                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 ${
+                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg collapse-transition hover:scale-105 active:scale-95 ${
                      isActive
                        ? 'text-white shadow-lg'
                        : 'text-gray-700 hover:bg-gray-200'
                    } ${isCollapsed ? 'justify-center px-2' : ''}`}
                    style={isActive ? { backgroundColor: '#5E936C' } : {}}
                  >
-                   <Icon className={`w-6 h-6 ${
+                   <Icon className={`w-6 h-6 collapse-transition ${
                      isActive ? 'text-white' : 'text-current'
                    }`} />
                    {!isCollapsed && (
-                     <span className="font-medium">{item.label}</span>
+                     <span className="font-medium sidebar-label-enter">{item.label}</span>
                    )}
                  </button>
               );
@@ -153,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50" style={{ animation: 'slideIn 0.4s ease-out' }}>
         <div className="flex justify-around items-center py-2">
           {navigationItems.slice(0, 5).map((item) => {
             const Icon = item.icon;
@@ -163,17 +219,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                              <button
                  key={item.id}
                  onClick={() => handleItemClick(item.id)}
-                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 min-w-[60px] ${
+                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg collapse-transition hover:scale-110 active:scale-95 min-w-[60px] ${
                    isActive
                      ? 'text-white'
                      : 'text-gray-700 hover:bg-gray-100'
                  }`}
                  style={isActive ? { backgroundColor: '#5E936C' } : {}}
                >
-                 <Icon className={`w-5 h-5 mb-1 ${
+                 <Icon className={`w-5 h-5 mb-1 collapse-transition ${
                    isActive ? 'text-white' : 'text-current'
                  }`} />
-                 <span className={`text-xs font-medium ${
+                 <span className={`text-xs font-medium collapse-transition ${
                    isActive ? 'text-white' : 'text-current'
                  }`}>
                   {item.label}

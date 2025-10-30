@@ -350,7 +350,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
                       'Checking...'
@@ -495,7 +495,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-6 rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isLoading ? (
                       isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'
@@ -520,7 +520,7 @@ export default function Login() {
                           type="button"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); sendOtp(); }}
                           disabled={otpLoading}
-                          className="w-full inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold text-sm rounded-lg hover:from-gray-700 hover:to-gray-900 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
+                          className="w-full inline-flex items-center justify-center px-4 py-3 bg-black text-white font-semibold text-sm rounded-lg hover:bg-gray-900 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
                         >
                           {otpLoading ? (
                             'Sending code...'
