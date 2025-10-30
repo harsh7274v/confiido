@@ -5,6 +5,7 @@ import { ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
+import { MoonLoader } from 'react-spinners';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -291,7 +292,7 @@ export default function Login() {
       `}</style>
       {redirecting && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-          <p className="text-gray-700 text-lg font-medium">Redirecting...</p>
+          <MoonLoader color="#000000" size={60} />
         </div>
       )}
       <div className="max-w-md w-full space-y-8">

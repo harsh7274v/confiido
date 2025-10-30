@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, KeyRound, AlertCircle, CheckCircle } from "lucide-react";
+import { MoonLoader } from 'react-spinners';
 
 const OTPPage = () => {
   const [email, setEmail] = useState("");
@@ -110,8 +111,8 @@ const OTPPage = () => {
             )}
           </form>
         ) : redirecting ? (
-          <div className="py-8 text-center text-gray-600">
-            Redirecting to your dashboard...
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+            <MoonLoader color="#000000" size={60} />
           </div>
         ) : (
           <form onSubmit={verifyOTP} className="space-y-5">

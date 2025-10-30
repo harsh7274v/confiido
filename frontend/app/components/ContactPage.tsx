@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Mail, 
   MessageCircle, 
+  MessageSquare,
   Send, 
   CheckCircle,
   Clock,
@@ -23,6 +24,23 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [displayText, setDisplayText] = useState('');
+  
+  const fullText = "We're here to help! Reach out to us through any of our support channels or send us a message.";
+
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setDisplayText(fullText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 30);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -133,25 +151,85 @@ export default function ContactPage() {
   return (
     <div className="w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl shadow-lg">
-              <MessageCircle className="h-8 w-8 text-white" />
+        {/* Header and Form Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12 pt-12">
+          {/* Left Side - Header and Support Boxes */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-lg shadow-lg" style={{ background: '#5E936C' }}>
+                <MessageCircle className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                Contact Us
+              </h1>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900">Contact Us</h1>
-          </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We&apos;re here to help! Reach out to us through any of our support channels or send us a message.
-          </p>
-        </div>
+            <style jsx>{`
+              @keyframes shimmer {
+                0% {
+                  background-position: -200% 0;
+                }
+                100% {
+                  background-position: 200% 0;
+                }
+              }
+              .animate-shimmer {
+                animation: shimmer 3s ease-in-out infinite;
+              }
+            `}</style>
+            <p className="text-base text-gray-600 mb-6 min-h-[3rem]">
+              {displayText}
+              <span className="animate-pulse">|</span>
+            </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Contact Form */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Send us a Message</h2>
-              <p className="text-gray-600">Fill out the form below and we&apos;ll get back to you as soon as possible.</p>
+            {/* Support Boxes */}
+            <div className="space-y-3">
+              {/* Email Support Box */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-blue-600 transition-colors">
+                    <Mail className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">Email Support</h3>
+                    <p className="text-sm text-gray-600 mb-2">Get detailed responses within 24 hours</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-700">confiido.io+support@gmail.com</span>
+                      <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
+                        Send Email
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* WhatsApp Support Box */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-green-600 transition-colors">
+                    <MessageSquare className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">WhatsApp Support</h3>
+                    <p className="text-sm text-gray-600 mb-2">Quick responses for urgent matters</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-700">+91 98765 43210</span>
+                      <button className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
+                        Chat on WhatsApp
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Contact Form */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-lg">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Send us a Message</h2>
+              <p className="text-sm text-gray-600">Fill out the form below and we&apos;ll get back to you as soon as possible.</p>
             </div>
 
             {isSubmitted ? (
@@ -170,10 +248,10 @@ export default function ContactPage() {
                     </div>
                   </div>
                 )}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Full Name
                     </label>
                     <input
@@ -183,12 +261,15 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm"
+                      style={{ '--tw-ring-color': '#5E936C' } as React.CSSProperties}
+                      onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #5E936C'}
+                      onBlur={(e) => e.target.style.boxShadow = ''}
                       placeholder="Enter your full name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address
                     </label>
                     <input
@@ -198,18 +279,20 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm ${
                         formData.email && !isValidEmailForSupport(formData.email)
                           ? 'border-red-400'
                           : 'border-gray-300'
                       }`}
+                      onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #5E936C'}
+                      onBlur={(e) => e.target.style.boxShadow = ''}
                       placeholder="Enter your email"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                     Subject
                   </label>
                   <select
@@ -218,7 +301,9 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors text-sm"
+                    onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #5E936C'}
+                    onBlur={(e) => e.target.style.boxShadow = ''}
                   >
                     <option value="">Select a subject</option>
                     <option value="general">General Inquiry</option>
@@ -230,7 +315,7 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                     Message
                   </label>
                   <textarea
@@ -239,8 +324,10 @@ export default function ContactPage() {
                     value={formData.message}
                     onChange={handleInputChange}
                     required
-                    rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors resize-none"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent transition-colors resize-none text-sm"
+                    onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px #5E936C'}
+                    onBlur={(e) => e.target.style.boxShadow = ''}
                     placeholder="Tell us how we can help you..."
                   />
                 </div>
@@ -248,7 +335,18 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !isValidEmailForSupport(formData.email)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                  className="w-full text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 text-sm"
+                  style={{ backgroundColor: '#5E936C' }}
+                  onMouseEnter={(e) => {
+                    if (!isSubmitting && isValidEmailForSupport(formData.email)) {
+                      e.currentTarget.style.backgroundColor = '#4A7556';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSubmitting && isValidEmailForSupport(formData.email)) {
+                      e.currentTarget.style.backgroundColor = '#5E936C';
+                    }
+                  }}
                 >
                   {isSubmitting ? (
                     'Sending Message...'
@@ -262,75 +360,6 @@ export default function ContactPage() {
               </form>
               </>
             )}
-          </div>
-
-          {/* Support Channels */}
-          <div className="space-y-8">
-            {/* Support Channels */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Support Channels</h2>
-              <div className="space-y-4">
-                {supportChannels.map((channel, index) => (
-                  <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-start gap-4">
-                      <div className={`p-3 rounded-lg ${channel.color} ${channel.hoverColor} transition-colors`}>
-                        <channel.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{channel.title}</h3>
-                        <p className="text-gray-600 mb-3">{channel.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700">{channel.contact}</span>
-                          <button className={`px-4 py-2 ${channel.color} ${channel.hoverColor} text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2`}>
-                            {channel.action}
-                            <ArrowRight className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Features */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Our Support?</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {features.map((feature, index) => (
-                  <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-purple-100 rounded-lg">
-                        <feature.icon className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{feature.title}</h3>
-                        <p className="text-gray-600">{feature.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Office Location */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <MapPin className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Office Location</h3>
-              </div>
-              <p className="text-gray-600 mb-2">
-                Lumina Career Solutions<br />
-                123 Innovation Street<br />
-                Tech Park, Bangalore - 560001<br />
-                Karnataka, India
-              </p>
-              <p className="text-sm text-gray-500">
-                Business Hours: Monday - Friday, 9:00 AM - 6:00 PM IST
-              </p>
-            </div>
           </div>
         </div>
       </div>

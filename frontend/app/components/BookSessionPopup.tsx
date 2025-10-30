@@ -5,6 +5,7 @@ import { availabilityApi } from '../services/availabilityApi';
 import { expertsApi, Expert } from '../services/expertsApi';
 import { bookingApi, BookingRequest } from '../services/bookingApi';
 import { useTimeout } from '../contexts/TimeoutContext';
+import { Calendar, Clock, User, Briefcase, X, Sparkles, RefreshCw } from 'lucide-react';
 
 const services = [
   { name: '1:1 Career Guidance', duration: '30 min' },
@@ -371,40 +372,63 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-md">
-      <div className="relative w-full max-w-sm animate-popup-in" style={{ maxWidth: '40vw', width: '80%', minWidth: '0' }}>
-        {/* Accent Bar */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-[#e0e0e0] rounded-t-2xl z-10" />
-        <div className="bg-[#f5f5f5] rounded-2xl shadow-2xl flex overflow-hidden border border-[#e0e0e0]" style={{ maxHeight: '90vh' }}>
-          {/* Close Button */}
-          <button
-            className="absolute top-4 right-4 text-black hover:text-[#e0e0e0] text-xl transition-transform transform hover:scale-125 focus:outline-none z-20"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            &times;
-          </button>
-          {/* Right: Booking Form */}
-          <div className="flex-1 p-8 flex flex-col justify-start bg-[#f5f5f5] relative hide-scrollbar" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-            <div className="mb-2">
-              <span className="text-3xl font-extrabold text-black tracking-tight leading-tight drop-shadow">Book a Session</span>
-            </div>
-            <div className="flex flex-col gap-4 mt-6">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
+      <div className="relative w-full max-w-sm animate-popup-in" style={{ maxWidth: '35vw', width: '90%', minWidth: '320px' }}>
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200" style={{ maxHeight: '90vh' }}>
+          {/* Modern Header with Gradient */}
+          <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl shadow-lg" style={{ background: '#3E5F44' }}>
+                <Calendar className="h-5 w-5 text-white" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-black mb-1">Select the Service</label>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                  Book a Session
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">Schedule your personalized session</p>
+              </div>
+            </div>
+            <button
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-all duration-200"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Form Content */}
+          <div className="p-6 overflow-y-auto hide-scrollbar" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+            <div className="space-y-4">
+              {/* Service Selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Briefcase className="h-4 w-4 text-gray-500" />
+                  Select the Service
+                </label>
                 <Select value={service} onValueChange={setService} placeholder="Select a service">
                   {services.map(s => (
                     <SelectItem key={s.name} value={s.name} className="text-base">{s.name}</SelectItem>
                   ))}
                 </Select>
               </div>
+
+              {/* Duration Info */}
               {service && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <span className="text-sm font-medium text-blue-800">Duration: {getSelectedServiceDuration()}</span>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Duration: {getSelectedServiceDuration()}
+                  </span>
                 </div>
               )}
-              <div>
-                <label className="block text-sm font-medium text-black mb-1">Select Mentor</label>
+
+              {/* Mentor Selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <User className="h-4 w-4 text-gray-500" />
+                  Select Mentor
+                </label>
                 <Select value={mentor} onValueChange={setMentor} placeholder={mentorsLoading ? 'Loading mentors...' : 'Select a mentor'}>
                   {mentors.map(m => (
                     <SelectItem key={m._id} value={`${m.userId.firstName} ${m.userId.lastName}`} className="text-base">
@@ -420,27 +444,36 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                   ))}
                 </Select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-black mb-1">Select Date</label>
+
+              {/* Date Selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  Select Date
+                </label>
                 <input 
                   type="date" 
                   value={date} 
                   onChange={e => setDate(e.target.value)} 
-                  className="w-full px-4 py-2 rounded-lg border border-[#e0e0e0] bg-white text-black font-semibold" 
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
                 />
               </div>
               
               {/* Show available slots info */}
               {mentor && date && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Availability Status</span>
+                    <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Availability Status
+                    </span>
                     <button
                       onClick={fetchAvailableSlots}
                       disabled={loading}
-                      className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {loading ? 'Refreshing...' : '🔄 Refresh'}
+                      <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                      {loading ? 'Refreshing...' : 'Refresh'}
                     </button>
                   </div>
                   {loading ? (
@@ -470,11 +503,14 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
               )}
 
               {availableSlots.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Book a Slot</label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    Book a Slot
+                  </label>
                   {service && (
-                    <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                      <span className="text-xs text-blue-700">
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-xl">
+                      <span className="text-xs text-blue-700 flex items-center gap-1">
                         ⏱️ Select a {getSelectedServiceDuration()} time slot
                       </span>
                     </div>
@@ -492,26 +528,26 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                               setFromTime(slot.startTime);
                               setToTime(slot.endTime);
                             }}
-                            className={`p-3 rounded-lg border text-left transition-colors ${
+                            className={`p-3 rounded-xl border text-left transition-all ${
                               fromTime === slot.startTime && toTime === slot.endTime
-                                ? 'bg-blue-100 border-blue-300 text-blue-800'
-                                : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-100 border-blue-300 text-blue-800 shadow-sm'
+                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
                             }`}
                           >
-                            <div className="font-medium">{slot.startDisplayTime} - {slot.endDisplayTime}</div>
+                            <div className="font-medium text-sm">{slot.startDisplayTime} - {slot.endDisplayTime}</div>
                             <div className="text-xs text-gray-500">{slot.duration} minutes</div>
                           </button>
                         ))}
                       </div>
                     </div>
                   ) : service && consecutiveSlots.length === 0 ? (
-                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl">
                       <span className="text-sm text-orange-600">
                         No {getSelectedServiceDuration()} slots available for this date
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
                       <span className="text-sm text-gray-600">
                         Please select a service to see available time slots
                       </span>
@@ -524,33 +560,56 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
             
             {/* Info Display */}
             {info && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                 <span className="text-sm text-blue-600 font-medium">{info}</span>
               </div>
             )}
             
             {/* Error Display */}
             {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <span className="text-sm text-red-600 font-medium">{error}</span>
               </div>
             )}
             
             <button 
               onClick={handleBookingSubmit}
-              className={`mt-6 px-6 py-3 rounded-lg font-semibold shadow transition text-lg ${
+              className={`mt-6 px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 text-base flex items-center justify-center gap-2 ${
                 service && mentor && date && fromTime && toTime && !isSubmitting
-                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  ? 'text-white hover:shadow-xl hover:scale-[1.02] active:scale-95'
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
+              style={
+                service && mentor && date && fromTime && toTime && !isSubmitting
+                  ? { backgroundColor: '#3E5F44' }
+                  : {}
+              }
+              onMouseEnter={(e) => {
+                if (service && mentor && date && fromTime && toTime && !isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#2F4A35';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (service && mentor && date && fromTime && toTime && !isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#3E5F44';
+                }
+              }}
               disabled={!service || !mentor || !date || !fromTime || !toTime || isSubmitting}
             >
+              <Calendar className="h-4 w-4" />
               {isSubmitting ? 'Creating Booking...' : 'Book Now'}
             </button>
           </div>
         </div>
       </div>
       <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+          animation: shimmer 3s ease-in-out infinite;
+        }
         .animate-popup-in {
           animation: popup-in 0.5s cubic-bezier(.4,2,.3,1) both;
         }
@@ -558,13 +617,13 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
           0% { opacity: 0; transform: scale(0.85); }
           100% { opacity: 1; transform: scale(1); }
         }
-        /* Use half width for desktop, 80vw for mobile */
+        /* Use 35vw for desktop, 90vw for mobile */
         .max-w-sm {
-          max-width: 40vw !important;
+          max-width: 35vw !important;
         }
         @media (max-width: 640px) {
           .max-w-sm {
-            max-width: 80vw !important;
+            max-width: 90vw !important;
           }
         }
         .p-8 {

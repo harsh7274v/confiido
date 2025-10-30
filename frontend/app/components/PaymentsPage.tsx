@@ -31,6 +31,110 @@ import { useAuth } from '../contexts/AuthContext';
 import CompleteTransactionPopup from './CompleteTransactionPopup';
 import { useTimeout } from '../contexts/TimeoutContext';
 
+// Skeleton Loader Component
+const SkeletonLoader = () => {
+  return (
+    <>
+      <style jsx>{`
+        .loader {
+          position: relative;
+          width: 240px;
+          height: 130px;
+          margin-bottom: 10px;
+          border: 1px solid #d3d3d3;
+          padding: 15px;
+          background-color: #e3e3e3;
+          overflow: hidden;
+        }
+
+        .loader:after {
+          content: "";
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          background: linear-gradient(110deg, rgba(227, 227, 227, 0) 0%, rgba(227, 227, 227, 0) 40%, rgba(227, 227, 227, 0.5) 50%, rgba(227, 227, 227, 0) 60%, rgba(227, 227, 227, 0) 100%);
+          animation: gradient-animation_2 1.2s linear infinite;
+        }
+
+        .loader .wrapper {
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+
+        .loader .wrapper > div {
+          background-color: #cacaca;
+        }
+
+        .loader .circle {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+        }
+
+        .loader .button {
+          display: inline-block;
+          height: 32px;
+          width: 75px;
+        }
+
+        .loader .line-1 {
+          position: absolute;
+          top: 11px;
+          left: 58px;
+          height: 10px;
+          width: 100px;
+        }
+
+        .loader .line-2 {
+          position: absolute;
+          top: 34px;
+          left: 58px;
+          height: 10px;
+          width: 150px;
+        }
+
+        .loader .line-3 {
+          position: absolute;
+          top: 57px;
+          left: 0px;
+          height: 10px;
+          width: 100%;
+        }
+
+        .loader .line-4 {
+          position: absolute;
+          top: 80px;
+          left: 0px;
+          height: 10px;
+          width: 92%;
+        }
+
+        @keyframes gradient-animation_2 {
+          0% {
+            transform: translateX(-100%);
+          }
+
+          100% {
+            transform: translateX(100%);
+          }
+        }
+      `}</style>
+      <div className="loader">
+        <div className="wrapper">
+          <div className="circle"></div>
+          <div className="line-1"></div>
+          <div className="line-2"></div>
+          <div className="line-3"></div>
+          <div className="line-4"></div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export default function PaymentsPage() {
   // Generate unique instance ID for debugging
   const instanceId = React.useMemo(() => Math.random().toString(36).substr(2, 9), []);
@@ -666,8 +770,8 @@ export default function PaymentsPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64 text-gray-500">
-            Loading payments...
+          <div className="flex items-center justify-center h-64">
+            <SkeletonLoader />
           </div>
         </div>
       </div>
@@ -678,26 +782,17 @@ export default function PaymentsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Modern Header */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-6 sm:mb-8 pt-12">
           <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4">
-            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-              <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-gray-400 to-gray-600 shadow-lg flex items-center justify-center relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                {/* Logo Icon */}
-                <div className="relative z-10 flex items-center justify-center">
-                  <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white/90 rounded-full flex items-center justify-center">
-                    <CreditCard className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-gray-600" />
-                  </div>
-                </div>
-                {/* Shine Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              <div className="p-2 rounded-lg shadow-lg" style={{ background: '#5E936C' }}>
+                <CreditCard className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-2xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
                   Booking Status
                 </h1>
-                <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Track and manage all your session bookings</p>
+                <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Track and manage all your session bookings</p>
               </div>
             </div>
             
@@ -714,6 +809,19 @@ export default function PaymentsPage() {
               </span>
             </button>
           </div>
+          <style jsx>{`
+            @keyframes shimmer {
+              0% {
+                background-position: -200% 0;
+              }
+              100% {
+                background-position: 200% 0;
+              }
+            }
+            .animate-shimmer {
+              animation: shimmer 3s ease-in-out infinite;
+            }
+          `}</style>
         </div>
 
 

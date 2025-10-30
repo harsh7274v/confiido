@@ -106,14 +106,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                )}
                <button
                  onClick={toggleCollapse}
-                 className={`p-2 rounded-full border border-purple-300 hover:bg-purple-50 transition-colors ${
+                 className={`p-2 rounded-full border transition-colors ${
                    isCollapsed ? 'mx-auto' : ''
                  }`}
+                 style={{ borderColor: '#5E936C' }}
+                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5E936C20'}
+                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                >
                 {isCollapsed ? (
-                  <ChevronRight className="w-4 h-4 text-purple-600" />
+                  <ChevronRight className="w-4 h-4" style={{ color: '#5E936C' }} />
                 ) : (
-                  <ChevronLeft className="w-4 h-4 text-purple-600" />
+                  <ChevronLeft className="w-4 h-4" style={{ color: '#5E936C' }} />
                 )}
               </button>
             </div>
@@ -131,9 +134,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                    onClick={() => handleItemClick(item.id)}
                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 ${
                      isActive
-                       ? 'bg-purple-600 text-white shadow-lg'
+                       ? 'text-white shadow-lg'
                        : 'text-gray-700 hover:bg-gray-200'
                    } ${isCollapsed ? 'justify-center px-2' : ''}`}
+                   style={isActive ? { backgroundColor: '#5E936C' } : {}}
                  >
                    <Icon className={`w-6 h-6 ${
                      isActive ? 'text-white' : 'text-current'
@@ -161,9 +165,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                  onClick={() => handleItemClick(item.id)}
                  className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 min-w-[60px] ${
                    isActive
-                     ? 'bg-purple-600 text-white'
+                     ? 'text-white'
                      : 'text-gray-700 hover:bg-gray-100'
                  }`}
+                 style={isActive ? { backgroundColor: '#5E936C' } : {}}
                >
                  <Icon className={`w-5 h-5 mb-1 ${
                    isActive ? 'text-white' : 'text-current'

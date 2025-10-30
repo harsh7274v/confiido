@@ -111,6 +111,23 @@ export default function DashboardPage() {
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
   const [showThreeDotMenu, setShowThreeDotMenu] = useState(false);
+  const [welcomeText, setWelcomeText] = useState('');
+  const fullWelcomeText = 'Welcome back,';
+
+  // Typewriter effect for welcome text
+  useEffect(() => {
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      if (currentIndex <= fullWelcomeText.length) {
+        setWelcomeText(fullWelcomeText.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // On mount, check URL for view=payments and switch view
   useLayoutEffect(() => {
@@ -685,10 +702,10 @@ export default function DashboardPage() {
           block: 'center' 
         });
         
-        // Add highlight effect
-        sessionsSection.classList.add('ring-4', 'ring-purple-300', 'ring-opacity-50');
+        // Add highlight effect with custom color
+        sessionsSection.style.boxShadow = '0 0 0 4px rgba(94, 147, 108, 0.5)';
         setTimeout(() => {
-          sessionsSection.classList.remove('ring-4', 'ring-purple-300', 'ring-opacity-50');
+          sessionsSection.style.boxShadow = '';
         }, 2000);
       }
     }, 100); // Small delay to ensure view transition is complete
@@ -798,7 +815,7 @@ export default function DashboardPage() {
                       <User className="h-5 w-5 text-white" />
                     </div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                      Welcome back, <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
+                      {welcomeText} <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
                     </h2>
                   </div>
                   <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to accelerate your career journey?</span>
@@ -856,7 +873,7 @@ export default function DashboardPage() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
                 {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
                 <div className="flex-1 order-2 lg:order-1">
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-black mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>Next in Your Career Journey</h2>
+                  <h2 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Next in Your Career Journey</h2>
                   <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
                   <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
@@ -868,8 +885,16 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Not sure what direction to take?</div>
-                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Book a career exploration session</button>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Not sure what direction to take?</div>
+                      <button 
+                        onClick={() => setShowBookSessionPopup(true)}
+                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
+                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                      >
+                        Book 1:1 Career guidance session
+                      </button>
                     </div>
                     {/* Card 2 */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10 animate-float-slow">
@@ -880,8 +905,16 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">🚲</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Need help creating a strong first resume?</div>
-                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Resume review for freshers</button>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Need help creating a strong first resume?</div>
+                      <button 
+                        onClick={() => setShowBookSessionPopup(true)}
+                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
+                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                      >
+                        Resume Review
+                      </button>
                     </div>
                     {/* Card 3 */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-fast">
@@ -892,8 +925,16 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Applied to a few jobs but no response?</div>
-                      <button className="w-full bg-gradient-to-r from-gray-600 to-gray-800 text-white font-semibold py-2 rounded-lg mt-2 text-sm hover:from-gray-700 hover:to-gray-900 transition-colors" style={{ fontFamily: "'Rubik', sans-serif" }}>Audit your job strategy</button>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Applied to a few jobs but no response?</div>
+                      <button 
+                        onClick={() => setShowBookSessionPopup(true)}
+                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
+                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                      >
+                        Book mock interview session
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -904,13 +945,15 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
                       <button 
                         type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-gradient-to-r from-gray-600 to-gray-800 text-white hover:from-gray-700 hover:to-gray-900"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer text-white"
                         onClick={() => setShowBookSessionPopup(true)}
-                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
+                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto', backgroundColor: '#3E5F44' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: '#3E5F44' }} />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="text-lg font-semibold mb-1">Book a session</p>
@@ -923,13 +966,15 @@ export default function DashboardPage() {
 
                       <button
                         type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer bg-gradient-to-r from-gray-500 to-gray-700 text-white hover:from-gray-600 hover:to-gray-800"
+                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer text-white"
                         onClick={() => setShowMessageToast(true)}
-                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto' }}
+                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto', backgroundColor: '#3E5F44' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
                       >
                         <div className="flex items-center gap-3 sm:gap-4">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: '#3E5F44' }} />
                           </div>
                           <div className="text-left flex-1 min-w-0">
                             <p className="text-lg font-semibold mb-1">Open messages</p>
@@ -960,7 +1005,7 @@ export default function DashboardPage() {
                   
                   {/* Modern Toast Notification */}
                   {showMessageToast && (
-                    <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
+                    <div className="fixed top-6 right-6 z-50 flex items-center gap-3 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20" style={{ backgroundColor: '#3E5F44' }}>
                       <MessageSquare className="h-6 w-6 text-white" />
                       <span className="font-semibold">This feature is not available at this moment</span>
                       <button
@@ -974,10 +1019,10 @@ export default function DashboardPage() {
                   {/* Find Your Mentor Section (outer box/background removed, cards retained) */}
                   <div className="mt-6 w-full">
                     <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Find Your Mentor</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Find Your Mentor</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                       {mentors.map((mentor) => (
@@ -1026,20 +1071,22 @@ export default function DashboardPage() {
                   {/* Sessions box */}
                   <div id="sessions-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                     <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Sessions</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Sessions</h2>
                     </div>
                     <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        style={sessionTab === 'upcoming' ? { backgroundColor: '#3E5F44' } : {}}
                         onClick={() => setSessionTab('upcoming')}
                       >
                         Upcoming
                       </button>
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'bg-gradient-to-r from-gray-600 to-gray-800 text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        style={sessionTab === 'completed' ? { backgroundColor: '#3E5F44' } : {}}
                         onClick={() => setSessionTab('completed')}
                       >
                         Completed
@@ -1065,7 +1112,7 @@ export default function DashboardPage() {
                             <div key={session.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
                               <div className="flex items-center justify-between mb-3">
                                 <div>
-                                  <h3 className="font-semibold text-black text-base mb-1">{session.title}</h3>
+                                  <h3 className="font-semibold text-base mb-1" style={{ color: '#3E5F44' }}>{session.title}</h3>
                                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                                     <Calendar className="h-4 w-4" />
                                     <span>{session.date}</span>
@@ -1159,10 +1206,10 @@ export default function DashboardPage() {
                   {/* Goals box */}
                   <div id="goals-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
                     <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-black" style={{ fontFamily: "'Rubik', sans-serif" }}>Goals</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Goals</h2>
                     </div>
                     
                     {/* Add Goal Input */}
@@ -1179,7 +1226,10 @@ export default function DashboardPage() {
                         <button
                           onClick={addGoal}
                           disabled={saving || !newGoal.trim()}
-                          className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-xl sm:rounded-2xl font-semibold hover:from-gray-700 hover:to-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
+                          className="px-4 sm:px-6 py-2 sm:py-3 text-white rounded-xl sm:rounded-2xl font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
+                          style={{ backgroundColor: saving || !newGoal.trim() ? '' : '#3E5F44' }}
+                          onMouseEnter={(e) => { if (!saving && newGoal.trim()) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
+                          onMouseLeave={(e) => { if (!saving && newGoal.trim()) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
                         >
                           {saving ? 'Adding...' : 'Add'}
                         </button>
