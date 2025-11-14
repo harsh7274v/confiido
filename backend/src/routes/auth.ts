@@ -158,12 +158,16 @@ router.post('/send-signup-otp', [
     // Save OTP
     await OTP.create({ email, otp, expiresAt, type: 'signup' });
 
-    // Send OTP email (non-blocking - don't wait for email to send)
-    sendOTPEmail(email, otp).catch(err => {
-      console.error('Failed to send signup OTP email to', email, ':', err);
-      // Email failure is logged but doesn't block the response
-      // User will still see the verification screen
-    });
+    // Send OTP email (await to ensure it sends in serverless environment)
+    try {
+      await sendOTPEmail(email, otp);
+    } catch (emailErr) {
+      console.error('Failed to send signup OTP email to', email, ':', emailErr);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to send verification code. Please try again.'
+      });
+    }
 
     res.json({ 
       success: true, 
