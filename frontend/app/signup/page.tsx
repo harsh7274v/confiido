@@ -11,6 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 export default function Signup() {
   const router = useRouter();
   const { user, loading, redirecting: authRedirecting } = useAuth();
+  
+  // All useState hooks MUST be declared before any conditional returns
   const [selectedCategory, setSelectedCategory] = useState<'student' | 'professional'>('student');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -20,7 +22,6 @@ export default function Signup() {
     confirmPassword: '',
     agreeToTerms: false
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +31,11 @@ export default function Signup() {
   // OTP verification states
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [canResend, setCanResend] = useState(false);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -49,20 +55,6 @@ export default function Signup() {
     }
   }, [user, loading, router]);
 
-  // Show loading while checking authentication
-  if (loading || user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <MoonLoader color="#000000" size={60} />
-      </div>
-    );
-  }
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
-  const [canResend, setCanResend] = useState(false);
-
   // Timer countdown effect
   useEffect(() => {
     if (otpSent && timeLeft > 0) {
@@ -78,6 +70,15 @@ export default function Signup() {
       return () => clearInterval(timer);
     }
   }, [otpSent, timeLeft]);
+
+  // Show loading while checking authentication
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <MoonLoader color="#000000" size={60} />
+      </div>
+    );
+  }
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

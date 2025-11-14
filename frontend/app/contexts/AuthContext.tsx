@@ -1,6 +1,6 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import { useRouter } from 'next/navigation';
 
@@ -149,6 +149,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
+
+  // Handle Google Sign-In redirect result
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          console.log('✅ Google Sign-In redirect successful');
+          setRedirecting(true);
+          
+          // Get user token and verify with backend to get role
+          const token = await result.user.getIdToken();
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/verify`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            try {
+              const data = await response.json();
+              const userRole = data.data?.user?.role;
+              
+              // Store the JWT token and set session timestamp
+              if (data.data?.token && typeof window !== 'undefined') {
+                localStorage.setItem('token', data.data.token);
+                setSessionTimestamp();
+                console.log('🔐 JWT token stored with 24-hour session for Google sign-in');
+              }
+              
+              // Store user role
+              if (userRole && typeof window !== 'undefined') {
+                localStorage.setItem('userRole', userRole);
+              }
+              
+              // Redirect based on role
+              if (userRole === "expert") {
+                router.push("/mentor/dashboard");
+              } else {
+                router.push("/dashboard");
+              }
+            } catch (jsonError) {
+              console.error('Failed to parse role verification response:', jsonError);
+              // Fallback to regular dashboard
+              router.push('/dashboard');
+            }
+          } else {
+            // Fallback to regular dashboard if verification fails
+            router.push('/dashboard');
+          }
+        }
+      } catch (error: any) {
+        // Ignore popup-closed-by-user errors since we're using redirect now
+        if (error.code !== 'auth/popup-closed-by-user') {
+          console.error('Error handling redirect result:', error);
+        }
+      } finally {
+        setRedirecting(false);
+      }
+    };
+
+    handleRedirectResult();
+  }, [router]);
 
   useEffect(() => {
     setLoading(true);
@@ -328,62 +393,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
-      
-      // Navigate to dashboard on successful sign in
-      if (result.user) {
-        try {
-          // Show redirecting spinner
-          setRedirecting(true);
-          
-          // Get user token and verify with backend to get role
-          const token = await result.user.getIdToken();
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/verify`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            try {
-              const data = await response.json();
-              const userRole = data.data?.user?.role;
-              
-              // Store the JWT token and set session timestamp
-              if (data.data?.token && typeof window !== 'undefined') {
-                localStorage.setItem('token', data.data.token);
-                setSessionTimestamp();
-                console.log('🔐 JWT token stored with 24-hour session for Google sign-in');
-              }
-              
-              // Store user role
-              if (userRole && typeof window !== 'undefined') {
-                localStorage.setItem('userRole', userRole);
-              }
-              
-              // Redirect based on role
-              if (userRole === "expert") {
-                router.push("/mentor/dashboard");
-              } else {
-                router.push("/dashboard");
-              }
-            } catch (jsonError) {
-              console.error('Failed to parse role verification response:', jsonError);
-              // Fallback to regular dashboard
-              router.push('/dashboard');
-            }
-          } else {
-            // Fallback to regular dashboard if verification fails
-            router.push('/dashboard');
-          }
-        } catch (error) {
-          console.error('Error verifying user role:', error);
-          // Fallback to regular dashboard
-          router.push('/dashboard');
-        }
-      }
+      // Use redirect instead of popup to avoid CORS issues
+      await signInWithRedirect(auth, googleProvider);
+      // After redirect, the user will be brought back to this page
+      // and getRedirectResult will handle the rest in useEffect
     } catch (error) {
       console.error('Error signing in with Google:', error);
       setLoading(false);
