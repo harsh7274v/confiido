@@ -83,6 +83,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🗑️ Session cleared from localStorage');
   };
 
+  // Handle PWA app visibility changes (when switching apps or closing/opening)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 App became visible, checking authentication state...');
+        // Restore session from localStorage if it exists
+        const token = localStorage.getItem('token');
+        const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+        
+        if (token && sessionTimestamp && !isSessionExpired()) {
+          console.log('✅ Valid session found in localStorage, restoring authentication');
+          // Force Firebase to check auth state again
+          // The onAuthStateChanged will handle the rest
+        } else if (token && sessionTimestamp && isSessionExpired()) {
+          console.log('⏰ Session expired while app was in background');
+          clearSession();
+        }
+      }
+    };
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      console.log('📱 Page shown (PWA restored), checking authentication...');
+      // Restore session from localStorage
+      const token = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+      
+      if (token && sessionTimestamp && !isSessionExpired()) {
+        console.log('✅ Valid session found, authentication restored');
+      } else if (token && sessionTimestamp && isSessionExpired()) {
+        console.log('⏰ Session expired');
+        clearSession();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('📱 Window focused (app returned to foreground), checking authentication...');
+      // Restore session from localStorage when window regains focus
+      // This handles cases where app was in background (e.g., after opening Razorpay)
+      const token = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+      
+      if (token && sessionTimestamp && !isSessionExpired()) {
+        console.log('✅ Valid session found on focus, authentication maintained');
+      } else if (token && sessionTimestamp && isSessionExpired()) {
+        console.log('⏰ Session expired while app was in background');
+        clearSession();
+      }
+    };
+
+    // Listen for visibility changes (app switching, minimizing, etc.)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Listen for page show (PWA restoration from cache)
+    window.addEventListener('pageshow', handlePageShow);
+    
+    // Listen for window focus (app returned to foreground)
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     
@@ -183,17 +250,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // If we have a valid token and session, don't clear it!
           // This handles email/password logins that don't use Firebase auth
+          // AND PWA restoration where Firebase auth might be lost but localStorage persists
           if (existingToken && sessionTimestamp && !isSessionExpired()) {
-            console.log('✅ No Firebase user but valid JWT token found, keeping session');
+            console.log('✅ No Firebase user but valid JWT token found, keeping session (PWA restoration)');
+            // Keep user as null (no Firebase user) but don't clear session
+            // ProtectedRoute will allow access based on token
             setUser(null); // No Firebase user
+            setLoading(false);
+            return; // Don't clear session!
+          } else if (existingToken && !sessionTimestamp) {
+            // Token exists but no timestamp - might be from old session
+            // Set timestamp now to prevent immediate expiration
+            console.log('⚠️ Token found without timestamp, setting timestamp now');
+            setSessionTimestamp();
+            setUser(null);
             setLoading(false);
             return; // Don't clear session!
           }
         }
         
         // Only clear session if truly no authentication exists
-        clearSession();
-        console.log('👋 User logged out, session cleared');
+        if (typeof window !== 'undefined') {
+          const existingToken = localStorage.getItem('token');
+          if (!existingToken) {
+            clearSession();
+            console.log('👋 User logged out, session cleared');
+          } else {
+            console.log('⚠️ Firebase user lost but token exists - keeping session for PWA');
+          }
+        }
       }
       setUser(user);
       setLoading(false);

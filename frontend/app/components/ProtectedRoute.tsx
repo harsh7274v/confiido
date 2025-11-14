@@ -181,6 +181,47 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     }
   }, [user, loading, requireRole, isMounted]);
 
+  // Re-check authentication when app becomes visible (PWA restoration)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isMounted) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 ProtectedRoute: App became visible, re-checking authentication...');
+        // Re-check authentication when app becomes visible
+        const token = localStorage.getItem('token');
+        const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+        
+        if (token && sessionTimestamp) {
+          // Force re-check by calling checkAuth logic
+          const isExpired = (() => {
+            if (!sessionTimestamp) return true;
+            const sessionTime = parseInt(sessionTimestamp);
+            const currentTime = Date.now();
+            const twentyFourHours = 24 * 60 * 60 * 1000;
+            return (currentTime - sessionTime) > twentyFourHours;
+          })();
+          
+          if (!isExpired) {
+            console.log('✅ ProtectedRoute: Valid session found on visibility change');
+            // Authentication is still valid, no action needed
+            // The existing useEffect will handle state updates
+          } else {
+            console.log('⏰ ProtectedRoute: Session expired on visibility change');
+            setIsAuthenticated(false);
+            setIsAuthorized(false);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isMounted]);
+
   // Show nothing while checking authentication (but allow access if token exists)
   if (!isMounted || isAuthenticated === null) {
     console.log('⏳ Still checking authentication state...');

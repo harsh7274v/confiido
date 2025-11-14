@@ -200,6 +200,7 @@ const createSessionDateTime = (scheduledDate: string, time: string): Date => {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const mainContentRef = React.useRef<HTMLElement>(null);
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
@@ -815,11 +816,25 @@ export default function DashboardPage() {
 
   // Function to scroll to top of dashboard
   const scrollToTop = () => {
-    window.scrollTo({ 
-      top: 0, 
-      behavior: 'smooth' 
-    });
     setCurrentView('dashboard');
+    
+    // Use setTimeout to ensure the dashboard view is rendered before scrolling
+    setTimeout(() => {
+      // Use ref if available, otherwise find the main scrollable container
+      const mainContent = mainContentRef.current || document.querySelector('main.overflow-y-auto');
+      if (mainContent) {
+        mainContent.scrollTo({ 
+          top: 0, 
+          behavior: 'smooth' 
+        });
+      } else {
+        // Fallback to window scroll if main element not found
+        window.scrollTo({ 
+          top: 0, 
+          behavior: 'smooth' 
+        });
+      }
+    }, 100); // Small delay to ensure view transition is complete
   };
 
   // Show 'User' as default if no username is set, otherwise use username from users collection
@@ -888,7 +903,7 @@ export default function DashboardPage() {
         />
         
         {/* Main content */}
-        <main className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen">
+        <main ref={mainContentRef} className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen">
           {currentView === 'transactions' ? (
             <div className="w-full">
               <TransactionsPage />
