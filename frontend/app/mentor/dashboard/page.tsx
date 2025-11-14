@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Users, MessageSquare, BookOpen, Settings, BarChart3, LogOut, ChevronUp, ChevronDown, DollarSign } from "lucide-react";
 import AvailabilityManager from "../../components/availability/AvailabilityManager";
 import MentorBookings from "../../components/MentorBookings";
+import ProtectedRoute from "../../components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { bookingApi } from "../../services/bookingApi";
@@ -292,6 +293,7 @@ const MentorDashboard = () => {
   };
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -421,6 +423,7 @@ const MentorDashboard = () => {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { X, Star, MessageCircle, Calendar, User, Award, Briefcase, MapPin } from 'lucide-react';
+import { X, Star, User, MapPin } from 'lucide-react';
 
 export interface MentorData {
 		name: string;
@@ -89,50 +89,10 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, mentor }) 
 								</div>
 							</div>
 
-							<div className="flex items-baseline gap-2 mb-6">
-								<span className="text-3xl font-bold" style={{ color: '#3E5F44' }}>₹{mentor.rate}</span>
-								<span className="text-sm text-gray-500">per hour</span>
-							</div>
 						</div>
-
-						{/* Action Buttons */}
-						<div className="grid grid-cols-2 gap-3 mb-8">
-							<button className="flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50 hover:border-gray-300 active:scale-95 transition-all">
-								<Award className="h-4 w-4" />
-								Free Trial
-							</button>
-							<button className="flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50 hover:border-gray-300 active:scale-95 transition-all">
-								<User className="h-4 w-4" />
-								1 on 1
-							</button>
-							<button className="flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl font-semibold text-sm shadow-sm hover:bg-gray-50 hover:border-gray-300 active:scale-95 transition-all">
-								<Briefcase className="h-4 w-4" />
-								Career Guidance
-							</button>
-							<button 
-								className="flex items-center justify-center gap-2 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl active:scale-95 transition-all"
-								style={{ backgroundColor: '#3E5F44' }}
-								onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-								onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-							>
-								<MessageCircle className="h-4 w-4" />
-								Message
-							</button>
-						</div>
-
-						{/* Book Session Button */}
-						<button 
-							className="w-full flex items-center justify-center gap-2 text-white px-6 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-8"
-							style={{ backgroundColor: '#3E5F44' }}
-							onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-							onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-						>
-							<Calendar className="h-5 w-5" />
-							Book a Session
-						</button>
 
 						{/* About Section */}
-						<div className="mb-6">
+						<div className="mb-6 mt-4">
 							<h4 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
 								<div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#3E5F44' }}></div>
 								About

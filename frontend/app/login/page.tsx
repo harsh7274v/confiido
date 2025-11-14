@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
 import { MoonLoader } from 'react-spinners';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
+  const router = useRouter();
+  const { user, loading, redirecting: authRedirecting } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,9 +28,57 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
-  const router = useRouter();
 
   const [error, setError] = useState('');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+      
+      // Check if session is expired
+      if (token && sessionTimestamp) {
+        const sessionTime = parseInt(sessionTimestamp);
+        const currentTime = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        // If session expired, clear it
+        if ((currentTime - sessionTime) > twentyFourHours) {
+          console.log('❌ Session expired on login page, clearing...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('sessionTimestamp');
+          localStorage.removeItem('userRole');
+          return;
+        }
+      }
+      
+      // If user is already authenticated with valid session, redirect to dashboard
+      if ((user || token) && sessionTimestamp) {
+        console.log('✅ User already logged in with valid session, redirecting to dashboard');
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'expert') {
+          router.push('/mentor/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+    };
+
+    // Only check when loading is complete
+    if (!loading) {
+      checkAuth();
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking authentication
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <MoonLoader color="#000000" size={60} />
+      </div>
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -139,8 +190,19 @@ export default function Login() {
       if (!res.ok || !data?.success || !data?.data?.token) {
         throw new Error(data?.error || 'Invalid code');
       }
+      
+      // Store token and session timestamp for 24-hour validity
       localStorage.setItem('token', data.data.token);
+      localStorage.setItem('sessionTimestamp', Date.now().toString());
+      
+      // Store user role
+      if (data.data.user?.role) {
+        localStorage.setItem('userRole', data.data.user.role);
+      }
+      
+      console.log('✅ OTP verified, session set for 24 hours');
       setRedirecting(true);
+      
       const userRole = data.data.user?.role;
       if (userRole === 'expert') {
         router.push('/mentor/dashboard');
@@ -261,9 +323,16 @@ export default function Login() {
         throw new Error(data.error || data.errors?.[0]?.msg || 'Login failed');
       }
 
-      // Store token in localStorage
+      // Store token and session timestamp for 24-hour validity
       if (data.data?.token) {
         localStorage.setItem('token', data.data.token);
+        localStorage.setItem('sessionTimestamp', Date.now().toString());
+        console.log('✅ Login successful, session set for 24 hours');
+      }
+      
+      // Store user role
+      if (data.data.user?.role) {
+        localStorage.setItem('userRole', data.data.user.role);
       }
 
       // Show redirecting spinner
@@ -290,7 +359,7 @@ export default function Login() {
           display: none;
         }
       `}</style>
-      {redirecting && (
+      {(redirecting || authRedirecting) && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
           <MoonLoader color="#000000" size={60} />
         </div>

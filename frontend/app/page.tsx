@@ -4,10 +4,11 @@ import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronU
 import Link from 'next/link';
 import { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Testimonials from './components/ui/testimonials';
 import { HeroGeometric } from './components/ui/shape-landing-hero';
 import { MoonLoader } from 'react-spinners';
+import { useAuth } from './contexts/AuthContext';
 import '/public/WEB/css/clash-grotesk.css';
 import '/public/web1/css/bespoke-stencil.css';
 import '/public/web1/css/clash-display.css';
@@ -32,6 +33,8 @@ const CenterSpinner = memo(() => (
 CenterSpinner.displayName = 'CenterSpinner';
 
 export default function Home() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonialSlide, setCurrentTestimonialSlide] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -44,6 +47,10 @@ export default function Home() {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [chatbotStep, setChatbotStep] = useState<'email' | 'subject' | 'query'>('email');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [chatbotData, setChatbotData] = useState({
     email: '',
     subject: '',
@@ -53,7 +60,24 @@ export default function Home() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isSignupLoading, setIsSignupLoading] = useState(false);
-  const router = useRouter();
+
+  // Auto-redirect logged-in users to dashboard
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      
+      // If user is already authenticated, redirect to dashboard
+      if (user || token) {
+        console.log('User already logged in, redirecting to dashboard from home page');
+        router.push('/dashboard');
+      }
+    };
+
+    // Only check when loading is complete
+    if (!loading) {
+      checkAuth();
+    }
+  }, [user, loading, router]);
 
   // Generate random light background colors for testimonials
   const getRandomBackgroundColor = (index: number) => {
@@ -500,10 +524,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen overflow-x-hidden relative" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-      {/* Simple, performant background pattern */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-40"></div>
-      </div>
+      {/* Simple, performant background pattern - removed for clean look */}
       
       <style jsx global>{`
         ::-webkit-scrollbar {
@@ -1482,110 +1503,150 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="space-y-1"
+            className="space-y-6"
           >
             {/* FAQ 1 - How do I get started? */}
-            <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden">
+            <div>
               <button 
                 onClick={() => handleFaqClick(0)}
-                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none hover:bg-[#202020]"
+                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-base md:text-lg font-normal text-white">
                     How do I get started?
                   </h3>
-                  {openFaq === 0 ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  ) : (
+                  <motion.div
+                    animate={{ rotate: openFaq === 0 ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  >
                     <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  )}
+                  </motion.div>
                 </div>
               </button>
-              {openFaq === 0 && (
-                <div className="px-5 pb-5 border-t border-gray-800">
-                  <p className="text-gray-400 leading-relaxed pt-4">
-                    Simply sign up and follow the onboarding process.
-                  </p>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {openFaq === 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ transformOrigin: 'top' }}
+                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                  >
+                    <p className="text-gray-300 leading-relaxed pt-4">
+                      Simply sign up and follow the onboarding process.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* FAQ 2 - What payment methods do you accept? */}
-            <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden">
+            <div>
               <button 
                 onClick={() => handleFaqClick(1)}
-                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none hover:bg-[#202020]"
+                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-base md:text-lg font-normal text-white">
                     What payment methods do you accept?
                   </h3>
-                  {openFaq === 1 ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  ) : (
+                  <motion.div
+                    animate={{ rotate: openFaq === 1 ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  >
                     <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  )}
+                  </motion.div>
                 </div>
               </button>
-              {openFaq === 1 && (
-                <div className="px-5 pb-5 border-t border-gray-800">
-                  <p className="text-gray-400 leading-relaxed pt-4">
-                    We accept payments through Razorpay, including UPI, credit cards, debit cards, net banking, and wallets.
-                  </p>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {openFaq === 1 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ transformOrigin: 'top' }}
+                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                  >
+                    <p className="text-gray-300 leading-relaxed pt-4">
+                      We accept payments through Razorpay, including UPI, credit cards, debit cards, net banking, and wallets.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* FAQ 3 - What is the refund policy? */}
-            <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden">
+            <div>
               <button 
                 onClick={() => handleFaqClick(2)}
-                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none hover:bg-[#202020]"
+                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-base md:text-lg font-normal text-white">
                     What is the refund policy?
                   </h3>
-                  {openFaq === 2 ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  ) : (
+                  <motion.div
+                    animate={{ rotate: openFaq === 2 ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  >
                     <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  )}
+                  </motion.div>
                 </div>
               </button>
-              {openFaq === 2 && (
-                <div className="px-5 pb-5 border-t border-gray-800">
-                  <p className="text-gray-400 leading-relaxed pt-4">
-                    We truly value your trust in booking a session with us. Since each session is personalized and time is reserved exclusively for you, all bookings are non-refundable. However, if you're unable to attend, we'll be happy to help you reschedule (subject to availability).
-                  </p>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {openFaq === 2 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ transformOrigin: 'top' }}
+                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                  >
+                    <p className="text-gray-300 leading-relaxed pt-4">
+                      We truly value your trust in booking a session with us. Since each session is personalized and time is reserved exclusively for you, all bookings are non-refundable. However, if you're unable to attend, we'll be happy to help you reschedule (subject to availability).
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* FAQ 4 - Are sessions online? */}
-            <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden">
+            <div>
               <button 
                 onClick={() => handleFaqClick(3)}
-                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none hover:bg-[#202020]"
+                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-base md:text-lg font-normal text-white">
                     Are sessions conducted online?
                   </h3>
-                  {openFaq === 3 ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  ) : (
+                  <motion.div
+                    animate={{ rotate: openFaq === 3 ? 180 : 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  >
                     <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  )}
+                  </motion.div>
                 </div>
               </button>
-              {openFaq === 3 && (
-                <div className="px-5 pb-5 border-t border-gray-800">
-                  <p className="text-gray-400 leading-relaxed pt-4">
-                    Yes, all our coaching sessions are conducted online via Google Meet. This allows you to learn from the comfort of your own space and gives us access to top coaches worldwide. You'll receive a meeting link before your session, and all you need is a stable internet connection and a device with a camera.
-                  </p>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {openFaq === 3 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scaleY: 0 }}
+                    animate={{ opacity: 1, scaleY: 1 }}
+                    exit={{ opacity: 0, scaleY: 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ transformOrigin: 'top' }}
+                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                  >
+                    <p className="text-gray-300 leading-relaxed pt-4">
+                      Yes, all our coaching sessions are conducted online via Google Meet. This allows you to learn from the comfort of your own space and gives us access to top coaches worldwide. You'll receive a meeting link before your session, and all you need is a stable internet connection and a device with a camera.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
 
@@ -1608,38 +1669,27 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
+            {/* Brand Section */}
+            <div className="max-w-md">
               <h3 className="text-xl font-bold text-white mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Confiido</h3>
               <p className="text-gray-400" style={{ fontFamily: "'Rubik', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
             </div>
+            
+            {/* Company Links */}
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms Of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">For Mentees</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/search" className="hover:text-white transition-colors">Find Mentors</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">For Mentors</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/become-expert" className="hover:text-white transition-colors">Become a Mentor</Link></li>
-                <li><Link href="/resources" className="hover:text-white transition-colors">Resources</Link></li>
-                <li><Link href="/community" className="hover:text-white transition-colors">Community</Link></li>
+                <li><button onClick={() => setIsAboutOpen(true)} className="hover:text-white transition-colors text-left">About</button></li>
+                <li><button onClick={() => setIsContactOpen(true)} className="hover:text-white transition-colors text-left">Contact Us</button></li>
+                <li><button onClick={() => setIsTermsOpen(true)} className="hover:text-white transition-colors text-left">Terms Of Service</button></li>
+                <li><button onClick={() => setIsPrivacyOpen(true)} className="hover:text-white transition-colors text-left">Privacy</button></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+          
+          {/* Copyright */}
+          <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-400">©2025 Confiido. All rights reserved.</p>
           </div>
         </div>
@@ -1941,6 +1991,408 @@ export default function Home() {
           </div>
         </motion.div>
       )}
+
+      {/* About Modal */}
+      <AnimatePresence>
+        {isAboutOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            onClick={() => setIsAboutOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center z-10">
+                <h2 className="text-3xl font-bold text-gray-900">About Confiido</h2>
+                <button
+                  onClick={() => setIsAboutOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="px-8 py-6 text-gray-700 space-y-6">
+                <section>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">Our Mission</h3>
+                  <p className="text-lg leading-relaxed">
+                    Confiido is dedicated to connecting ambitious professionals with industry experts for career acceleration. We believe that personalized mentorship is the key to unlocking your full potential and achieving your career goals.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">What We Do</h3>
+                  <p className="mb-4">
+                    We provide a platform where professionals can connect with experienced mentors across various industries. Our services include:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>One-on-One Mentorship Sessions:</strong> Personalized guidance from industry experts</li>
+                    <li><strong>Career Guidance:</strong> Strategic advice for career transitions and growth</li>
+                    <li><strong>Skill Development:</strong> Learn from the best in your field</li>
+                    <li><strong>Networking Opportunities:</strong> Connect with professionals in your industry</li>
+                    <li><strong>Online Convenience:</strong> All sessions conducted via Google Meet</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">Our Approach</h3>
+                  <p className="mb-4">
+                    At Confiido, we understand that every professional's journey is unique. That's why we offer:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Curated Mentors:</strong> Carefully selected experts with proven track records</li>
+                    <li><strong>Flexible Scheduling:</strong> Book sessions that fit your busy schedule</li>
+                    <li><strong>Personalized Matching:</strong> Find mentors who align with your goals</li>
+                    <li><strong>Secure Platform:</strong> Safe and professional environment for learning</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">Why Choose Confiido?</h3>
+                  <div className="space-y-3">
+                    <p>
+                      <strong>Expert Mentors:</strong> Our mentors are industry leaders with years of experience and a passion for helping others succeed.
+                    </p>
+                    <p>
+                      <strong>Proven Results:</strong> Our mentees have achieved career breakthroughs, landed dream jobs, and accelerated their professional growth.
+                    </p>
+                    <p>
+                      <strong>Convenient & Accessible:</strong> All sessions are conducted online, making professional mentorship accessible from anywhere.
+                    </p>
+                    <p>
+                      <strong>Supportive Community:</strong> Join a network of ambitious professionals committed to continuous growth and learning.
+                    </p>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">Our Vision</h3>
+                  <p className="text-lg leading-relaxed">
+                    We envision a world where professional growth is accessible to everyone, regardless of location or background. Through meaningful mentorship connections, we're building a community of professionals who support each other's success and contribute to a more knowledgeable, skilled workforce.
+                  </p>
+                </section>
+
+                <section className="bg-gray-50 p-6 rounded-xl">
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">Get Started Today</h3>
+                  <p className="mb-4">
+                    Ready to take your career to the next level? Browse our mentors, book a session, and start your journey toward professional excellence.
+                  </p>
+                  <button 
+                    onClick={() => {
+                      setIsAboutOpen(false);
+                      window.location.href = '/search';
+                    }}
+                    className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                  >
+                    Find Your Mentor
+                  </button>
+                </section>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contact Us Modal */}
+      <AnimatePresence>
+        {isContactOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            onClick={() => setIsContactOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl max-w-2xl w-full relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center rounded-t-2xl">
+                <h2 className="text-3xl font-bold text-gray-900">Contact Us</h2>
+                <button
+                  onClick={() => setIsContactOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="px-8 py-8 text-center space-y-6">
+                <div className="flex justify-center mb-6">
+                  <div className="bg-black rounded-full p-4">
+                    <MessageCircle className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-semibold text-gray-900">Get in Touch</h3>
+                <p className="text-gray-600 text-lg">
+                  Have questions or need support? We're here to help!
+                </p>
+                
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <p className="text-sm text-gray-600 mb-2">Email us at:</p>
+                  <a 
+                    href="mailto:confiido.io+support@gmail.com"
+                    className="text-2xl font-semibold text-black hover:text-gray-700 transition-colors break-all"
+                  >
+                    confiido.io+support@gmail.com
+                  </a>
+                </div>
+
+                <div className="pt-4">
+                  <p className="text-gray-600 mb-4">Or use our support chatbot for instant assistance</p>
+                  <button
+                    onClick={() => {
+                      setIsContactOpen(false);
+                      openChatbot();
+                    }}
+                    className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold inline-flex items-center gap-2"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Open Support Chat
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Terms of Service Modal */}
+      <AnimatePresence>
+        {isTermsOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            onClick={() => setIsTermsOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center z-10">
+                <h2 className="text-3xl font-bold text-gray-900">Terms of Service</h2>
+                <button
+                  onClick={() => setIsTermsOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="px-8 py-6 text-gray-700 space-y-6">
+                <p className="text-sm text-gray-500">Last updated: November 11, 2025</p>
+                
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h3>
+                  <p>By accessing and using Confiido's services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">2. Service Description</h3>
+                  <p>Confiido provides a platform connecting ambitious professionals with industry experts for career mentorship and coaching. Our services include online mentoring sessions, career guidance, and professional development resources.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">3. User Responsibilities</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>You must provide accurate and complete information during registration</li>
+                    <li>You are responsible for maintaining the confidentiality of your account credentials</li>
+                    <li>You must be at least 18 years old to use our services</li>
+                    <li>You agree to use the platform in a professional and respectful manner</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">4. Booking and Payment</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>All bookings are subject to mentor availability</li>
+                    <li>Payment must be completed before the session is confirmed</li>
+                    <li>All payments are processed securely through Razorpay</li>
+                    <li>Sessions are non-refundable once booked</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">5. Cancellation and Rescheduling</h3>
+                  <p>While bookings are non-refundable, we understand that circumstances may change. You may request to reschedule your session subject to mentor availability. Please contact support for rescheduling requests.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">6. Intellectual Property</h3>
+                  <p>All content on Confiido, including text, graphics, logos, and software, is the property of Confiido and is protected by copyright and intellectual property laws.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">7. Limitation of Liability</h3>
+                  <p>Confiido acts as a platform connecting mentees with mentors. We do not guarantee specific outcomes from mentoring sessions. The mentors are independent professionals, and Confiido is not responsible for the content or quality of individual sessions.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">8. Privacy and Data Protection</h3>
+                  <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your personal information.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">9. Modifications to Terms</h3>
+                  <p>Confiido reserves the right to modify these terms at any time. We will notify users of any significant changes. Continued use of the service after modifications constitutes acceptance of the updated terms.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">10. Contact Information</h3>
+                  <p>If you have any questions about these Terms of Service, please contact us through our support system.</p>
+                </section>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Privacy Policy Modal */}
+      <AnimatePresence>
+        {isPrivacyOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            onClick={() => setIsPrivacyOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center z-10">
+                <h2 className="text-3xl font-bold text-gray-900">Privacy Policy</h2>
+                <button
+                  onClick={() => setIsPrivacyOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="px-8 py-6 text-gray-700 space-y-6">
+                <p className="text-sm text-gray-500">Last updated: November 11, 2025</p>
+                
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Introduction</h3>
+                  <p>Confiido ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">2. Information We Collect</h3>
+                  <h4 className="font-semibold mt-4 mb-2">Personal Information:</h4>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Name, email address, and contact information</li>
+                    <li>Profile information and professional background</li>
+                    <li>Payment information (processed securely through Razorpay)</li>
+                    <li>Session booking details and preferences</li>
+                  </ul>
+                  
+                  <h4 className="font-semibold mt-4 mb-2">Automatically Collected Information:</h4>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>IP address and browser information</li>
+                    <li>Device information and operating system</li>
+                    <li>Usage data and analytics</li>
+                    <li>Cookies and similar tracking technologies</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">3. How We Use Your Information</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>To provide and maintain our services</li>
+                    <li>To process your bookings and payments</li>
+                    <li>To communicate with you about your account and sessions</li>
+                    <li>To improve our platform and user experience</li>
+                    <li>To send promotional communications (with your consent)</li>
+                    <li>To detect and prevent fraud and ensure platform security</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">4. Information Sharing</h3>
+                  <p className="mb-3">We do not sell your personal information. We may share your information with:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Mentors:</strong> Necessary information to facilitate your sessions</li>
+                    <li><strong>Service Providers:</strong> Payment processors, hosting services, and analytics providers</li>
+                    <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">5. Data Security</h3>
+                  <p>We implement appropriate security measures to protect your personal information. However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">6. Cookies and Tracking</h3>
+                  <p>We use cookies and similar tracking technologies to enhance your experience. You can control cookie settings through your browser preferences.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">7. Your Rights</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Access and review your personal information</li>
+                    <li>Request correction of inaccurate data</li>
+                    <li>Request deletion of your account and data</li>
+                    <li>Opt-out of marketing communications</li>
+                    <li>Export your data in a portable format</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">8. Data Retention</h3>
+                  <p>We retain your personal information for as long as necessary to provide our services and comply with legal obligations. You may request deletion of your account at any time.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">9. Third-Party Links</h3>
+                  <p>Our platform may contain links to third-party websites. We are not responsible for the privacy practices of these external sites.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">10. Children's Privacy</h3>
+                  <p>Our services are not intended for individuals under 18 years of age. We do not knowingly collect personal information from children.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">11. Changes to Privacy Policy</h3>
+                  <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes by email or through a notice on our platform.</p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">12. Contact Us</h3>
+                  <p>If you have any questions about this Privacy Policy or our data practices, please contact us through our support system.</p>
+                </section>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

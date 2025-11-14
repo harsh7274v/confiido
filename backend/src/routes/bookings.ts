@@ -1,5 +1,5 @@
  import express from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, validationResult, query } from 'express-validator';
 import { protect } from '../middleware/auth';
 import Booking, { ISession } from '../models/Booking';
 import Expert from '../models/Expert';
@@ -18,6 +18,154 @@ let socketService: SocketService | null = null;
 export const setSocketService = (service: SocketService) => {
   socketService = service;
 };
+
+const STANDARD_DURATION_PRICING: Record<number, number> = {
+  30: 750,
+  60: 1150
+};
+
+const ensureExpertProfile = async (expertUserId: string) => {
+  let expert = await Expert.findOne({ userId: expertUserId });
+
+  if (expert) {
+    return expert;
+  }
+
+  const mentorUser = await User.findById(expertUserId);
+  if (!mentorUser) {
+    return null;
+  }
+
+  const basicExpertData = {
+    userId: expertUserId,
+    title: `${mentorUser.firstName} ${mentorUser.lastName}`,
+    company: 'Professional Mentor',
+    expertise: ['Career Guidance', 'Professional Development'],
+    description: `Experienced professional offering career guidance and mentorship services.`,
+    hourlyRate: 50,
+    currency: 'INR',
+    availability: {
+      monday: { start: '09:00', end: '17:00', available: true },
+      tuesday: { start: '09:00', end: '17:00', available: true },
+      wednesday: { start: '09:00', end: '17:00', available: true },
+      thursday: { start: '09:00', end: '17:00', available: true },
+      friday: { start: '09:00', end: '17:00', available: true },
+      saturday: { start: '10:00', end: '16:00', available: false },
+      sunday: { start: '10:00', end: '16:00', available: false }
+    },
+    sessionTypes: [
+      {
+        type: 'video',
+        duration: 30,
+        price: 750,
+        description: '30-minute video consultation'
+      },
+      {
+        type: 'video',
+        duration: 60,
+        price: 1150,
+        description: '1-hour video consultation'
+      },
+      {
+        type: 'chat',
+        duration: 30,
+        price: 750,
+        description: '30-minute chat consultation'
+      }
+    ],
+    languages: ['English', 'Hindi'],
+    rating: 4.5,
+    totalReviews: 0,
+    totalSessions: 0,
+    totalEarnings: 0,
+    isFeatured: true,
+    isAvailable: true,
+    verificationStatus: 'verified'
+  };
+
+  try {
+    expert = await Expert.create(basicExpertData);
+    return expert;
+  } catch (error) {
+    console.error('Failed to create expert document:', error);
+    return null;
+  }
+};
+
+const applyStandardPricing = (duration: number, price: number, context: string) => {
+  const overridePrice = STANDARD_DURATION_PRICING[duration];
+
+  if (overridePrice && overridePrice !== price) {
+    console.log('ℹ️ [BOOKING] Applying standard pricing override:', {
+      context,
+      requestedDuration: duration,
+      originalPrice: price,
+      overridePrice
+    });
+    return overridePrice;
+  }
+
+  return price;
+};
+
+// @route   GET /api/bookings/pricing
+// @desc    Securely fetch pricing for a session
+// @access  Private
+router.get('/pricing', protect, [
+  query('expertId')
+    .notEmpty()
+    .withMessage('Expert ID is required'),
+  query('sessionType')
+    .isIn(['video', 'audio', 'chat', 'in-person'])
+    .withMessage('Invalid session type'),
+  query('duration')
+    .isInt({ min: 15 })
+    .withMessage('Duration must be at least 15 minutes')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { expertId, sessionType } = req.query;
+    const duration = parseInt(req.query.duration as string, 10);
+
+    const expert = await ensureExpertProfile(expertId as string);
+    if (!expert) {
+      return res.status(404).json({
+        success: false,
+        error: 'Mentor not found'
+      });
+    }
+
+    const sessionTypeConfig = expert.sessionTypes.find(
+      s => s.type === sessionType && s.duration === duration
+    );
+
+    if (!sessionTypeConfig) {
+      return res.status(400).json({
+        success: false,
+        error: 'Selected session type and duration is not available for this expert'
+      });
+    }
+
+    const price = applyStandardPricing(duration, sessionTypeConfig.price, 'pricing-endpoint');
+
+    res.json({
+      success: true,
+      data: {
+        price,
+        currency: 'INR'
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // @route   POST /api/bookings
 // @desc    Create a new booking or add session to existing booking
@@ -63,75 +211,13 @@ router.post('/', protect, [
 
     // Check if expert exists and is available
     // The expertId sent from frontend is the MENTOR's User ID (not the authenticated user's ID)
-    let expert = await Expert.findOne({ userId: expertId });
-    
+    const expert = await ensureExpertProfile(expertId);
+
     if (!expert) {
-      // Get mentor user details to create basic expert profile
-      const mentorUser = await User.findById(expertId);
-      if (!mentorUser) {
-        return res.status(404).json({
-          success: false,
-          error: 'Mentor not found'
-        });
-      }
-      
-      // Create basic expert document for the mentor
-      const basicExpertData = {
-        userId: expertId, // This is the mentor's User ID
-        title: `${mentorUser.firstName} ${mentorUser.lastName}`,
-        company: 'Professional Mentor',
-        expertise: ['Career Guidance', 'Professional Development'],
-        description: `Experienced professional offering career guidance and mentorship services.`,
-        hourlyRate: 50,
-        currency: 'INR',
-        availability: {
-          monday: { start: '09:00', end: '17:00', available: true },
-          tuesday: { start: '09:00', end: '17:00', available: true },
-          wednesday: { start: '09:00', end: '17:00', available: true },
-          thursday: { start: '09:00', end: '17:00', available: true },
-          friday: { start: '09:00', end: '17:00', available: true },
-          saturday: { start: '10:00', end: '16:00', available: false },
-          sunday: { start: '10:00', end: '16:00', available: false }
-        },
-        sessionTypes: [
-          {
-            type: 'video',
-            duration: 30,
-            price: 25,
-            description: '30-minute video consultation'
-          },
-          {
-            type: 'video',
-            duration: 60,
-            price: 50,
-            description: '1-hour video consultation'
-          },
-          {
-            type: 'chat',
-            duration: 30,
-            price: 20,
-            description: '30-minute chat consultation'
-          }
-        ],
-        languages: ['English', 'Hindi'],
-        rating: 4.5,
-        totalReviews: 0,
-        totalSessions: 0,
-        totalEarnings: 0,
-        isFeatured: true,
-        isAvailable: true,
-        verificationStatus: 'verified'
-      };
-      
-      try {
-        expert = await Expert.create(basicExpertData);
-      } catch (createError) {
-        console.error('Failed to create expert document:', createError);
-        return res.status(500).json({
-          success: false,
-          error: 'Failed to create expert profile'
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        error: 'Mentor not found'
+      });
     }
     
     console.log('✅ [BOOKING] Expert found:', {
@@ -157,16 +243,16 @@ router.post('/', protect, [
     const endMinute = (startHour * 60 + startMinute + duration) % 60;
     const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
 
-    // Calculate price based on session type
-    const sessionTypeConfig = expert.sessionTypes.find(s => s.type === sessionType);
+    // Calculate price based on session type AND duration
+    const sessionTypeConfig = expert.sessionTypes.find(s => s.type === sessionType && s.duration === duration);
     if (!sessionTypeConfig) {
       return res.status(400).json({
         success: false,
-        error: 'Selected session type is not available for this expert'
+        error: 'Selected session type and duration is not available for this expert'
       });
     }
 
-    const price = sessionTypeConfig.price;
+    const price = applyStandardPricing(duration, sessionTypeConfig.price, 'booking-create');
 
     // Check for booking conflicts in existing sessions (block overlaps for any user)
     // Allow rebooking if previous attempt failed/refunded/cancelled or expired

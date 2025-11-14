@@ -5,6 +5,7 @@ import User from '../models/User';
 import OTP from '../models/OTP';
 import Reward from '../models/Reward';
 import { sendOTPEmail } from '../services/mailer';
+import { sendWelcomeEmail } from '../services/welcomeEmail';
 import { AppError } from '../middleware/errorHandler';
 import { protect } from '../middleware/auth';
 import { verifyFirebaseToken } from '../middleware/firebaseAuth';
@@ -83,6 +84,191 @@ router.post('/verify-otp', [
     res.json({
       success: true,
       message: 'OTP verified, login successful',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          isExpert: user.isExpert,
+          isVerified: user.isVerified
+        },
+        token
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/auth/send-signup-otp
+// @desc    Send OTP for signup verification
+// @access  Public
+router.post('/send-signup-otp', [
+  body('email').isEmail().withMessage('Please enter a valid email').normalizeEmail(),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
+  body('firstName').trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
+  body('lastName').trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    // Rate limit check
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+    // Run independent checks in parallel for faster response
+    const [existingUser, recentSignupCount] = await Promise.all([
+      User.findOne({ email }),
+      OTP.countDocuments({ 
+        email, 
+        type: 'signup', 
+        createdAt: { $gte: tenMinutesAgo } 
+      })
+    ]);
+
+    // Check if user already exists
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this email already exists'
+      });
+    }
+
+    // Rate limit: max 3 signup OTP requests per 10 minutes per email
+    if (recentSignupCount >= 3) {
+      return res.status(429).json({ 
+        success: false, 
+        error: 'Too many OTP requests. Try again in 10 minutes.' 
+      });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // Remove previous signup OTPs for this email
+    await OTP.deleteMany({ email, type: 'signup' });
+
+    // Save OTP
+    await OTP.create({ email, otp, expiresAt, type: 'signup' });
+
+    // Send OTP email (non-blocking - don't wait for email to send)
+    sendOTPEmail(email, otp).catch(err => {
+      console.error('Failed to send signup OTP email to', email, ':', err);
+      // Email failure is logged but doesn't block the response
+      // User will still see the verification screen
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Verification code sent to email' 
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/auth/verify-signup-otp
+// @desc    Verify signup OTP and create account
+// @access  Public
+router.post('/verify-signup-otp', [
+  body('email').isEmail().withMessage('Please enter a valid email').normalizeEmail(),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long'),
+  body('firstName').trim().isLength({ min: 2, max: 50 }).withMessage('First name must be between 2 and 50 characters'),
+  body('lastName').trim().isLength({ min: 2, max: 50 }).withMessage('Last name must be between 2 and 50 characters'),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email, otp, password, firstName, lastName, userType } = req.body;
+
+    // Verify OTP
+    const otpDoc = await OTP.findOne({ email, otp, type: 'signup' });
+    if (!otpDoc || otpDoc.expiresAt < new Date()) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid or expired verification code' 
+      });
+    }
+
+    // Check if user already exists (double-check)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'User with this email already exists'
+      });
+    }
+
+    // OTP valid, delete it
+    await OTP.deleteMany({ email, type: 'signup' });
+
+    // Generate a unique serial user_id starting from 1000
+    const user_id = await generateUniqueUserId();
+
+    // Determine role based on userType
+    const role = userType === 'professional' ? 'expert' : 'user';
+
+    // Create user
+    const userData: any = {
+      email,
+      password, // Will be hashed by the pre-save middleware
+      firstName,
+      lastName,
+      isVerified: true, // Email is verified through OTP
+      isActive: true,
+      role,
+      isExpert: role === 'expert',
+      user_id
+    };
+
+    const user = await User.create(userData);
+
+    // Create initial rewards for the new user
+    try {
+      await Reward.create({
+        userId: user._id,
+        user_id: user.user_id,
+        points: 0,
+        totalEarned: 0,
+        totalSpent: 0,
+        history: [
+          {
+            type: 'earned',
+            description: 'Welcome bonus for new user registration',
+            points: 0,
+            status: 'completed',
+            date: new Date(),
+          },
+        ],
+      });
+      console.log(`✅ Rewards created for new user: ${user.email} (${user.user_id})`);
+    } catch (rewardError) {
+      console.error('Failed to create rewards for new user:', rewardError);
+    }
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.email, user.firstName).catch(err => {
+      console.error('Failed to send welcome email to', user.email, ':', err);
+      // Email failure doesn't affect account creation
+    });
+
+    // Generate token
+    const token = generateToken(user._id.toString());
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
       data: {
         user: {
           id: user._id,

@@ -50,8 +50,16 @@ const OTPPage = () => {
       });
       const data = await res.json();
       if (data.success && data.data?.token) {
-        // Save token (localStorage or cookie)
+        // Store token and session timestamp for 24-hour validity
         localStorage.setItem("token", data.data.token);
+        localStorage.setItem('sessionTimestamp', Date.now().toString());
+        
+        // Store user role
+        if (data.data.user?.role) {
+          localStorage.setItem('userRole', data.data.user.role);
+        }
+        
+        console.log('✅ OTP verified, session set for 24 hours');
         
         // Show redirecting spinner
         setRedirecting(true);

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
 import React, { useEffect, useMemo, useState, useLayoutEffect } from 'react';
+import ProtectedRoute from '../components/ProtectedRoute';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
@@ -14,6 +16,7 @@ import Sidebar from '../components/Sidebar';
 import {
   ArrowRight,
   CheckCircle2,
+  CheckCircle,
   ChevronRight,
   ChevronDown,
   ClipboardList,
@@ -196,6 +199,7 @@ const createSessionDateTime = (scheduledDate: string, time: string): Date => {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
@@ -206,6 +210,7 @@ export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showMessageToast, setShowMessageToast] = useState(false);
+  const [showLogoutToast, setShowLogoutToast] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
@@ -305,7 +310,7 @@ export default function DashboardPage() {
     {
       id: '2',
       name: 'Ajatika Singh',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      image: '/mento2.jpeg',
       title: 'Journalist',
       company: 'ABP News',
       location: 'Delhi, India',
@@ -317,22 +322,6 @@ export default function DashboardPage() {
       experience: '8+ years in Journalism',
       languages: ['English', 'Hindi'],
       availability: 'Weekdays 11 AM-9 PM, Weekends 11 AM-7 PM'
-    },
-    {
-      id: '3',
-      name: 'Anjali Patel',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      title: 'UX Design Director',
-      company: 'Adobe',
-      location: 'Delhi, India',
-      rating: 4.7,
-      reviews: 156,
-      hourlyRate: 2800,
-      expertise: ['UX Design', 'Design Systems', 'User Testing', 'Design Leadership'],
-      bio: 'Creative design leader with expertise in building user-centered products. I mentor designers to create impactful user experiences.',
-      experience: '12+ years in UX Design',
-      languages: ['English', 'Hindi', 'Gujarati'],
-      availability: 'Weekdays 5-8 PM, Weekends 11 AM-3 PM'
     }
   ];
 
@@ -373,14 +362,28 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchSessions() {
-      // Check if we have authentication
+      // Check if we have authentication - be more lenient during initial load
       const storedToken = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
       
+      // If no token at all, wait for auth to load
       if (!user && !storedToken) {
-        console.log('No authentication found, redirecting to login');
-        setSessionsError('Please log in to view your sessions');
+        console.log('⏳ No token found, waiting for authentication to load...');
         setSessionsLoading(false);
         return;
+      }
+      
+      // If we have token but it's expired, show error
+      if (storedToken && sessionTimestamp) {
+        const sessionTime = parseInt(sessionTimestamp);
+        const currentTime = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        if ((currentTime - sessionTime) > twentyFourHours) {
+          console.log('❌ Session expired, please login again');
+          setSessionsError('Session expired, please log in again');
+          setSessionsLoading(false);
+          return;
+        }
       }
       
       setSessionsLoading(true);
@@ -826,6 +829,7 @@ export default function DashboardPage() {
   const stats = data?.stats || {};
 
   return (
+  <ProtectedRoute>
   <div>
     <style jsx global>{`
       .scrollbar-hide {
@@ -944,9 +948,15 @@ export default function DashboardPage() {
                                 onClick={async () => {
                                   console.log('Logout button clicked');
                                   try {
-                                    await logout();
-                                    console.log('Logout successful');
+                                    // Show success toast
+                                    setShowLogoutToast(true);
                                     setShowThreeDotMenu(false);
+                                    
+                                    // Wait for toast to be visible, then logout
+                                    setTimeout(async () => {
+                                      await logout();
+                                      console.log('Logout successful');
+                                    }, 500);
                                   } catch (error) {
                                     console.error('Logout failed:', error);
                                     setShowThreeDotMenu(false);
@@ -978,7 +988,7 @@ export default function DashboardPage() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
                 {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
                 <div className="flex-1 order-2 lg:order-1">
-                  <h2 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Next in Your Career Journey</h2>
+                  <h2 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Next in Your Career Journey</h2>
                   <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
                   <div className="flex flex-col gap-4 sm:gap-6 items-start">
                     {/* Card 1 */}
@@ -990,7 +1000,7 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Not sure what direction to take?</div>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Not sure what direction to take?</div>
                       <button 
                         onClick={() => setShowBookSessionPopup(true)}
                         className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
@@ -1010,7 +1020,7 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">🚲</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Need help creating a strong first resume?</div>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Need help creating a strong first resume?</div>
                       <button 
                         onClick={() => setShowBookSessionPopup(true)}
                         className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
@@ -1030,7 +1040,7 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-2xl sm:text-3xl">💡</span>
                       </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Applied to a few jobs but no response?</div>
+                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Applied to a few jobs but no response?</div>
                       <button 
                         onClick={() => setShowBookSessionPopup(true)}
                         className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
@@ -1100,30 +1110,51 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   )}
+
+                  {/* Logout Success Toast Notification */}
+                  {showLogoutToast && (
+                    <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
+                      <div className="p-2 bg-white/20 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Logout Successful!</span>
+                        <span className="text-xs opacity-90">Account logged out successfully</span>
+                      </div>
+                      <button
+                        className="ml-4 text-white/80 hover:text-white focus:outline-none transition-colors"
+                        onClick={() => setShowLogoutToast(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  
                   {/* Find Your Mentor Section (outer box/background removed, cards retained) */}
-                  <div className="mt-6 w-full">
-                    <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <div className="mt-6 w-full sm:min-w-[400px] sm:max-w-[500px]">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8 w-4/5 mx-auto">
                       <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Find Your Mentor</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Find Your Mentor</h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-4/5 mx-auto">
                       {mentors.map((mentor) => (
                         <div 
                           key={mentor.id}
-                          className="flex flex-col items-center cursor-pointer group"
+                          className="flex flex-col items-center cursor-pointer group h-full"
                           onClick={() => {
                             setSelectedMentor(mentor);
                             setShowProfilePopup(true);
                             setCurrentView('dashboard');
                           }}
                         >
-                          <div className="relative mb-3">
+                          <div className="relative mb-3 w-20 h-20 sm:w-24 sm:h-24">
                             <img 
                               src={mentor.image} 
                               alt={mentor.name} 
-                              className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl sm:rounded-2xl border-2 border-gray-200 group-hover:border-gray-400 group-hover:shadow-xl transition-all duration-300 flex-shrink-0" 
+                              className="w-full h-full object-cover object-center rounded-xl sm:rounded-2xl border-2 border-gray-200 group-hover:border-gray-400 group-hover:shadow-xl transition-all duration-300" 
+                              style={{ objectPosition: 'center center' }}
                             />
                             <div className="absolute inset-0 bg-gray-600 bg-opacity-0 group-hover:bg-opacity-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center">
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -1135,11 +1166,23 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-center">
+                        </div>
+                        <div className="text-center flex flex-col items-center gap-2 w-full flex-grow">
+                          <div className="flex-grow">
                             <span className="font-semibold text-gray-800 text-sm group-hover:text-gray-700 transition-colors duration-300 block">{mentor.name}</span>
                             <span className="text-xs text-gray-600 mt-1 block">{mentor.title}</span>
                           </div>
+                          <button
+                            type="button"
+                            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:text-white hover:bg-gray-800 transition-colors duration-200 mt-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowBookSessionPopup(true);
+                            }}
+                          >
+                            Book a session
+                          </button>
+                        </div>
                         </div>
                       ))}
                     </div>
@@ -1158,7 +1201,7 @@ export default function DashboardPage() {
                       <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Sessions</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Sessions</h2>
                     </div>
                     <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
                       <button
@@ -1295,7 +1338,7 @@ export default function DashboardPage() {
                       <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#3E5F44' }}>Goals</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Goals</h2>
                     </div>
                     
                     {/* Add Goal Input */}
@@ -1386,6 +1429,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  </ProtectedRoute>
   );
 }
 

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Camera, Save, Edit, Eye, EyeOff, Globe, Lock, Bell, Shield } from 'lucide-react';
 import Link from 'next/link';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +45,7 @@ export default function Profile() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-black">
       {/* Navigation */}
       <nav className="bg-gray-900 border-b border-gray-800">
@@ -386,5 +388,6 @@ export default function Profile() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 } 

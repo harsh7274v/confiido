@@ -14,6 +14,11 @@ const services = [
   { name: 'Public Speaking', duration: '60 min' },
 ];
 
+const STANDARD_PRICE_BY_DURATION: Record<number, number> = {
+  30: 750,
+  60: 1150
+};
+
 const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookingId?: string) => void }> = ({ onClose, onGoToPayments }) => {
   const [service, setService] = useState<string | undefined>(undefined);
   const [mentor, setMentor] = useState<string | undefined>(undefined);
@@ -36,6 +41,9 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
   const [mentorsLoading, setMentorsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [servicePrice, setServicePrice] = useState<number | null>(null);
+  const [pricingError, setPricingError] = useState('');
+  const [pricingLoading, setPricingLoading] = useState(false);
   
   // Use the timeout context
   const { addTimeout } = useTimeout();
@@ -57,6 +65,13 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
     }
     console.log(`❌ [FRONTEND] Service not found: ${service}`);
     return 0;
+  };
+
+  const getStandardPriceForService = () => {
+    if (!service) return null;
+    const duration = getSelectedServiceDurationMinutes();
+    if (!duration) return null;
+    return STANDARD_PRICE_BY_DURATION[duration] ?? null;
   };
 
   // Fetch mentors on component mount
@@ -85,6 +100,8 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
     setInfo('');
     setFromTime(undefined);
     setToTime(undefined);
+    setServicePrice(getStandardPriceForService());
+    setPricingError('');
     // Show info message about service change
     if (service) {
       setInfo(`Service changed to ${service}. Please reselect your time slots.`);
@@ -97,6 +114,66 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
     setError('');
     setInfo('');
   }, [fromTime, toTime]);
+
+  const getSessionTypeForService = () => {
+    if (!service) return 'video';
+    if (service.includes('Mock Interview')) return 'video';
+    if (service.includes('Resume Review')) return 'chat';
+    if (service.includes('Public Speaking')) return 'video';
+    return 'video';
+  };
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      const standardPrice = getStandardPriceForService();
+      if (!service || !mentor) {
+        setServicePrice(standardPrice);
+        setPricingError('');
+        setPricingLoading(false);
+        return;
+      }
+
+      const selectedMentor = mentors.find(m => `${m.userId.firstName} ${m.userId.lastName}` === mentor);
+      if (!selectedMentor) {
+        setPricingError('Mentor not found');
+        setServicePrice(standardPrice);
+        setPricingLoading(false);
+        return;
+      }
+
+      const duration = getSelectedServiceDurationMinutes();
+      const sessionType = getSessionTypeForService();
+
+      if (!duration) {
+        setServicePrice(standardPrice);
+        setPricingError('');
+        setPricingLoading(false);
+        return;
+      }
+
+      setPricingLoading(true);
+      setPricingError('');
+
+      try {
+        const response = await bookingApi.getSessionPricing(selectedMentor._id, sessionType, duration);
+        if (response.success) {
+          setServicePrice(response.data.price);
+        } else {
+          setServicePrice(standardPrice);
+          setPricingError('Unable to fetch pricing right now.');
+        }
+      } catch (pricingErr) {
+        console.error('❌ Error fetching pricing:', pricingErr);
+        setServicePrice(standardPrice);
+        setPricingError('Unable to fetch pricing right now.');
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+
+    fetchPricing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service, mentor, mentors]);
 
   const fetchMentors = async () => {
     setMentorsLoading(true);
@@ -413,13 +490,21 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                 </Select>
               </div>
 
-              {/* Duration Info */}
+              {/* Duration and Price Info */}
               {service && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                  <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Duration: {getSelectedServiceDuration()}
-                  </span>
+                <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Duration: {getSelectedServiceDuration()}
+                    </span>
+                    <span className="text-sm font-bold text-indigo-800 bg-white px-3 py-1 rounded-lg shadow-sm">
+                      {servicePrice !== null ? `₹${servicePrice}` : 'Price unavailable'}
+                    </span>
+                  </div>
+                  {pricingError && (
+                    <p className="text-xs text-red-600 mt-2">{pricingError}</p>
+                  )}
                 </div>
               )}
 

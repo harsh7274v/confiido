@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, EyeOff, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
+import { MoonLoader } from 'react-spinners';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Signup() {
   const router = useRouter();
+  const { user, loading, redirecting: authRedirecting } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<'student' | 'professional'>('student');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -23,6 +26,78 @@ export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // OTP verification states
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      
+      // If user is already authenticated, redirect to dashboard
+      if (user || token) {
+        console.log('User already logged in, redirecting to dashboard');
+        router.push('/dashboard');
+      }
+    };
+
+    // Only check when loading is complete
+    if (!loading) {
+      checkAuth();
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking authentication
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <MoonLoader color="#000000" size={60} />
+      </div>
+    );
+  }
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [canResend, setCanResend] = useState(false);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (otpSent && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [otpSent, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleOtpInputChange = (index: number, value: string) => {
+    if (value && !/^[0-9]$/.test(value)) return; // only digits
+    const next = [...otpDigits];
+    next[index] = value;
+    setOtpDigits(next);
+    // auto-focus next
+    const nextIndex = value ? index + 1 : index - 1;
+    const id = nextIndex >= 0 && nextIndex < 6 ? `otp-${nextIndex}` : undefined;
+    if (id) {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      el?.focus();
+    }
+  };
 
   const isValidEmailForSupport = (email: string): boolean => {
     const trimmed = (email || '').trim().toLowerCase();
@@ -87,7 +162,12 @@ export default function Signup() {
 
     setIsSubmitting(true);
     setError('');
-    setSuccess('');
+    setSuccess('Verification code sent to your email!');
+    
+    // Immediately show OTP screen
+    setOtpSent(true);
+    setTimeLeft(300); // Reset timer to 5 minutes
+    setCanResend(false);
 
     try {
       const requestData = {
@@ -98,7 +178,8 @@ export default function Signup() {
         userType: selectedCategory
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/register`, {
+      // Send OTP for verification instead of directly registering
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/send-signup-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,25 +190,126 @@ export default function Signup() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.errors?.[0]?.msg || 'Registration failed');
+        // If error, go back to signup form
+        setOtpSent(false);
+        throw new Error(data.error || data.errors?.[0]?.msg || 'Failed to send verification code');
+      }
+      
+    } catch (error: any) {
+      setOtpSent(false);
+      setSuccess('');
+      setError(error.message || 'Failed to send verification code. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const verifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const otp = otpDigits.join('');
+    if (otp.length !== 6) {
+      setError('Please enter the complete 6-digit code');
+      return;
+    }
+    
+    setOtpLoading(true);
+    setError('');
+    
+    try {
+      const requestData = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        userType: selectedCategory,
+        otp: otp
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/verify-signup-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.errors?.[0]?.msg || 'Invalid verification code');
       }
 
-      // Store token in localStorage (you might want to use a more secure method)
+      // Store token and session timestamp for 24-hour validity
       if (data.data?.token) {
         localStorage.setItem('token', data.data.token);
+        localStorage.setItem('sessionTimestamp', Date.now().toString());
+        console.log('✅ Signup successful, session set for 24 hours');
+      }
+      
+      // Store user role
+      if (data.data?.user?.role) {
+        localStorage.setItem('userRole', data.data.user.role);
       }
 
       setSuccess('Account created successfully! Redirecting...');
+      setRedirecting(true);
       
-      // Redirect to login page after signup
+      // Redirect based on user role
       setTimeout(() => {
-        router.push('/login');
+        const userRole = data.data?.user?.role;
+        if (userRole === 'expert') {
+          router.push('/mentor/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
       }, 1500);
       
     } catch (error: any) {
-      setError(error.message || 'Failed to create account. Please try again.');
+      setError(error.message || 'Invalid verification code. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setOtpLoading(false);
+    }
+  };
+
+  const resendOTP = async () => {
+    setOtpLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const requestData = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        userType: selectedCategory
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/send-signup-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend verification code');
+      }
+
+      setSuccess('Verification code resent!');
+      setTimeLeft(300);
+      setCanResend(false);
+      setOtp('');
+      setOtpDigits(['', '', '', '', '', '']);
+      
+    } catch (error: any) {
+      setError(error.message || 'Failed to resend verification code.');
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -142,49 +324,53 @@ export default function Signup() {
         }
       `}</style>
       <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
-            <img 
-              src="/icons/icon-96x96.png" 
-              alt="Confiido Logo" 
-              className="h-10 w-10 object-contain"
-            />
-            <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
-          </Link>
-          <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
-            Create your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
-            Join thousands of professionals and start your mentorship journey
-          </p>
-        </div>
+        {/* Header - Only show when NOT on OTP screen */}
+        {!otpSent && (
+          <>
+            <div className="text-center">
+              <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
+                <img 
+                  src="/icons/icon-96x96.png" 
+                  alt="Confiido Logo" 
+                  className="h-10 w-10 object-contain"
+                />
+                <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
+              </Link>
+              <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                Create your account
+              </h2>
+              <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                Join thousands of professionals and start your mentorship journey
+              </p>
+            </div>
 
-        {/* Category Selection */}
-        <div className="flex justify-center mb-6">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('student')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
-              selectedCategory === 'student'
-                ? 'bg-black text-white shadow-md'
-                : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
-            }`}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('professional')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
-              selectedCategory === 'professional'
-                ? 'bg-black text-white shadow-md'
-                : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
-            }`}
-          >
-            Working Professional
-          </button>
-        </div>
+            {/* Category Selection */}
+            <div className="flex justify-center mb-6">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('student')}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
+                  selectedCategory === 'student'
+                    ? 'bg-black text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
+                }`}
+              >
+                Student
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('professional')}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
+                  selectedCategory === 'professional'
+                    ? 'bg-black text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
+                }`}
+              >
+                Working Professional
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Error/Success Messages */}
         {error && (
@@ -205,8 +391,103 @@ export default function Signup() {
           </div>
         )}
 
+        {/* Redirecting Spinner */}
+        {(redirecting || authRedirecting) && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+            <MoonLoader color="#000000" size={60} />
+          </div>
+        )}
+
+        {/* OTP Verification Screen */}
+        {otpSent && !redirecting ? (
+          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+            {/* Confiido Logo - Top Left */}
+            <div className="mb-6">
+              <Link href="/" className="inline-flex items-center gap-2">
+                <img 
+                  src="/icons/icon-96x96.png" 
+                  alt="Confiido Logo" 
+                  className="h-8 w-8 object-contain"
+                />
+                <span className="text-xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
+              </Link>
+            </div>
+
+            <div className="flex flex-col items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                Verify Your Email
+              </h2>
+              <p className="text-sm text-gray-500 mt-1 text-center">
+                We sent a verification code to <strong>{formData.email}</strong>
+              </p>
+            </div>
+
+            <form onSubmit={verifyOTP} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                  Enter 6-digit code
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map(i => (
+                    <input
+                      key={i}
+                      id={`otp-${i}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={otpDigits[i]}
+                      onChange={(e) => handleOtpInputChange(i, e.target.value)}
+                      disabled={otpLoading}
+                      className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={otpLoading || timeLeft === 0 || otpDigits.join('').length !== 6}
+              >
+                {otpLoading ? 'Verifying...' : 'Verify & Create Account'}
+              </button>
+
+              {/* Resend Button */}
+              {canResend && (
+                <button
+                  type="button"
+                  onClick={resendOTP}
+                  className="w-full text-blue-600 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                  disabled={otpLoading}
+                >
+                  Resend Verification Code
+                </button>
+              )}
+
+              {/* Back Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtp('');
+                  setOtpDigits(['', '', '', '', '', '']);
+                  setError('');
+                  setSuccess('');
+                  setTimeLeft(300);
+                  setCanResend(false);
+                }}
+                className="w-full text-gray-600 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                disabled={otpLoading}
+              >
+                Back to Sign Up
+              </button>
+            </form>
+          </div>
+        ) : null}
+
         {/* Signup Form */}
-        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        {!otpSent && !redirecting && (
+          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div>
@@ -411,6 +692,7 @@ export default function Signup() {
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

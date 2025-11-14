@@ -152,6 +152,25 @@ class BookingApi {
     }
   }
 
+  // Securely fetch pricing for a session
+  async getSessionPricing(expertId: string, sessionType: 'video' | 'audio' | 'chat' | 'in-person', duration: number): Promise<{ success: boolean; data: { price: number; currency: string } }> {
+    try {
+      const params = new URLSearchParams();
+      params.append('expertId', expertId);
+      params.append('sessionType', sessionType);
+      params.append('duration', duration.toString());
+
+      const response = await axios.get(`${API_BASE_URL}/api/bookings/pricing?${params.toString()}`, {
+        headers: this.getAuthHeaders()
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error fetching session pricing:', error);
+      throw error;
+    }
+  }
+
   // Complete payment for a session (called after successful payment)
   async completePayment(bookingId: string, sessionId: string, paymentMethod?: string, loyaltyPointsUsed?: number): Promise<{ success: boolean; message: string; data: any }> {
     try {

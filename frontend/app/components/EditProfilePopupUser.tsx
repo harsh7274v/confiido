@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectItem } from './ui/Select';
-import { User, Briefcase, Calendar, Phone, MessageCircle, Linkedin, X, Save, LogOut, Sparkles } from 'lucide-react';
+import { User, Briefcase, Calendar, Phone, MessageCircle, Linkedin, X, Save, LogOut, Sparkles, CheckCircle } from 'lucide-react';
 
 interface EditProfilePopupProps {
     onClose: () => void;
@@ -30,6 +30,8 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                 linkedin: '',
             }
     );
+    const [showSuccessToast, setShowSuccessToast] = useState(false);
+    const [showLogoutToast, setShowLogoutToast] = useState(false);
 
     useEffect(() => {
         if (initialProfile) {
@@ -42,8 +44,24 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
         };
 
     const handleSave = async () => {
+        // Check if any data has actually changed
+        const hasChanges = initialProfile && (
+            profile.username !== initialProfile.username ||
+            profile.gender !== initialProfile.gender ||
+            profile.dateOfBirth !== initialProfile.dateOfBirth ||
+            profile.profession !== initialProfile.profession ||
+            profile.phoneNumber !== initialProfile.phoneNumber ||
+            profile.whatsappNumber !== initialProfile.whatsappNumber ||
+            profile.linkedin !== initialProfile.linkedin
+        );
+
+        // If no changes were made, don't save or show toast
+        if (!hasChanges) {
+            return;
+        }
+
         try {
-            await fetch(
+            const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/users/profile`,
                 {
                     method: 'PUT',
@@ -54,21 +72,79 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                     body: JSON.stringify({ userdata: profile })
                 }
             );
-            onSave(profile);
+            
+            // Only show success toast if the update was successful
+            if (response.ok) {
+                onSave(profile);
+                
+                // Show success toast
+                setShowSuccessToast(true);
+                
+                // Auto-hide toast after 3 seconds
+                setTimeout(() => {
+                    setShowSuccessToast(false);
+                }, 3000);
+            } else {
+                console.error('Error saving profile: Server returned', response.status);
+            }
         } catch (error) {
             console.error('Error saving profile:', error);
         }
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        if (window?.location) {
-            window.location.href = '/';
-        }
+        // Show logout success toast
+        setShowLogoutToast(true);
+        
+        // Wait for toast to be visible, then logout
+        setTimeout(() => {
+            localStorage.removeItem('token');
+            if (window?.location) {
+                window.location.href = '/';
+            }
+        }, 500);
     };
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 animate-fadeIn pb-20 lg:pb-0 bg-black/30 backdrop-blur-sm">
+            {/* Success Toast Notification */}
+            {showSuccessToast && (
+                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
+                    <div className="p-2 bg-white/20 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Profile Updated!</span>
+                        <span className="text-xs opacity-90">Your profile data has been successfully updated</span>
+                    </div>
+                    <button
+                        className="ml-4 text-white/80 hover:text-white focus:outline-none transition-colors"
+                        onClick={() => setShowSuccessToast(false)}
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
+
+            {/* Logout Success Toast Notification */}
+            {showLogoutToast && (
+                <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
+                    <div className="p-2 bg-white/20 rounded-full">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-sm">Logout Successful!</span>
+                        <span className="text-xs opacity-90">Account logged out successfully</span>
+                    </div>
+                    <button
+                        className="ml-4 text-white/80 hover:text-white focus:outline-none transition-colors"
+                        onClick={() => setShowLogoutToast(false)}
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+            )}
+            
             <div className="bg-white rounded-3xl shadow-2xl w-full relative transition-all duration-300 overflow-hidden border border-gray-200" style={{ maxWidth: '35vw', width: '90%', minWidth: '320px', maxHeight: '90vh' }}>
                 {/* Modern Header with Gradient */}
                 <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
