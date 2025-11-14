@@ -198,22 +198,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               router.push('/dashboard');
             }
           } else {
-            // Fallback to regular dashboard if verification fails
+            console.error('Backend verification failed:', response.status);
+            // Fallback to regular dashboard
             router.push('/dashboard');
           }
         }
       } catch (error: any) {
-        // Ignore popup-closed-by-user errors since we're using redirect now
-        if (error.code !== 'auth/popup-closed-by-user') {
-          console.error('Error handling redirect result:', error);
+        // Silently ignore these specific errors as they're expected
+        if (error.code === 'auth/popup-closed-by-user' || 
+            error.code === 'auth/cancelled-popup-request' ||
+            error.code === 'auth/popup-blocked') {
+          console.log('Google Sign-In cancelled or popup blocked');
+          return;
+        }
+        // Log other errors
+        if (error.code) {
+          console.error('Error handling redirect result:', error.code, error.message);
         }
       } finally {
         setRedirecting(false);
       }
     };
 
+    // Only run on mount
     handleRedirectResult();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty array to run only once on mount
 
   useEffect(() => {
     setLoading(true);
@@ -392,13 +402,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
+      console.log('🔵 Initiating Google Sign-In with redirect...');
       setLoading(true);
       // Use redirect instead of popup to avoid CORS issues
       await signInWithRedirect(auth, googleProvider);
       // After redirect, the user will be brought back to this page
       // and getRedirectResult will handle the rest in useEffect
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
+      // Only show error if it's not a user cancellation
+      if (error.code && 
+          error.code !== 'auth/popup-closed-by-user' && 
+          error.code !== 'auth/cancelled-popup-request') {
+        console.error('Google Sign-In Error:', error.code, error.message);
+      }
       setLoading(false);
     }
   };
