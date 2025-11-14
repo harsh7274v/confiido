@@ -2144,10 +2144,10 @@ export default function Home() {
                 <div className="bg-gray-50 p-6 rounded-xl">
                   <p className="text-sm text-gray-600 mb-2">Email us at:</p>
                   <a 
-                    href="mailto:confiido.io+support@gmail.com"
+                    href="mailto:confiido.io@gmail.com"
                     className="text-2xl font-semibold text-black hover:text-gray-700 transition-colors break-all"
                   >
-                    confiido.io+support@gmail.com
+                    confiido.io@gmail.com
                   </a>
                 </div>
 
