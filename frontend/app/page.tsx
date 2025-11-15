@@ -62,6 +62,12 @@ export default function Home() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isSignupLoading, setIsSignupLoading] = useState(false);
   const [isRestoringSession, setIsRestoringSession] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Handle mounting
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Check for existing session immediately on mount (for PWA)
   useEffect(() => {
@@ -550,8 +556,12 @@ export default function Home() {
     },
   ];
 
-  // Show loading screen if restoring session (PWA reopen)
-  // Only check localStorage on client-side
+  // Don't render anything server-side to prevent hydration issues
+  if (!isMounted) {
+    return null;
+  }
+
+  // Show loading screen if restoring session (PWA reopen) or during initial load if user is logged in
   if (isRestoringSession || (loading && user)) {
     return <SessionLoadingScreen />;
   }

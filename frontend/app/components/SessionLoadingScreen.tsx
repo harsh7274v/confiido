@@ -17,15 +17,8 @@ export default function SessionLoadingScreen() {
   }, []);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center z-50" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div className="fixed inset-0 flex flex-col items-center justify-center z-50" style={{ background: 'linear-gradient(135deg, #3E5F44 0%, #2d4532 100%)' }}>
       <div className="text-center">
-        {/* Logo or Brand Name */}
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold text-white" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-            Confiido
-          </h1>
-        </div>
-
         {/* Loading Text */}
         <div className="mb-6">
           <p className="text-2xl font-bold text-white">

@@ -1,6 +1,6 @@
 // Service Worker for Confiido PWA
-// Version: 2.0 - Update this version number when you deploy new changes
-const CACHE_VERSION = 'confiido-v2.0';
+// Version: 2.1 - Update this version number when you deploy new changes
+const CACHE_VERSION = 'confiido-v2.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const API_CACHE = `${CACHE_VERSION}-api`;
