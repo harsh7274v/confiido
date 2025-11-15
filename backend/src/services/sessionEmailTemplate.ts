@@ -24,12 +24,12 @@ const getTransporter = () => {
 
 interface SessionConfirmationData {
   userName: string;
-  sessionDate: string;
-  startTime: string;
-  endTime: string;
+  sessionDate: string; // Formatted date string (e.g., "Monday, January 15, 2025")
+  startTime: string; // Time in HH:mm format (e.g., "10:00") - assumed to be in IST
+  endTime: string; // Time in HH:mm format (e.g., "11:00") - assumed to be in IST
   mentorName: string;
   sessionTopic?: string;
-  timeZone?: string;
+  timeZone?: string; // Default: 'IST' (Asia/Kolkata)
   meetingLink?: string;
   mentorTitle?: string; // Added for better display
 }

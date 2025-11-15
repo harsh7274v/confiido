@@ -8,9 +8,9 @@ type CreateMeetEventParams = {
   expertEmail: string;
   title: string;
   description?: string;
-  scheduledDate: Date; // date portion is used
-  startTime: string; // HH:mm (24h)
-  endTime: string;   // HH:mm (24h)
+  scheduledDate: Date; // Date object (date portion is used, time is from startTime/endTime)
+  startTime: string; // Time in HH:mm format (24h) - assumed to be in IST (Asia/Kolkata)
+  endTime: string;   // Time in HH:mm format (24h) - assumed to be in IST (Asia/Kolkata)
 };
 
 export async function createMeetEventForSession(params: CreateMeetEventParams): Promise<{ hangoutLink?: string; eventId?: string; calendarId?: string }> {
@@ -52,12 +52,17 @@ export async function createMeetEventForSession(params: CreateMeetEventParams): 
 
   // Check if the scheduled date is in the past
   const now = new Date();
-  const scheduledDateTime = new Date(scheduledDate);
-  scheduledDateTime.setHours(parseInt(startTime.split(':')[0]), parseInt(startTime.split(':')[1]), 0, 0);
+  
+  // Parse the scheduled time in IST timezone for validation
+  const validationDateStr = scheduledDate.toISOString().split('T')[0];
+  const validationStartISO = `${validationDateStr}T${startTime.padStart(5, '0')}:00+05:30`;
+  const scheduledDateTime = new Date(validationStartISO);
   
   console.log('🔍 [DEBUG] Date validation:', {
     now: now.toISOString(),
+    nowIST: new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })),
     scheduledDateTime: scheduledDateTime.toISOString(),
+    scheduledDateTimeIST: scheduledDateTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }),
     isPastDate: scheduledDateTime < now,
     timeDifference: scheduledDateTime.getTime() - now.getTime()
   });
@@ -112,10 +117,10 @@ export async function createMeetEventForSession(params: CreateMeetEventParams): 
     } else {
       // No credentials available → provide a fallback link
       try {
-        const [sHour, sMin] = startTime.split(':').map(n => parseInt(n, 10));
-        const start = new Date(scheduledDate);
-        start.setHours(sHour, sMin, 0, 0);
-        const fallbackSlugBase = `${title || 'Session'}-${start.toISOString()}`
+        const fallbackDateStr = scheduledDate.toISOString().split('T')[0];
+        const fallbackStartISO = `${fallbackDateStr}T${startTime.padStart(5, '0')}:00+05:30`;
+        const fallbackStart = new Date(fallbackStartISO);
+        const fallbackSlugBase = `${title || 'Session'}-${fallbackStart.toISOString()}`
           .replace(/[^a-zA-Z0-9]+/g, '-')
           .replace(/-+/g, '-')
           .replace(/^-|-$/g, '')
@@ -133,15 +138,35 @@ export async function createMeetEventForSession(params: CreateMeetEventParams): 
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
   // Build start/end Date objects from scheduledDate + HH:mm strings
+  // IMPORTANT: Times are assumed to be in IST (Asia/Kolkata) timezone
   const [sHour, sMin] = startTime.split(':').map(n => parseInt(n, 10));
   const [eHour, eMin] = endTime.split(':').map(n => parseInt(n, 10));
-  const start = new Date(scheduledDate);
-  start.setHours(sHour, sMin, 0, 0);
-  const end = new Date(scheduledDate);
-  end.setHours(eHour, eMin, 0, 0);
+  
+  // Create date in IST timezone to avoid timezone conversion issues
+  // Get the date parts from scheduledDate
+  const dateStr = scheduledDate.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  // Create ISO strings in IST timezone (UTC+5:30)
+  const startISO = `${dateStr}T${startTime.padStart(5, '0')}:00+05:30`;
+  const endISO = `${dateStr}T${endTime.padStart(5, '0')}:00+05:30`;
+  
+  const start = new Date(startISO);
+  const end = new Date(endISO);
 
-  const timeZone = timeZoneToUse;
+  // Force timezone to Asia/Kolkata (IST) for consistency
+  const timeZone = 'Asia/Kolkata';
   const calendarId = calendarIdToUse || 'primary';
+  
+  console.log('🔍 [DEBUG] Calendar event times:', {
+    dateStr,
+    startTime,
+    endTime,
+    startISO,
+    endISO,
+    startUTC: start.toISOString(),
+    endUTC: end.toISOString(),
+    timeZone
+  });
 
   try {
     const attendees = [
@@ -216,10 +241,10 @@ export async function createMeetEventForSession(params: CreateMeetEventParams): 
     });
     // On error, provide a deterministic fallback so session still has a link
     try {
-      const [sHour, sMin] = startTime.split(':').map(n => parseInt(n, 10));
-      const start = new Date(scheduledDate);
-      start.setHours(sHour, sMin, 0, 0);
-      const fallbackSlugBase = `${title || 'Session'}-${start.toISOString()}`
+      const errorDateStr = scheduledDate.toISOString().split('T')[0];
+      const errorStartISO = `${errorDateStr}T${startTime.padStart(5, '0')}:00+05:30`;
+      const errorStart = new Date(errorStartISO);
+      const fallbackSlugBase = `${title || 'Session'}-${errorStart.toISOString()}`
         .replace(/[^a-zA-Z0-9]+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '')
