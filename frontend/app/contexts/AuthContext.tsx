@@ -45,8 +45,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const sessionTime = parseInt(sessionTimestamp);
     const currentTime = Date.now();
     const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    const timeElapsed = currentTime - sessionTime;
     
-    return (currentTime - sessionTime) > twentyFourHours;
+    console.log('⏰ Session check:', {
+      sessionStarted: new Date(sessionTime).toLocaleString(),
+      currentTime: new Date(currentTime).toLocaleString(),
+      hoursElapsed: (timeElapsed / (60 * 60 * 1000)).toFixed(2),
+      isExpired: timeElapsed > twentyFourHours
+    });
+    
+    return timeElapsed > twentyFourHours;
   };
 
   // Function to set session timestamp
@@ -56,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const timestamp = Date.now().toString();
     localStorage.setItem('sessionTimestamp', timestamp);
+    localStorage.setItem('lastActivity', timestamp);
     console.log('✅ Session timestamp set for 24-hour validity:', new Date(parseInt(timestamp)).toLocaleString());
   };
 
@@ -65,10 +74,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window === 'undefined') return;
     
     const existingTimestamp = localStorage.getItem('sessionTimestamp');
-    if (existingTimestamp) {
+    if (existingTimestamp && !isSessionExpired()) {
       const newTimestamp = Date.now().toString();
       localStorage.setItem('sessionTimestamp', newTimestamp);
+      localStorage.setItem('lastActivity', newTimestamp);
       console.log('🔄 Session refreshed, new expiry:', new Date(parseInt(newTimestamp) + 24 * 60 * 60 * 1000).toLocaleString());
+    }
+  };
+
+  // Update last activity on user interaction
+  const updateLastActivity = () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (token) {
+      localStorage.setItem('lastActivity', Date.now().toString());
     }
   };
 
@@ -147,6 +166,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pageshow', handlePageShow);
       window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Track user activity and auto-refresh session
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let activityTimer: NodeJS.Timeout;
+    const ACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
+
+    // Update activity on user interactions
+    const handleUserActivity = () => {
+      updateLastActivity();
+      
+      // Clear existing timer
+      if (activityTimer) {
+        clearTimeout(activityTimer);
+      }
+      
+      // Set new timer to auto-refresh session if user is active
+      activityTimer = setTimeout(() => {
+        const lastActivity = localStorage.getItem('lastActivity');
+        if (lastActivity) {
+          const timeSinceActivity = Date.now() - parseInt(lastActivity);
+          // If user was active in last 30 minutes, refresh session
+          if (timeSinceActivity < 30 * 60 * 1000) {
+            refreshSessionTimestamp();
+          }
+        }
+      }, ACTIVITY_CHECK_INTERVAL);
+    };
+
+    // Listen for various user activities
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      window.addEventListener(event, handleUserActivity, { passive: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+      if (activityTimer) {
+        clearTimeout(activityTimer);
+      }
+    };
+  }, []);
+
+  // Listen for service worker updates
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const handleSWUpdate = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'SW_UPDATED') {
+        console.log('🔄 New version available:', event.data.version);
+        // Optionally show a notification to user
+        // You can add a toast/notification here
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSWUpdate);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSWUpdate);
     };
   }, []);
 
@@ -429,6 +512,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // This is the key - once cleared, onAuthStateChanged won't sync with backend
       console.log('🗑️ Clearing session data from localStorage...');
       clearSession();
+      
+      // Clear service worker caches
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        console.log('🗑️ Clearing service worker caches...');
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
+      }
       
       console.log('🔥 Signing out from Firebase...');
       await signOut(auth);

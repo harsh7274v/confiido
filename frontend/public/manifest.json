@@ -2,11 +2,14 @@
   "name": "Confiido - Connect with Experts",
   "short_name": "Confiido",
   "description": "Book 1-on-1 calls with industry experts, mentors, and professionals",
-  "start_url": "/",
+  "version": "2.0.0",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3E5F44",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

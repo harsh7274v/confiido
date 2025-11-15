@@ -9,6 +9,7 @@ import Testimonials from './components/ui/testimonials';
 import { HeroGeometric } from './components/ui/shape-landing-hero';
 import { MoonLoader } from 'react-spinners';
 import { useAuth } from './contexts/AuthContext';
+import SessionLoadingScreen from './components/SessionLoadingScreen';
 import '/public/WEB/css/clash-grotesk.css';
 import '/public/web1/css/bespoke-stencil.css';
 import '/public/web1/css/clash-display.css';
@@ -60,16 +61,41 @@ export default function Home() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isSignupLoading, setIsSignupLoading] = useState(false);
+  const [isRestoringSession, setIsRestoringSession] = useState(false);
+
+  // Check for existing session immediately on mount (for PWA)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+      
+      // If there's a valid session, show loading screen immediately
+      if (token && sessionTimestamp) {
+        console.log('📱 Existing session detected, showing loading screen...');
+        setIsRestoringSession(true);
+      }
+    }
+  }, []);
 
   // Auto-redirect logged-in users to dashboard
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
+      const userRole = localStorage.getItem('userRole');
       
-      // If user is already authenticated, redirect to dashboard
+      // If user is already authenticated, redirect to appropriate dashboard
       if (user || token) {
         console.log('User already logged in, redirecting to dashboard from home page');
-        router.push('/dashboard');
+        
+        // Redirect based on role
+        if (userRole === 'expert') {
+          router.replace('/mentor/dashboard');
+        } else {
+          router.replace('/dashboard');
+        }
+      } else {
+        // No valid session, hide loading screen
+        setIsRestoringSession(false);
       }
     };
 
@@ -521,6 +547,11 @@ export default function Home() {
       onClick: scrollToTestimonials
     },
   ];
+
+  // Show loading screen if restoring session (PWA reopen)
+  if (isRestoringSession || (loading && (user || localStorage.getItem('token')))) {
+    return <SessionLoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden relative" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

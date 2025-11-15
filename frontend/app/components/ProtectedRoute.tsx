@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import SessionLoadingScreen from './SessionLoadingScreen';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -222,10 +223,10 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     };
   }, [isMounted]);
 
-  // Show nothing while checking authentication (but allow access if token exists)
+  // Show loading screen while checking authentication (especially for PWA)
   if (!isMounted || isAuthenticated === null) {
-    console.log('⏳ Still checking authentication state...');
-    return null; // Return nothing during SSR and initial client render
+    console.log('⏳ Still checking authentication state, showing loading screen...');
+    return <SessionLoadingScreen />;
   }
 
   // Show 404 error if not authenticated

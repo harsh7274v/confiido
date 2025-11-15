@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TimeoutProvider } from "./contexts/TimeoutContext";
+import PWARegister from "./components/PWARegister";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,6 +42,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Confiido" />
       </head>
       <body className={inter.className} suppressHydrationWarning>
+        <PWARegister />
         <AuthProvider>
           <TimeoutProvider>
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
