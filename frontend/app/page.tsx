@@ -80,6 +80,8 @@ export default function Home() {
   // Auto-redirect logged-in users to dashboard
   useEffect(() => {
     const checkAuth = () => {
+      if (typeof window === 'undefined') return; // Server-side, skip
+      
       const token = localStorage.getItem('token');
       const userRole = localStorage.getItem('userRole');
       
@@ -549,7 +551,8 @@ export default function Home() {
   ];
 
   // Show loading screen if restoring session (PWA reopen)
-  if (isRestoringSession || (loading && (user || localStorage.getItem('token')))) {
+  // Only check localStorage on client-side
+  if (isRestoringSession || (loading && user)) {
     return <SessionLoadingScreen />;
   }
 
