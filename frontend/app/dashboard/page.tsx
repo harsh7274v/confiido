@@ -1218,16 +1218,16 @@ export default function DashboardPage() {
                       </div>
                       <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Sessions</h2>
                     </div>
-                    <div className="flex flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 w-full">
+                    <div className="flex flex-row gap-2 sm:gap-4 mb-4 sm:mb-6 w-full overflow-x-auto scrollbar-hide">
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'upcoming' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 min-w-[100px] px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-xs sm:text-base whitespace-nowrap ${sessionTab === 'upcoming' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         style={sessionTab === 'upcoming' ? { backgroundColor: '#3E5F44' } : {}}
                         onClick={() => setSessionTab('upcoming')}
                       >
                         Upcoming
                       </button>
                       <button
-                        className={`flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-sm sm:text-base ${sessionTab === 'completed' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 min-w-[100px] px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-xs sm:text-base whitespace-nowrap ${sessionTab === 'completed' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                         style={sessionTab === 'completed' ? { backgroundColor: '#3E5F44' } : {}}
                         onClick={() => setSessionTab('completed')}
                       >
@@ -1254,8 +1254,8 @@ export default function DashboardPage() {
                         <div className="space-y-4">
                           {sessions.map((session: any) => (
                             <div key={session.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
-                              <div className="flex items-center justify-between mb-3">
-                                <div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                                <div className="flex-1">
                                   <h3 className="font-semibold text-base mb-1" style={{ color: '#3E5F44' }}>{session.title}</h3>
                                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                                     <Calendar className="h-4 w-4" />
@@ -1288,7 +1288,7 @@ export default function DashboardPage() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
+                                <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-shrink-0">
                                   <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                     sessionTab === 'upcoming' 
                                       ? 'bg-blue-100 text-blue-700' 

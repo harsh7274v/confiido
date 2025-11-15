@@ -7,6 +7,7 @@ import User from '../models/User';
 import mongoose, { Types } from 'mongoose';
 import SocketService from '../services/socketService';
 import { sendSessionEmail } from '../services/mailer';
+import { sendSessionConfirmationEmail, sendMentorSessionNotification } from '../services/sessionEmailTemplate';
 import { createMeetEventForSession } from '../services/googleCalendar';
 
 const router = express.Router();
@@ -305,6 +306,13 @@ router.post('/', protect, [
         error: 'You cannot book a session with yourself'
       });
     }
+
+    console.log('📧 [BOOKING CREATION] Expert email details:', {
+      expertUserId: expertUser.user_id,
+      expertEmail: expertUser.email,
+      expertMentorEmail: (expertUser as any)?.mentor_email,
+      willUseEmail: (expertUser as any)?.mentor_email || expertUser.email
+    });
 
     // Create new session data
     const newSession: ISession = {
@@ -1184,106 +1192,206 @@ router.put('/:id/complete-payment', protect, [
     } else {
       session.finalAmount = session.price;
     }
-    
-    // Try to create a real Google Meet event if mentor has Google calendar connected
-    try {
-      console.log('🔍 [DEBUG] Starting Google Meet event creation...');
-      const expertUser = await User.findById(session.expertId);
-      const clientUser = await User.findById(booking.clientId);
-      const title = `${session.sessionType.toUpperCase()} session with ${clientUser?.firstName || 'Client'}`;
-      
-      console.log('🔍 [DEBUG] Calling createMeetEventForSession with:', {
-        expertUserObjectId: String(session.expertId),
-        clientEmail: clientUser?.email || booking.clientEmail,
-        expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
-        title,
-        scheduledDate: session.scheduledDate,
-        startTime: session.startTime,
-        endTime: session.endTime
-      });
-      
-      const { hangoutLink } = await createMeetEventForSession({
-        expertUserObjectId: session.expertId as any,
-        clientEmail: clientUser?.email || booking.clientEmail,
-        expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
-        title,
-        description: session.notes || undefined,
-        scheduledDate: new Date(session.scheduledDate),
-        startTime: session.startTime,
-        endTime: session.endTime,
-      });
 
-      console.log('🔍 [DEBUG] createMeetEventForSession returned:', { hangoutLink });
-
-      if (hangoutLink) {
-        session.meetingLink = hangoutLink;
-        console.log('✅ [DEBUG] Google Meet link set:', hangoutLink);
-      } else {
-        console.log('❌ [DEBUG] No hangout link returned from createMeetEventForSession');
-      }
-    } catch (gErr) {
-      console.error('❌ [DEBUG] Failed to create Google Meet event:', gErr);
-      console.error('❌ [DEBUG] Error details:', {
-        message: gErr.message,
-        stack: gErr.stack
-      });
-    }
-
+    // Save booking immediately to update payment status
     await booking.save();
 
-    // Emit socket event for real-time updates
-    if (socketService) {
-      socketService.emitBookingStatusUpdate(
-        booking._id.toString(),
-        session.sessionId.toString(),
-        'completed',
-        {
-          paymentStatus: 'paid',
-          paymentMethod: session.paymentMethod,
-          paymentCompletedAt: session.paymentCompletedAt,
-          loyaltyPointsUsed: session.loyaltyPointsUsed,
-          finalAmount: session.finalAmount
-        }
-      );
-    }
-
-    // Send meeting link emails to client and mentor
-    try {
-      const client = await User.findById(booking.clientId);
-      const expertUser = await User.findById(session.expertId);
-      const scheduled = new Date(session.scheduledDate);
-      const scheduledStr = `${scheduled.toDateString()} ${session.startTime} - ${session.endTime}`;
-      const subject = 'Your session is confirmed';
-      const text = session.meetingLink
-        ? `Your session is confirmed for ${scheduledStr}. Join link: ${session.meetingLink}`
-        : `Your session is confirmed for ${scheduledStr}. A meeting link will be shared shortly.`;
-      const html = session.meetingLink
-        ? `<p>Your session is confirmed for <strong>${scheduledStr}</strong>.</p><p>Join: <a href=\"${session.meetingLink}\">${session.meetingLink}</a></p>`
-        : `<p>Your session is confirmed for <strong>${scheduledStr}</strong>.</p><p>A meeting link will be shared shortly.</p>`;
-      if (client?.email) {
-        await sendSessionEmail(client.email, subject, text, html);
-      }
-      const mentorEmail = session.expertEmail || (expertUser as any)?.email;
-      if (mentorEmail) {
-        await sendSessionEmail(mentorEmail, 'You have a confirmed session - link inside', text, html);
-      }
-    } catch (emailErr) {
-      console.error('⚠️ Failed to send session emails:', emailErr);
-    }
-
-    console.log('✅ [BOOKING] Payment completed successfully:', {
-      bookingId: booking._id,
-      sessionId: session.sessionId,
-      clientUserId: booking.clientUserId,
-      expertUserId: session.expertUserId,
-      finalAmount: session.finalAmount,
-      loyaltyPointsUsed: session.loyaltyPointsUsed
-    });
-
-    res.json({
+    // Respond immediately to frontend (don't wait for emails/calendar)
+    res.status(200).json({
       success: true,
       message: 'Payment completed successfully',
       data: { booking, session }
+    });
+
+    // Handle slow operations in background (calendar creation, emails)
+    // This runs asynchronously after response is sent
+    setImmediate(async () => {
+      try {
+        console.log('🔄 [BACKGROUND] Starting background tasks for session:', session.sessionId);
+        
+        // Try to create a real Google Meet event if mentor has Google calendar connected
+        try {
+          console.log('🔍 [DEBUG] Starting Google Meet event creation...');
+          const expertUser = await User.findById(session.expertId);
+          const clientUser = await User.findById(booking.clientId);
+          
+          // Get mentor name for the calendar title
+          const expertFound = await User.findOne({ user_id: session.expertUserId });
+          const expertName = expertFound?.firstName 
+            ? `${expertFound.firstName}${expertFound.lastName ? ' ' + expertFound.lastName : ''}`
+            : 'Mentor';
+          
+          // Extract session name from notes (e.g., "Service: 1:1 Career Guidance" → "1:1 Career Guidance")
+          let calendarSessionName: string = session.sessionType;
+          if (session.notes && session.notes.includes('Service:')) {
+            calendarSessionName = session.notes.replace('Service:', '').trim();
+          }
+          
+          // Format: [Confiido] - [Session name] with [Mentor name]
+          const title = `[Confiido] - ${calendarSessionName} with ${expertName}`;
+          
+          console.log('🔍 [DEBUG] Calling createMeetEventForSession with:', {
+            expertUserObjectId: String(session.expertId),
+            clientEmail: clientUser?.email || booking.clientEmail,
+            expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
+            title,
+            scheduledDate: session.scheduledDate,
+            startTime: session.startTime,
+            endTime: session.endTime
+          });
+          
+          const { hangoutLink } = await createMeetEventForSession({
+            expertUserObjectId: session.expertId as any,
+            clientEmail: clientUser?.email || booking.clientEmail,
+            expertEmail: (expertUser as any)?.mentor_email || session.expertEmail,
+            title,
+            description: session.notes || undefined,
+            scheduledDate: new Date(session.scheduledDate),
+            startTime: session.startTime,
+            endTime: session.endTime,
+          });
+
+          console.log('🔍 [DEBUG] createMeetEventForSession returned:', { hangoutLink });
+
+          if (hangoutLink) {
+            session.meetingLink = hangoutLink;
+            console.log('✅ [DEBUG] Google Meet link set:', hangoutLink);
+            // Save the meeting link to database
+            await booking.save();
+          } else {
+            console.log('❌ [DEBUG] No hangout link returned from createMeetEventForSession');
+          }
+        } catch (gErr) {
+          console.error('❌ [DEBUG] Failed to create Google Meet event:', gErr);
+          console.error('❌ [DEBUG] Error details:', {
+            message: gErr.message,
+            stack: gErr.stack
+          });
+        }
+    
+        // Emit socket event for real-time updates
+        if (socketService) {
+          socketService.emitBookingStatusUpdate(
+            booking._id.toString(),
+            session.sessionId.toString(),
+            'completed',
+            {
+              paymentStatus: 'paid',
+              paymentMethod: session.paymentMethod,
+              paymentCompletedAt: session.paymentCompletedAt,
+              loyaltyPointsUsed: session.loyaltyPointsUsed,
+              finalAmount: session.finalAmount,
+              meetingLink: session.meetingLink
+            }
+          );
+        }
+
+        // Send professional confirmation emails to client and mentor
+        try {
+          const client = await User.findById(booking.clientId);
+          
+          // FIXED: Use expertUserId (string like "1534") to find the mentor from Users collection
+          // session.expertUserId is the user_id field in User model
+          let expertUser = null;
+          if (session.expertUserId) {
+            expertUser = await User.findOne({ user_id: session.expertUserId });
+            console.log('🔍 Found expert by expertUserId:', {
+              expertUserId: session.expertUserId,
+              expertFound: !!expertUser,
+              expertName: expertUser ? `${expertUser.firstName} ${expertUser.lastName}` : 'Not found'
+            });
+          }
+          
+          // Fallback: try expertId if expertUserId lookup failed
+          if (!expertUser && session.expertId) {
+            expertUser = await User.findById(session.expertId);
+            console.log('🔍 Fallback: Found expert by expertId (ObjectId)');
+          }
+          
+          const scheduled = new Date(session.scheduledDate);
+          
+          // Format date nicely (e.g., "Monday, January 15, 2025")
+          const scheduledDateFormatted = scheduled.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+          // Get mentor name - FIXED: properly extract from expertUser
+          const mentorName = expertUser?.firstName && expertUser?.lastName
+            ? `${expertUser.firstName} ${expertUser.lastName}`
+            : expertUser?.email?.split('@')[0] || session.expertEmail?.split('@')[0] || 'Your Mentor';
+
+          // Get client name
+          const clientName = client?.firstName && client?.lastName
+            ? `${client.firstName} ${client.lastName}`
+            : client?.email?.split('@')[0] || 'User';
+
+          // Session topic (can be customized based on expert specialization or booking details)
+          const sessionTopic = session.notes || session.sessionType || 'Your scheduled session';
+
+          console.log('📧 Preparing to send emails:', {
+            clientEmail: client?.email,
+            sessionExpertEmail: session.expertEmail,
+            expertUserEmail: (expertUser as any)?.email,
+            expertUserMentorEmail: (expertUser as any)?.mentor_email,
+            finalMentorEmail: session.expertEmail || (expertUser as any)?.email,
+            clientName,
+            mentorName,
+            expertUserId: session.expertUserId,
+            expertFound: !!expertUser,
+            sessionDate: scheduledDateFormatted,
+            sessionTopic
+          });
+
+          // Send email to client with professional template
+          if (client?.email) {
+            await sendSessionConfirmationEmail(client.email, {
+              userName: clientName,
+              sessionDate: scheduledDateFormatted,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              mentorName: mentorName,
+              sessionTopic: sessionTopic,
+              timeZone: 'IST',
+              meetingLink: session.meetingLink || undefined
+            });
+            console.log(`✅ Sent confirmation email to client: ${client.email}`);
+          }
+
+          // Send email to mentor
+          const mentorEmail = session.expertEmail || (expertUser as any)?.email;
+          console.log('📧 [MENTOR EMAIL DEBUG]:', {
+            expertUserId: session.expertUserId,
+            sessionExpertEmail: session.expertEmail,
+            expertUserFromDB: !!expertUser,
+            expertUserEmail: expertUser?.email,
+            expertUserMentorEmail: (expertUser as any)?.mentor_email,
+            finalMentorEmail: mentorEmail,
+            willSendTo: mentorEmail
+          });
+          if (mentorEmail) {
+            await sendMentorSessionNotification(mentorEmail, {
+              userName: clientName,
+              sessionDate: scheduledDateFormatted,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              mentorName: mentorName,
+              sessionTopic: sessionTopic,
+              timeZone: 'IST',
+              meetingLink: session.meetingLink || undefined
+            });
+            console.log(`✅ Sent notification email to mentor: ${mentorEmail}`);
+          }
+        } catch (emailErr) {
+          console.error('❌ [BACKGROUND] Failed to send confirmation emails:', emailErr);
+        }
+
+        console.log('✅ [BACKGROUND] Background tasks completed for session:', session.sessionId);
+      } catch (bgErr) {
+        console.error('❌ [BACKGROUND] Background task error:', bgErr);
+      }
     });
   } catch (error) {
     next(error);
