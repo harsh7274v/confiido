@@ -215,24 +215,6 @@ export default function DashboardPage() {
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
-  const [showThreeDotMenu, setShowThreeDotMenu] = useState(false);
-  const [welcomeText, setWelcomeText] = useState('');
-  const fullWelcomeText = 'Welcome back,';
-
-  // Typewriter effect for welcome text
-  useEffect(() => {
-    let currentIndex = 0;
-    const interval = setInterval(() => {
-      if (currentIndex <= fullWelcomeText.length) {
-        setWelcomeText(fullWelcomeText.slice(0, currentIndex));
-        currentIndex++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 100);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   // On mount, check URL for view=payments and switch view
   useLayoutEffect(() => {
@@ -267,24 +249,6 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      // Check if click is outside the dropdown menu
-      if (showThreeDotMenu && !target.closest('.dropdown-menu')) {
-        setShowThreeDotMenu(false);
-      }
-    };
-
-    if (showThreeDotMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showThreeDotMenu]);
 
 
 
@@ -946,76 +910,38 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Modern Header */}
-              <section className="relative overflow-hidden py-8 sm:py-10 translucent-bg">
-              {/* Semi-transparent overlay for header */}
-              <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
-              <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-6 relative z-20">
+              <section className="relative overflow-hidden py-6 sm:py-8" style={{ background: 'linear-gradient(135deg, #e0e8ed 0%, #f0f4f7 100%)' }}>
+              <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-20">
                 <div className="max-w-7xl mx-auto flex flex-row items-center justify-between">
-                  {/* Left side - Welcome text */}
-                  <div className="flex flex-col items-start space-y-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl shadow-lg">
-                        <User className="h-5 w-5 text-white" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-800 tracking-tight" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                        {welcomeText} <span className="bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">{userDisplayName}</span>
-                      </h2>
+                  {/* Left side - User avatar and Welcome text */}
+                  <div className="flex items-center gap-4">
+                    {/* User Avatar */}
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <User className="h-6 w-6 sm:h-7 sm:w-7 text-gray-600" />
                     </div>
-                    <span className="text-xs sm:text-sm text-gray-600 font-medium ml-0 sm:ml-12" style={{ fontFamily: "'Rubik', sans-serif" }}>Ready to accelerate your career journey?</span>
+                    
+                    {/* Welcome Text */}
+                    <div className="flex flex-col">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                        Hello, {userDisplayName}!
+                      </h2>
+                      <span className="text-sm sm:text-base text-gray-600 font-normal" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                        Ready for your session?
+                      </span>
+                    </div>
                   </div>
                   
-                  {/* Right side - Action icons aligned with Book a session button */}
+                  {/* Right side - Settings icon */}
                   <div className="flex-shrink-0">
-                    <div className="w-full sm:min-w-[400px] sm:max-w-[500px]">
-                      <div className="w-4/5 mx-auto flex items-center justify-end gap-3 relative py-2">
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
-                            onClick={() => setShowThreeDotMenu(!showThreeDotMenu)}
-                          >
-                            <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
-                          </button>
-                          
-                          {/* Dropdown Menu */}
-                          {showThreeDotMenu && (
-                            <div className="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                              <button
-                                type="button"
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors duration-200"
-                                onClick={async () => {
-                                  console.log('Logout button clicked');
-                                  try {
-                                    // Show success toast
-                                    setShowLogoutToast(true);
-                                    setShowThreeDotMenu(false);
-                                    
-                                    // Wait for toast to be visible, then logout
-                                    setTimeout(async () => {
-                                      await logout();
-                                      console.log('Logout successful');
-                                    }, 500);
-                                  } catch (error) {
-                                    console.error('Logout failed:', error);
-                                    setShowThreeDotMenu(false);
-                                  }
-                                }}
-                              >
-                                <LogOut className="h-4 w-4 text-gray-500" />
-                                <span className="text-sm font-medium">Logout</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowProfilePopup(true)}
-                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gray-200 flex items-center justify-center border-2 border-gray-300 shadow-xl sm:shadow-2xl hover:scale-110 hover:shadow-2xl sm:hover:shadow-3xl hover:border-gray-400 transition-all duration-300 focus:outline-none"
-                        >
-                          <Settings className="h-5 w-5 text-gray-600" />
-                        </button>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-all duration-200 focus:outline-none"
+                      onClick={() => {
+                        setShowProfilePopup(true);
+                      }}
+                    >
+                      <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                    </button>
                   </div>
                 </div>
               </div>
