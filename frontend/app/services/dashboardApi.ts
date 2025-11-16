@@ -85,10 +85,27 @@ interface UserSettings {
 
 class DashboardApi {
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
+    // Try to get token, with a small retry in case it's being stored
+    let token = localStorage.getItem('token');
+    
     if (!token) {
+      // Wait a moment and try again (handles race condition during signup/login)
+      // This is a synchronous check, so we can't use await, but we can check immediately
+      console.warn('⚠️ Token not found on first check, this might be a timing issue');
+      
+      // For now, throw the error but log more context
+      const hasSessionTimestamp = !!localStorage.getItem('sessionTimestamp');
+      const hasUserRole = !!localStorage.getItem('userRole');
+      console.log('🔍 Token check context:', {
+        hasToken: false,
+        hasSessionTimestamp: hasSessionTimestamp,
+        hasUserRole: hasUserRole,
+        pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+      });
+      
       throw new Error('No authentication token found. Please log in again.');
     }
+    
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`

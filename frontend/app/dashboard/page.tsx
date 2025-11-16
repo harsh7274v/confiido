@@ -364,12 +364,28 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchSessions() {
       // Check if we have authentication - be more lenient during initial load
-      const storedToken = localStorage.getItem('token');
+      let storedToken = localStorage.getItem('token');
       const sessionTimestamp = localStorage.getItem('sessionTimestamp');
       
-      // If no token at all, wait for auth to load
-      if (!user && !storedToken) {
+      // If no token, wait a bit and check again (in case it's being stored)
+      if (!storedToken && !user) {
         console.log('⏳ No token found, waiting for authentication to load...');
+        // Wait a bit and check again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        storedToken = localStorage.getItem('token');
+        
+        if (!storedToken && !user) {
+          console.log('⏳ Still no token after wait, skipping fetch');
+          setSessionsLoading(false);
+          return;
+        } else if (storedToken) {
+          console.log('✅ Token found after wait, proceeding with fetch');
+        }
+      }
+      
+      // Final check - if still no token and no user, return
+      if (!user && !storedToken) {
+        console.log('❌ No authentication available, cannot fetch sessions');
         setSessionsLoading(false);
         return;
       }

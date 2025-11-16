@@ -39,13 +39,40 @@ export default function Signup() {
 
   // Check if user is already logged in
   useEffect(() => {
+    // Don't check if we're already redirecting (after successful signup)
+    if (redirecting || authRedirecting) {
+      return;
+    }
+
     const checkAuth = () => {
       const token = localStorage.getItem('token');
+      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+      
+      // Check if session is expired
+      if (token && sessionTimestamp) {
+        const sessionTime = parseInt(sessionTimestamp);
+        const currentTime = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        
+        // If session expired, clear it
+        if ((currentTime - sessionTime) > twentyFourHours) {
+          console.log('❌ Session expired on signup page, clearing...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('sessionTimestamp');
+          localStorage.removeItem('userRole');
+          return;
+        }
+      }
       
       // If user is already authenticated, redirect to dashboard
       if (user || token) {
         console.log('User already logged in, redirecting to dashboard');
-        router.push('/dashboard');
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'expert') {
+          router.replace('/mentor/dashboard');
+        } else {
+          router.replace('/dashboard');
+        }
       }
     };
 
@@ -53,7 +80,7 @@ export default function Signup() {
     if (!loading) {
       checkAuth();
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, redirecting, authRedirecting]);
 
   // Timer countdown effect
   useEffect(() => {
@@ -243,28 +270,75 @@ export default function Signup() {
 
       // Store token and session timestamp for 24-hour validity
       if (data.data?.token) {
+        const timestamp = Date.now().toString();
         localStorage.setItem('token', data.data.token);
-        localStorage.setItem('sessionTimestamp', Date.now().toString());
+        localStorage.setItem('sessionTimestamp', timestamp);
         console.log('✅ Signup successful, session set for 24 hours');
+        console.log('🔐 Token stored:', data.data.token.substring(0, 20) + '...');
+        console.log('⏰ Session timestamp:', timestamp);
+        
+        // Verify token was stored correctly
+        const storedToken = localStorage.getItem('token');
+        const storedTimestamp = localStorage.getItem('sessionTimestamp');
+        if (!storedToken || !storedTimestamp) {
+          console.error('❌ ERROR: Token or timestamp not stored correctly!');
+          throw new Error('Failed to store authentication token');
+        }
+        console.log('✅ Verified: Token and timestamp stored correctly');
       }
       
       // Store user role
       if (data.data?.user?.role) {
         localStorage.setItem('userRole', data.data.user.role);
+        console.log('👤 User role stored:', data.data.user.role);
       }
 
       setSuccess('Account created successfully! Redirecting...');
       setRedirecting(true);
       
-      // Redirect based on user role
-      setTimeout(() => {
-        const userRole = data.data?.user?.role;
-        if (userRole === 'expert') {
-          router.push('/mentor/dashboard');
-        } else {
-          router.push('/dashboard');
+      // Store a flag to indicate we just signed up (prevents AuthContext from clearing token)
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('justSignedUp', 'true');
+        console.log('🏷️ Set justSignedUp flag in sessionStorage');
+      }
+      
+      // Small delay to ensure localStorage is persisted before redirect
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify token is still there before redirecting
+      const verifyToken = localStorage.getItem('token');
+      const verifyTimestamp = localStorage.getItem('sessionTimestamp');
+      if (!verifyToken || !verifyTimestamp) {
+        console.error('❌ ERROR: Token or timestamp lost before redirect!', {
+          hasToken: !!verifyToken,
+          hasTimestamp: !!verifyTimestamp
+        });
+        setError('Authentication error. Please try logging in.');
+        setRedirecting(false);
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('justSignedUp');
         }
-      }, 1500);
+        return;
+      }
+      
+      console.log('✅ Token verified before redirect:', {
+        tokenLength: verifyToken.length,
+        timestamp: verifyTimestamp
+      });
+      
+      // Use window.location for a hard redirect to ensure clean state
+      // This ensures localStorage is fully persisted before navigation
+      const userRole = data.data?.user?.role;
+      console.log('➡️ Redirecting to dashboard, role:', userRole);
+      
+      // Use setTimeout to ensure all state updates complete
+      setTimeout(() => {
+        if (userRole === 'expert') {
+          window.location.href = '/mentor/dashboard';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }, 100);
       
     } catch (error: any) {
       setError(error.message || 'Invalid verification code. Please try again.');

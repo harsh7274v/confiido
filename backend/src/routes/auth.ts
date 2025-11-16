@@ -9,6 +9,7 @@ import { sendWelcomeEmail } from '../services/welcomeEmail';
 import { AppError } from '../middleware/errorHandler';
 import { protect } from '../middleware/auth';
 import { verifyFirebaseToken } from '../middleware/firebaseAuth';
+import { verifyFirebaseToken as verifyFirebaseTokenNew, isFirebaseAvailable } from '../config/firebase.server';
 import { generateJWTToken } from '../utils/jwtGenerator';
 import { generateUniqueUserId } from '../utils/userIdGenerator';
 
@@ -522,7 +523,7 @@ router.post('/login', [
 });
 
 // @route   POST /api/auth/verify
-// @desc    Verify Firebase token and sync user
+// @desc    Verify Firebase token and sync user (legacy)
 // @access  Public
 router.post('/verify', verifyFirebaseToken, async (req, res, next) => {
   try {
@@ -546,6 +547,160 @@ router.post('/verify', verifyFirebaseToken, async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+// @route   POST /api/auth/firebase/verify
+// @desc    Verify Firebase ID token and sync/create user (new implementation)
+// @access  Public
+router.post('/firebase/verify', [
+  body('idToken').notEmpty().withMessage('Firebase ID token is required'),
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { idToken } = req.body;
+
+    // Check if Firebase is available
+    if (!isFirebaseAvailable()) {
+      console.error('❌ Firebase not available. Check environment variables:');
+      console.error('  FIREBASE_PROJECT_ID:', !!process.env.FIREBASE_PROJECT_ID);
+      console.error('  FIREBASE_PRIVATE_KEY:', !!process.env.FIREBASE_PRIVATE_KEY);
+      console.error('  FIREBASE_CLIENT_EMAIL:', !!process.env.FIREBASE_CLIENT_EMAIL);
+      
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Firebase authentication is not configured. Please set FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, and FIREBASE_CLIENT_EMAIL environment variables.' 
+      });
+    }
+
+    // Verify Firebase token
+    const decodedToken = await verifyFirebaseTokenNew(idToken);
+
+    // Find or create user
+    let user = await User.findOne({ firebaseUid: decodedToken.uid });
+
+    if (!user) {
+      // Check if user exists with this email
+      const existingUser = await User.findOne({ email: decodedToken.email });
+
+      if (existingUser) {
+        // Link Firebase account to existing user
+        existingUser.firebaseUid = decodedToken.uid;
+        existingUser.isVerified = true;
+        existingUser.lastLogin = new Date();
+        await existingUser.save();
+        user = existingUser;
+      } else {
+        // Create new Firebase user
+        const nameParts = (decodedToken.name || '').split(' ') || ['', ''];
+        const user_id = await generateUniqueUserId();
+
+        user = new User({
+          firebaseUid: decodedToken.uid,
+          email: decodedToken.email,
+          name: decodedToken.name || '',
+          firstName: nameParts[0] || '',
+          lastName: nameParts.slice(1).join(' ') || '',
+          role: 'user',
+          isExpert: false,
+          isVerified: true,
+          isActive: true,
+          lastLogin: new Date(),
+          username: '',
+          password: 'firebase_dummy_password',
+          phone: '',
+          phoneNumber: '',
+          whatsappNumber: '',
+          dateOfBirth: null,
+          gender: 'prefer-not-to-say',
+          age: null,
+          category: 'student',
+          profession: '',
+          domain: '',
+          location: {
+            country: '',
+            city: '',
+            timezone: 'UTC'
+          },
+          bio: '',
+          user_id: user_id,
+          preferences: {
+            notifications: {
+              email: true,
+              push: true,
+              sms: false
+            },
+            privacy: {
+              profileVisibility: 'public',
+              showOnlineStatus: true
+            }
+          },
+          socialLinks: {
+            linkedin: '',
+            twitter: '',
+            website: ''
+          }
+        });
+
+        await user.save();
+
+        // Create initial rewards
+        try {
+          await Reward.create({
+            userId: user._id,
+            user_id: user.user_id,
+            points: 0,
+            totalEarned: 0,
+            totalSpent: 0,
+            history: [{
+              type: 'earned',
+              description: 'Welcome bonus for Firebase user registration',
+              points: 0,
+              status: 'completed',
+              date: new Date(),
+            }],
+          });
+        } catch (rewardError) {
+          console.error('Failed to create rewards for Firebase user:', rewardError);
+        }
+      }
+    } else {
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+    }
+
+    // Generate JWT token
+    const jwtToken = generateJWTToken(user.user_id);
+
+    res.json({
+      success: true,
+      message: 'Firebase authentication successful',
+      data: {
+        user: {
+          id: user._id,
+          user_id: user.user_id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: user.name || `${user.firstName} ${user.lastName}`,
+          role: user.role || 'user',
+          isExpert: user.isExpert || false,
+          isVerified: user.isVerified
+        },
+        token: jwtToken
+      }
+    });
+  } catch (error: any) {
+    console.error('Firebase verification error:', error);
+    res.status(401).json({
+      success: false,
+      error: error.message || 'Failed to verify Firebase token'
+    });
   }
 });
 

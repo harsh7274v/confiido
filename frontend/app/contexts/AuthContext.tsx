@@ -1,7 +1,8 @@
 'use client';
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { User, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { getFirebaseAuth } from '../config/firebase.client';
+import { useGoogleRedirectResult } from '../hooks/useGoogleSignIn';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false); // Track intentional logout
   const isLoggingOutRef = useRef(false); // Ref to track logout without causing re-renders
+  const isProcessingRedirectRef = useRef(false); // Ref to track Google redirect processing
   const router = useRouter();
 
   // Function to check if session is expired (24 hours)
@@ -233,84 +235,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Handle Google Sign-In redirect result
+  // Handle Google Sign-In redirect result using the new hook
+  const { handleRedirectResult, loading: redirectLoading } = useGoogleRedirectResult();
+  
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          console.log('✅ Google Sign-In redirect successful');
-          setRedirecting(true);
-          
-          // Get user token and verify with backend to get role
-          const token = await result.user.getIdToken();
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/verify`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (response.ok) {
-            try {
-              const data = await response.json();
-              const userRole = data.data?.user?.role;
-              
-              // Store the JWT token and set session timestamp
-              if (data.data?.token && typeof window !== 'undefined') {
-                localStorage.setItem('token', data.data.token);
-                setSessionTimestamp();
-                console.log('🔐 JWT token stored with 24-hour session for Google sign-in');
-              }
-              
-              // Store user role
-              if (userRole && typeof window !== 'undefined') {
-                localStorage.setItem('userRole', userRole);
-              }
-              
-              // Redirect based on role
-              if (userRole === "expert") {
-                router.push("/mentor/dashboard");
-              } else {
-                router.push("/dashboard");
-              }
-            } catch (jsonError) {
-              console.error('Failed to parse role verification response:', jsonError);
-              // Fallback to regular dashboard
-              router.push('/dashboard');
-            }
-          } else {
-            console.error('Backend verification failed:', response.status);
-            // Fallback to regular dashboard
-            router.push('/dashboard');
-          }
-        }
-      } catch (error: any) {
-        // Silently ignore these specific errors as they're expected
-        if (error.code === 'auth/popup-closed-by-user' || 
-            error.code === 'auth/cancelled-popup-request' ||
-            error.code === 'auth/popup-blocked') {
-          console.log('Google Sign-In cancelled or popup blocked');
-          return;
-        }
-        // Log other errors
-        if (error.code) {
-          console.error('Error handling redirect result:', error.code, error.message);
-        }
-      } finally {
-        setRedirecting(false);
-      }
-    };
-
-    // Only run on mount
     handleRedirectResult();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty array to run only once on mount
+  }, []);
+  
+  useEffect(() => {
+    if (redirectLoading) {
+      setRedirecting(true);
+    } else {
+      setRedirecting(false);
+    }
+  }, [redirectLoading]);
 
   useEffect(() => {
     setLoading(true);
     
+    const auth = getFirebaseAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Skip all processing if we're in the middle of logging out
@@ -321,8 +265,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
+        // CRITICAL: If we're processing a Google redirect, skip the token check
+        // The redirect handler will set the token, so we need to wait for it
+        if (isProcessingRedirectRef.current) {
+          console.log('🔄 Google redirect in progress, waiting for token to be set...');
+          // Don't set user yet, wait for redirect handler to complete
+          setLoading(false);
+          return;
+        }
+
         // CRITICAL CHECK: If there's no token in localStorage but Firebase user exists,
         // it means the user just logged out and we should NOT sync with backend
+        // BUT only if we're not processing a redirect
         if (typeof window !== 'undefined') {
           const existingToken = localStorage.getItem('token');
           if (!existingToken) {
@@ -403,27 +357,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // BUT check if we have a valid JWT token from email/password login
         // UNLESS we're in the middle of an intentional logout
         if (!isLoggingOut && typeof window !== 'undefined') {
+          // Check if we just signed up - if so, wait a bit for token to be available
+          const justSignedUp = sessionStorage.getItem('justSignedUp');
+          if (justSignedUp === 'true') {
+            console.log('🆕 Just signed up, checking for token...');
+            
+            // Check for token immediately first
+            let token = localStorage.getItem('token');
+            let timestamp = localStorage.getItem('sessionTimestamp');
+            
+            // If token not found immediately, retry a few times
+            if (!token || !timestamp) {
+              let retryCount = 0;
+              const maxRetries = 10; // More retries for slower systems
+              
+              const checkForToken = () => {
+                token = localStorage.getItem('token');
+                timestamp = localStorage.getItem('sessionTimestamp');
+                
+                if (token && timestamp) {
+                  console.log('✅ Token found after signup retry, proceeding');
+                  sessionStorage.removeItem('justSignedUp');
+                  // Token found, will continue with normal check below
+                  return;
+                } else if (retryCount < maxRetries) {
+                  retryCount++;
+                  console.log(`⏳ Token not found yet, retry ${retryCount}/${maxRetries}...`);
+                  setTimeout(checkForToken, 200);
+                  return;
+                } else {
+                  console.log('⚠️ Token not found after signup retries, but keeping flag for now');
+                  // Don't clear flag yet, might be a timing issue
+                  setLoading(false);
+                  return;
+                }
+              };
+              
+              // Start retry process
+              setTimeout(checkForToken, 100);
+              // Return early, will check again when token is found
+              setLoading(false);
+              return;
+            } else {
+              // Token found immediately, clear flag and continue
+              console.log('✅ Token found immediately after signup');
+              sessionStorage.removeItem('justSignedUp');
+              // Continue with normal token check below
+            }
+          }
+          
           const existingToken = localStorage.getItem('token');
           const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+          
+          console.log('🔍 Checking for JWT token (no Firebase user):', {
+            hasToken: !!existingToken,
+            hasTimestamp: !!sessionTimestamp,
+            tokenPreview: existingToken ? existingToken.substring(0, 20) + '...' : 'none',
+            justSignedUp: justSignedUp === 'true'
+          });
           
           // If we have a valid token and session, don't clear it!
           // This handles email/password logins that don't use Firebase auth
           // AND PWA restoration where Firebase auth might be lost but localStorage persists
-          if (existingToken && sessionTimestamp && !isSessionExpired()) {
-            console.log('✅ No Firebase user but valid JWT token found, keeping session (PWA restoration)');
-            // Keep user as null (no Firebase user) but don't clear session
-            // ProtectedRoute will allow access based on token
-            setUser(null); // No Firebase user
-            setLoading(false);
-            return; // Don't clear session!
+          if (existingToken && sessionTimestamp) {
+            const isExpired = isSessionExpired();
+            console.log('📊 Session check:', {
+              hasToken: true,
+              hasTimestamp: true,
+              isExpired,
+              timestamp: sessionTimestamp
+            });
+            
+            if (!isExpired) {
+              console.log('✅ No Firebase user but valid JWT token found, keeping session (email/password login)');
+              // Keep user as null (no Firebase user) but don't clear session
+              // ProtectedRoute will allow access based on token
+              setUser(null); // No Firebase user
+              setLoading(false);
+              return; // Don't clear session!
+            } else {
+              console.log('⏰ Session expired, but keeping token for now (user might be on signup/login page)');
+              // Don't clear session here - let the individual pages handle expired sessions
+            }
           } else if (existingToken && !sessionTimestamp) {
-            // Token exists but no timestamp - might be from old session
+            // Token exists but no timestamp - might be from old session or just created
             // Set timestamp now to prevent immediate expiration
             console.log('⚠️ Token found without timestamp, setting timestamp now');
             setSessionTimestamp();
             setUser(null);
             setLoading(false);
             return; // Don't clear session!
+          } else if (!existingToken && sessionTimestamp) {
+            // Timestamp exists but no token - clean up
+            console.log('🧹 Cleaning up orphaned timestamp');
+            localStorage.removeItem('sessionTimestamp');
           }
         }
         
@@ -431,10 +458,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (typeof window !== 'undefined') {
           const existingToken = localStorage.getItem('token');
           if (!existingToken) {
-            clearSession();
-            console.log('👋 User logged out, session cleared');
+            // Only clear if we're not in the middle of a signup/login flow
+            // Check if we're on signup or login page
+            const currentPath = window.location.pathname;
+            const isAuthPage = currentPath === '/signup' || currentPath === '/login';
+            
+            if (!isAuthPage) {
+              clearSession();
+              console.log('👋 User logged out, session cleared');
+            } else {
+              console.log('📍 On auth page, not clearing session yet');
+            }
           } else {
-            console.log('⚠️ Firebase user lost but token exists - keeping session for PWA');
+            console.log('⚠️ Firebase user lost but token exists - keeping session');
           }
         }
       }
@@ -484,23 +520,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const signInWithGoogle = async () => {
-    try {
-      console.log('🔵 Initiating Google Sign-In with redirect...');
-      setLoading(true);
-      // Use redirect instead of popup to avoid CORS issues
-      await signInWithRedirect(auth, googleProvider);
-      // After redirect, the user will be brought back to this page
-      // and getRedirectResult will handle the rest in useEffect
-    } catch (error: any) {
-      console.error('Error signing in with Google:', error);
-      // Only show error if it's not a user cancellation
-      if (error.code && 
-          error.code !== 'auth/popup-closed-by-user' && 
-          error.code !== 'auth/cancelled-popup-request') {
-        console.error('Google Sign-In Error:', error.code, error.message);
-      }
-      setLoading(false);
-    }
+    // This is now handled by the GoogleSignInButton component using useGoogleSignIn hook
+    // Keeping this for backward compatibility but it won't be used
+    console.log('⚠️ signInWithGoogle called - use GoogleSignInButton component instead');
   };
 
   const logout = async () => {
@@ -520,6 +542,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log('🔥 Signing out from Firebase...');
+      const auth = getFirebaseAuth();
       await signOut(auth);
       console.log('✅ Firebase sign out completed');
       

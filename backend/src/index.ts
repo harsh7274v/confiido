@@ -13,6 +13,8 @@ import { createServer } from 'http';
 import path from 'path';
 
 import { connectDB } from './config/database';
+// Import Firebase config to trigger initialization on startup
+import './config/firebase.server';
 import Transaction from './models/Transaction';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
