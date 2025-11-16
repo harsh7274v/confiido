@@ -859,6 +859,12 @@ export default function DashboardPage() {
     : 'User';
   const stats = data?.stats || {};
 
+  // Check if profile is incomplete (missing username, phone number, or whatsapp number)
+  const isProfileIncomplete = !profileData || 
+    !profileData.username || profileData.username.trim() === '' ||
+    !profileData.phoneNumber || profileData.phoneNumber.trim() === '' ||
+    !profileData.whatsappNumber || profileData.whatsappNumber.trim() === '';
+
   return (
   <ProtectedRoute>
   <div>
@@ -916,6 +922,7 @@ export default function DashboardPage() {
           onContactClick={handleContactClick}
           onRewardsClick={() => setCurrentView('rewards')}
           onPaymentsClick={() => setCurrentView('payments')}
+          isProfileIncomplete={isProfileIncomplete}
         />
         
         {/* Main content */}

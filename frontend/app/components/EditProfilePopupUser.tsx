@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Select, SelectItem } from './ui/Select';
-import { User, Briefcase, Calendar, Phone, MessageCircle, Linkedin, X, Save, LogOut, Sparkles, CheckCircle } from 'lucide-react';
+import { User, Briefcase, Calendar, Phone, MessageCircle, Linkedin, X, Save, LogOut, Sparkles, CheckCircle, Star } from 'lucide-react';
 
 interface EditProfilePopupProps {
     onClose: () => void;
@@ -145,9 +145,9 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                 </div>
             )}
             
-            <div className="bg-white rounded-3xl shadow-2xl w-full relative transition-all duration-300 overflow-hidden border border-gray-200" style={{ maxWidth: '35vw', width: '90%', minWidth: '320px', maxHeight: '90vh' }}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full relative transition-all duration-300 overflow-hidden border border-gray-200 flex flex-col" style={{ maxWidth: '35vw', width: '90%', minWidth: '320px', maxHeight: '90vh' }}>
                 {/* Modern Header with Gradient */}
-                <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
+                <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl shadow-lg" style={{ background: '#3E5F44' }}>
                             <User className="h-5 w-5 text-white" />
@@ -180,14 +180,17 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                 `}</style>
 
                 {/* Form Content */}
-                <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+                <div className="p-6 overflow-y-auto pb-8 flex-1" style={{ maxHeight: 'calc(90vh - 180px)' }}>
                     <form className="space-y-4">
                         {/* Username & Gender Row */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label htmlFor="username" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                     <User className="h-4 w-4 text-gray-500" />
                                     Username
+                                    {(!profile.username || profile.username.trim() === '') && (
+                                        <Star className="w-3 h-3 fill-red-500 text-red-500" />
+                                    )}
                                 </label>
                                 <input 
                                     id="username" 
@@ -218,7 +221,7 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                         </div>
 
                         {/* Profession & Date of Birth Row */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label htmlFor="profession" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                     <Briefcase className="h-4 w-4 text-gray-500" />
@@ -251,11 +254,14 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                         </div>
 
                         {/* Phone & WhatsApp Row */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label htmlFor="phoneNumber" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                     <Phone className="h-4 w-4 text-gray-500" />
                                     Phone Number
+                                    {(!profile.phoneNumber || profile.phoneNumber.trim() === '') && (
+                                        <Star className="w-3 h-3 fill-red-500 text-red-500" />
+                                    )}
                                 </label>
                                 <input 
                                     id="phoneNumber" 
@@ -271,6 +277,9 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                                 <label htmlFor="whatsappNumber" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                     <MessageCircle className="h-4 w-4 text-gray-500" />
                                     WhatsApp Number
+                                    {(!profile.whatsappNumber || profile.whatsappNumber.trim() === '') && (
+                                        <Star className="w-3 h-3 fill-red-500 text-red-500" />
+                                    )}
                                 </label>
                                 <input 
                                     id="whatsappNumber" 
@@ -302,7 +311,7 @@ const EditProfilePopup: React.FC<EditProfilePopupProps> = ({ onClose, onSave, in
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3 pt-4">
+                        <div className="flex flex-col sm:flex-row gap-3 pt-6 pb-2">
                             <button
                                 type="button"
                                 className="flex-1 flex items-center justify-center gap-2 text-white py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-95"

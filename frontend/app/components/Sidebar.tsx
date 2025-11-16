@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Wallet
+  Wallet,
+  Star
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ interface SidebarProps {
   onContactClick?: () => void;
   onRewardsClick?: () => void;
   onPaymentsClick?: () => void;
+  isProfileIncomplete?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -33,7 +35,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onTransactionsClick,
   onContactClick,
   onRewardsClick,
-  onPaymentsClick
+  onPaymentsClick,
+  isProfileIncomplete = false
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState('profile');
@@ -188,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                                   <button
                    key={item.id}
                    onClick={() => handleItemClick(item.id)}
-                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg collapse-transition hover:scale-105 active:scale-95 ${
+                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg collapse-transition hover:scale-105 active:scale-95 relative ${
                      isActive
                        ? 'text-white shadow-lg'
                        : 'text-gray-700 hover:bg-gray-200'
@@ -199,7 +202,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                      isActive ? 'text-white' : 'text-current'
                    }`} />
                    {!isCollapsed && (
-                     <span className="font-medium sidebar-label-enter">{item.label}</span>
+                     <span className="font-medium sidebar-label-enter flex items-center gap-2">
+                       {item.label}
+                       {item.id === 'profile' && isProfileIncomplete && (
+                         <Star className="w-3 h-3 fill-red-500 text-red-500" />
+                       )}
+                     </span>
+                   )}
+                   {isCollapsed && item.id === 'profile' && isProfileIncomplete && (
+                     <Star className="absolute top-1 right-1 w-3 h-3 fill-red-500 text-red-500" />
                    )}
                  </button>
               );
@@ -226,9 +237,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                  }`}
                  style={isActive ? { backgroundColor: '#5E936C' } : {}}
                >
-                 <Icon className={`w-5 h-5 mb-1 collapse-transition ${
-                   isActive ? 'text-white' : 'text-current'
-                 }`} />
+                 <div className="relative">
+                   <Icon className={`w-5 h-5 mb-1 collapse-transition ${
+                     isActive ? 'text-white' : 'text-current'
+                   }`} />
+                   {item.id === 'profile' && isProfileIncomplete && (
+                     <Star className="absolute -top-1 -right-1 w-3 h-3 fill-red-500 text-red-500" />
+                   )}
+                 </div>
                  <span className={`text-xs font-medium collapse-transition ${
                    isActive ? 'text-white' : 'text-current'
                  }`}>
