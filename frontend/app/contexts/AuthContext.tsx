@@ -488,6 +488,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Only set up interval if user is logged in and we're in the browser
     if (!user || typeof window === 'undefined') return;
 
+    const auth = getFirebaseAuth();
+
     // Check session validity every 5 minutes
     const sessionCheckInterval = setInterval(() => {
       if (typeof window === 'undefined') return;

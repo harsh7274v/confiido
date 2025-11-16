@@ -124,3 +124,5 @@ FIREBASE_CLIENT_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/...
 - The new implementation is cleaner, more maintainable, and serverless-friendly
 - Both traditional email/password and Google sign-in work independently
 
+
+
