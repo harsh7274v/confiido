@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
-import React, { useEffect, useMemo, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useMemo, useState, useLayoutEffect, useCallback } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
@@ -41,6 +41,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { bookingApi } from '../services/bookingApi';
+import { availabilityApi } from '../services/availabilityApi';
 
 // Skeleton Loader Component
 const SkeletonLoader = () => {
@@ -147,14 +149,18 @@ interface Goal {
   text: string;
   completed: boolean;
   createdAt: Date;
-}interface SetupStep {
+}
+
+interface SetupStep {
   id: string;
   title: string;
   description: string;
   completed: boolean;
   action: string;
   icon: string;
-}interface DashboardData {
+}
+
+interface DashboardData {
   user: {
     id: string;
     name: string;
@@ -171,7 +177,23 @@ interface Goal {
   sessions: any;
   recentActivity: any[];
   inspiration?: any[];
-}// Utility function to create session datetime with proper timezone handling
+}
+
+interface RescheduleSlotOption {
+  startTime: string;
+  endTime: string;
+  startDisplayTime: string;
+  endDisplayTime: string;
+}
+
+interface RescheduleModalState {
+  session: any;
+  date: string;
+  reason: string;
+  selectedSlot: RescheduleSlotOption | null;
+}
+
+// Utility function to create session datetime with proper timezone handling
 const createSessionDateTime = (scheduledDate: string, time: string): Date => {
   try {
     console.log('Creating session datetime:', { scheduledDate, time });
@@ -198,6 +220,49 @@ const createSessionDateTime = (scheduledDate: string, time: string): Date => {
   }
 };
 
+const formatDateInputValue = (value?: string) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
+const formatReadableDate = (value?: string) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const formatReadableTime = (value?: string) => {
+  if (!value) return '—';
+  const [hours, minutes] = value.split(':').map((part) => parseInt(part, 10));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return value;
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
+const getRescheduleStatusStyles = (status: string) => {
+  switch (status) {
+    case 'approved':
+      return 'bg-green-50 border-green-200 text-green-700';
+    case 'rejected':
+      return 'bg-red-50 border-red-200 text-red-700';
+    case 'cancelled':
+      return 'bg-gray-50 border-gray-200 text-gray-600';
+    default:
+      return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+  }
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const mainContentRef = React.useRef<HTMLElement>(null);
@@ -215,6 +280,12 @@ export default function DashboardPage() {
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
+  const [rescheduleModal, setRescheduleModal] = useState<RescheduleModalState | null>(null);
+  const [rescheduleSlots, setRescheduleSlots] = useState<RescheduleSlotOption[]>([]);
+  const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false);
+  const [rescheduleSlotsError, setRescheduleSlotsError] = useState<string | null>(null);
+  const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+  const [sessionActionMessage, setSessionActionMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // On mount, check URL for view=payments and switch view
   useLayoutEffect(() => {
@@ -248,6 +319,12 @@ export default function DashboardPage() {
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    if (!sessionActionMessage) return;
+    const timer = setTimeout(() => setSessionActionMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [sessionActionMessage]);
 
 
 
@@ -291,7 +368,7 @@ export default function DashboardPage() {
   ];
 
   // Helper function to get auth headers
-  const getAuthHeaders = async () => {
+  const getAuthHeaders = useCallback(async () => {
     // First, try to get traditional auth token from localStorage
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
@@ -323,179 +400,162 @@ export default function DashboardPage() {
     return {
       'Content-Type': 'application/json'
     };
-  };
+  }, [user]);
 
-  useEffect(() => {
-    async function fetchSessions() {
-      // Check if we have authentication - be more lenient during initial load
-      let storedToken = localStorage.getItem('token');
-      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+  const fetchSessions = useCallback(async () => {
+    // Check if we have authentication - be more lenient during initial load
+    let storedToken = localStorage.getItem('token');
+    const sessionTimestamp = localStorage.getItem('sessionTimestamp');
+    
+    // If no token, wait a bit and check again (in case it's being stored)
+    if (!storedToken && !user) {
+      console.log('⏳ No token found, waiting for authentication to load...');
+      // Wait a bit and check again
+      await new Promise(resolve => setTimeout(resolve, 500));
+      storedToken = localStorage.getItem('token');
       
-      // If no token, wait a bit and check again (in case it's being stored)
       if (!storedToken && !user) {
-        console.log('⏳ No token found, waiting for authentication to load...');
-        // Wait a bit and check again
-        await new Promise(resolve => setTimeout(resolve, 500));
-        storedToken = localStorage.getItem('token');
-        
-        if (!storedToken && !user) {
-          console.log('⏳ Still no token after wait, skipping fetch');
-          setSessionsLoading(false);
-          return;
-        } else if (storedToken) {
-          console.log('✅ Token found after wait, proceeding with fetch');
-        }
+        console.log('⏳ Still no token after wait, skipping fetch');
+        setSessionsLoading(false);
+        return;
+      } else if (storedToken) {
+        console.log('✅ Token found after wait, proceeding with fetch');
       }
-      
-      // Final check - if still no token and no user, return
-      if (!user && !storedToken) {
-        console.log('❌ No authentication available, cannot fetch sessions');
+    }
+    
+    // Final check - if still no token and no user, return
+    if (!user && !storedToken) {
+      console.log('❌ No authentication available, cannot fetch sessions');
+      setSessionsLoading(false);
+      return;
+    }
+    
+    // If we have token but it's expired, show error
+    if (storedToken && sessionTimestamp) {
+      const sessionTime = parseInt(sessionTimestamp);
+      const currentTime = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      if ((currentTime - sessionTime) > twentyFourHours) {
+        console.log('❌ Session expired, please login again');
+        setSessionsError('Session expired, please log in again');
         setSessionsLoading(false);
         return;
       }
-      
-      // If we have token but it's expired, show error
-      if (storedToken && sessionTimestamp) {
-        const sessionTime = parseInt(sessionTimestamp);
-        const currentTime = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
-        if ((currentTime - sessionTime) > twentyFourHours) {
-          console.log('❌ Session expired, please login again');
-          setSessionsError('Session expired, please log in again');
-          setSessionsLoading(false);
-          return;
-        }
-      }
-      
-      setSessionsLoading(true);
-      setSessionsError(null);
-      setApiStatus('loading');
-      try {
-        const headers = await getAuthHeaders();
-        console.log('Making API call to bookings/user with headers:', headers);
-        
-        // Use the same API endpoint that works for the payment page
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/bookings/user?page=1&limit=100`, { headers });
-        console.log('Bookings API response:', res.data);
-        
-        // Transform the bookings data to sessions format
-        const bookings = res.data?.data?.bookings || [];
-        console.log('Bookings found:', bookings.length);
-        
-        // Extract all sessions from all bookings
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const allSessions = bookings.flatMap((booking: any) => 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          booking.sessions.map((session: any) => ({
-            id: session.sessionId || session._id,
-            title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertId?.title || 'Expert'}`,
-            date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
-            time: session.startTime && session.endTime ? `${session.startTime} - ${session.endTime}` : 'Unknown Time',
-            expertName: session.expertId?.title || 'Expert',
-            sessionType: session.sessionType || 'unknown',
-            status: session.status || 'unknown',
-            paymentStatus: session.paymentStatus || 'unknown',
-            meetingLink: session.meetingLink,
-            price: session.price || 0,
-            currency: session.currency || 'INR',
-            expertEmail: session.expertEmail,
-            notes: session.notes,
-            scheduledDate: session.scheduledDate
-          }))
-        );
-        
-        console.log('=== FRONTEND DASHBOARD DEBUG ===');
-        console.log('All sessions extracted:', allSessions.length);
-        console.log('All sessions:', allSessions);
-        
-        // Debug: Show the first few sessions in detail
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        allSessions.slice(0, 3).forEach((session: any, index: number) => {
-          console.log(`Session ${index + 1} details:`, {
-            id: session.id,
-            scheduledDate: session.scheduledDate,
-            time: session.time,
-            status: session.status,
-            paymentStatus: session.paymentStatus
-          });
-        });
-        
-        // Filter for paid sessions only
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const paidSessions = allSessions.filter((session: any) => {
-          const isPaid = session.paymentStatus === 'paid';
-          if (!isPaid) {
-            console.log(`Skipping unpaid session: ${session.id} (status: ${session.paymentStatus})`);
-          }
-          return isPaid;
-        });
-        console.log('Paid sessions:', paidSessions.length);
-        console.log('Total sessions before filtering:', allSessions.length);
-        
-        // Separate upcoming and completed sessions with proper date/time comparison
-        const now = new Date();
-        console.log('Current date/time:', now.toISOString());
-        
-        // Test: Create a future date to verify the logic works
-        const testFutureDate = new Date();
-        testFutureDate.setDate(testFutureDate.getDate() + 1); // Tomorrow
-        testFutureDate.setHours(10, 0, 0, 0); // 10:00 AM
-        console.log('Test future date:', testFutureDate.toISOString());
-        console.log('Is test future date > now?', testFutureDate > now);
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const upcoming = paidSessions.filter((session: any) => {
-          const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
-          
-          console.log(`Session ${session.id}:`, {
-            scheduledDate: session.scheduledDate,
-            time: session.time,
-            sessionDateTime: sessionDateTime.toISOString(),
-            currentTime: now.toISOString(),
-            isUpcoming: sessionDateTime > now,
-            status: session.status // Just for debugging, not used in logic
-          });
-          
-          // Only use date/time comparison, ignore backend status
-          return sessionDateTime > now;
-        });
-        
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const completed = paidSessions.filter((session: any) => {
-          const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
-          
-          // Only use date/time comparison, ignore backend status
-          return sessionDateTime <= now;
-        });
-        
-        console.log('Upcoming sessions:', upcoming.length);
-        console.log('Completed sessions:', completed.length);
-        
-        // Debug: Show which sessions are in which category
-        console.log('=== SESSION CATEGORIZATION (DATE-BASED ONLY) ===');
-        console.log('Note: Categorization is based ONLY on scheduledDate + time, ignoring backend status');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        console.log('Upcoming sessions:', upcoming.map((s: any) => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        console.log('Completed sessions:', completed.map((s: any) => ({ id: s.id, date: s.date, time: s.time, status: s.status })));
-        
-        const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
-        console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
-        setSessions(selectedSessions);
-        
-        setApiStatus('success');
-      } catch (err: any) {
-        console.error('Error fetching sessions:', err);
-        console.error('Error response:', err.response?.data);
-        setSessions([]);
-        setSessionsError(err.response?.data?.message || 'Failed to load sessions');
-        setApiStatus('error');
-      } finally {
-        setSessionsLoading(false);
-      }
     }
+    
+    setSessionsLoading(true);
+    setSessionsError(null);
+    setApiStatus('loading');
+    try {
+      const headers = await getAuthHeaders();
+      console.log('Making API call to bookings/user with headers:', headers);
+      
+      // Use the same API endpoint that works for the payment page
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/bookings/user?page=1&limit=100`, { headers });
+      console.log('Bookings API response:', res.data);
+      
+      // Transform the bookings data to sessions format
+      const bookings = res.data?.data?.bookings || [];
+      console.log('Bookings found:', bookings.length);
+      
+      // Extract all sessions from all bookings
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allSessions = bookings.flatMap((booking: any) => 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        booking.sessions.map((session: any) => ({
+          id: session.sessionId || session._id,
+          title: `${session.sessionType?.toUpperCase() || 'SESSION'} session with ${session.expertId?.title || 'Expert'}`,
+          date: session.scheduledDate ? new Date(session.scheduledDate).toLocaleDateString() : 'Unknown Date',
+          time: session.startTime && session.endTime ? `${session.startTime} - ${session.endTime}` : 'Unknown Time',
+          expertName: session.expertId?.title || 'Expert',
+          sessionType: session.sessionType || 'unknown',
+          status: session.status || 'unknown',
+          paymentStatus: session.paymentStatus || 'unknown',
+          meetingLink: session.meetingLink,
+          price: session.price || 0,
+          currency: session.currency || 'INR',
+          expertEmail: session.expertEmail,
+          expertUserId: session.expertUserId
+            || session.expertId?.user_id
+            || session.expertId?.userId?.user_id
+            || session.expertId?.userId?.userId, // fallback if nested
+          notes: session.notes,
+          scheduledDate: session.scheduledDate,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          duration: session.duration,
+          bookingId: booking._id,
+          rescheduleRequest: session.rescheduleRequest,
+          rescheduleHistory: session.rescheduleHistory || []
+        }))
+      );
+      
+      console.log('=== FRONTEND DASHBOARD DEBUG ===');
+      console.log('All sessions extracted:', allSessions.length);
+      console.log('All sessions:', allSessions);
+      
+      // Debug: Show the first few sessions in detail
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      allSessions.slice(0, 3).forEach((session: any, index: number) => {
+        console.log(`Session ${index + 1} details:`, {
+          id: session.id,
+          scheduledDate: session.scheduledDate,
+          time: session.time,
+          status: session.status,
+          paymentStatus: session.paymentStatus
+        });
+      });
+      
+      // Filter for paid sessions only
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const paidSessions = allSessions.filter((session: any) => {
+        const isPaid = session.paymentStatus === 'paid';
+        if (!isPaid) {
+          console.log(`Skipping unpaid session: ${session.id} (status: ${session.paymentStatus})`);
+        }
+        return isPaid;
+      });
+      console.log('Paid sessions:', paidSessions.length);
+      console.log('Total sessions before filtering:', allSessions.length);
+      
+      // Separate upcoming and completed sessions with proper date/time comparison
+      const now = new Date();
+      console.log('Current date/time:', now.toISOString());
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const upcoming = paidSessions.filter((session: any) => {
+        const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
+        return sessionDateTime > now;
+      });
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const completed = paidSessions.filter((session: any) => {
+        const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
+        return sessionDateTime <= now;
+      });
+      
+      console.log('Upcoming sessions:', upcoming.length);
+      console.log('Completed sessions:', completed.length);
+      
+      const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
+      console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
+      setSessions(selectedSessions);
+      
+      setApiStatus('success');
+    } catch (err: any) {
+      console.error('Error fetching sessions:', err);
+      console.error('Error response:', err.response?.data);
+      setSessions([]);
+      setSessionsError(err.response?.data?.message || 'Failed to load sessions');
+      setApiStatus('error');
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [getAuthHeaders, sessionTab, user]);
+
+  useEffect(() => {
     fetchSessions();
-  }, [sessionTab, user]);
+  }, [fetchSessions]);
 
   useEffect(() => {
     async function fetchProfileData() {
@@ -516,15 +576,127 @@ export default function DashboardPage() {
       }
     }
     fetchProfileData();
-  }, [user]);
+  }, [getAuthHeaders, user]);
 
   const handleProfileClick = () => {
     setShowProfilePopup(true);
     setCurrentView('dashboard');
   };
+  const fetchRescheduleSlots = useCallback(async (sessionData: any, targetDate: string, preferredStart?: string | null) => {
+    if (!sessionData?.expertUserId || !targetDate) {
+      setRescheduleSlots([]);
+      return;
+    }
+    setRescheduleSlotsLoading(true);
+    setRescheduleSlotsError(null);
+    try {
+      const sessionDuration = typeof sessionData.duration === 'number' ? sessionData.duration : null;
+      let durationMinutes = sessionDuration && sessionDuration > 0 ? sessionDuration : null;
+      if (!durationMinutes && sessionData.startTime && sessionData.endTime) {
+        const startTimeObj = new Date(`2000-01-01T${sessionData.startTime}:00`);
+        const endTimeObj = new Date(`2000-01-01T${sessionData.endTime}:00`);
+        durationMinutes = Math.round((endTimeObj.getTime() - startTimeObj.getTime()) / (1000 * 60));
+      }
+      if (!durationMinutes || durationMinutes < 15) {
+        durationMinutes = 30;
+      }
+
+      const response = await availabilityApi.getConsecutiveSlotsByUserId(
+        sessionData.expertUserId,
+        targetDate,
+        durationMinutes,
+        sessionData.id
+      );
+      const consecutiveSlots = response?.data?.consecutiveSlots || [];
+      const availableOptions: RescheduleSlotOption[] = consecutiveSlots
+        .filter((slot: any) => slot.available)
+        .map((slot: any) => ({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          startDisplayTime: slot.startDisplayTime,
+          endDisplayTime: slot.endDisplayTime
+        }));
+      setRescheduleSlots(availableOptions);
+
+      if (preferredStart) {
+        const matchingSlot = availableOptions.find(slot => slot.startTime === preferredStart);
+        if (matchingSlot) {
+          setRescheduleModal(prev => prev ? { ...prev, selectedSlot: matchingSlot } : prev);
+        }
+      } else {
+        setRescheduleModal(prev => prev ? { ...prev, selectedSlot: null } : prev);
+      }
+    } catch (error: any) {
+      console.error('Error fetching available slots:', error);
+      setRescheduleSlots([]);
+      setRescheduleSlotsError(error?.response?.data?.error || 'Unable to load available slots');
+    } finally {
+      setRescheduleSlotsLoading(false);
+    }
+  }, []);
 
   const handleContactClick = () => {
     setCurrentView('contact');
+  };
+
+  const handleOpenRescheduleModal = (session: any) => {
+    const initialDate = formatDateInputValue(session.scheduledDate);
+    const initialStartTime = session.startTime || session.time?.split(' - ')[0] || null;
+    setRescheduleModal({
+      session,
+      date: initialDate,
+      reason: '',
+      selectedSlot: null
+    });
+    setRescheduleSlots([]);
+    setRescheduleSlotsError(null);
+    fetchRescheduleSlots(session, initialDate, initialStartTime);
+  };
+
+  const handleCloseRescheduleModal = () => {
+    if (rescheduleSubmitting) return;
+    setRescheduleModal(null);
+    setRescheduleSlots([]);
+    setRescheduleSlotsError(null);
+  };
+
+  const handleRescheduleDateChange = (newDate: string) => {
+    if (!rescheduleModal) return;
+    const sessionData = rescheduleModal.session;
+    setRescheduleModal(prev => prev ? { ...prev, date: newDate, selectedSlot: null } : prev);
+    setRescheduleSlots([]);
+    setRescheduleSlotsError(null);
+    fetchRescheduleSlots(sessionData, newDate);
+  };
+
+  const handleRescheduleSubmit = async () => {
+    if (!rescheduleModal?.session || !rescheduleModal.date || !rescheduleModal.selectedSlot) return;
+    try {
+      setRescheduleSubmitting(true);
+      await bookingApi.requestSessionReschedule(
+        rescheduleModal.session.bookingId,
+        rescheduleModal.session.id,
+        {
+          scheduledDate: rescheduleModal.date,
+          startTime: rescheduleModal.selectedSlot.startTime,
+          reason: rescheduleModal.reason?.trim() ? rescheduleModal.reason.trim() : undefined
+        }
+      );
+      setSessionActionMessage({
+        type: 'success',
+        message: 'Reschedule request sent to your mentor.'
+      });
+      setRescheduleModal(null);
+      await fetchSessions();
+    } catch (error: any) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to send reschedule request';
+      setSessionActionMessage({
+        type: 'error',
+        message
+      });
+    } finally {
+      setRescheduleSubmitting(false);
+    }
   };
 
   const handleSaveProfile = async (profile: ProfileData) => {
@@ -1060,6 +1232,113 @@ export default function DashboardPage() {
                       }}
                     />
                   </div>
+
+                  {/* Reschedule Request Modal */}
+                  {rescheduleModal?.session && (
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
+                        <button
+                          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                          onClick={handleCloseRescheduleModal}
+                          disabled={rescheduleSubmitting}
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Request a reschedule</h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Pick a new slot that works for you. Your mentor will review and confirm.
+                        </p>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
+                            <input
+                              type="date"
+                              value={rescheduleModal.date}
+                              min={formatDateInputValue(new Date().toISOString())}
+                              onChange={(e) => handleRescheduleDateChange(e.target.value)}
+                              className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700">Available slots</label>
+                              <button
+                                type="button"
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                                onClick={() => rescheduleModal.session && fetchRescheduleSlots(rescheduleModal.session, rescheduleModal.date, rescheduleModal.selectedSlot?.startTime || null)}
+                              >
+                                Refresh
+                              </button>
+                            </div>
+                            <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-2">
+                              {rescheduleSlotsLoading ? (
+                                <div className="py-6 text-center text-sm text-gray-500">Loading available slots...</div>
+                              ) : rescheduleSlotsError ? (
+                                <div className="py-4 text-sm text-red-600">{rescheduleSlotsError}</div>
+                              ) : rescheduleSlots.length === 0 ? (
+                                <div className="py-4 text-sm text-gray-500">No slots available for this date.</div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {rescheduleSlots.map((slot) => (
+                                    <label
+                                      key={slot.startTime}
+                                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                                        rescheduleModal.selectedSlot?.startTime === slot.startTime
+                                          ? 'border-gray-800 bg-gray-50'
+                                          : 'border-gray-200 hover:border-gray-400'
+                                      }`}
+                                    >
+                                      <div>
+                                        <div className="font-semibold text-gray-900">
+                                          {slot.startDisplayTime} – {slot.endDisplayTime}
+                                        </div>
+                                        <div className="text-xs text-gray-500">{slot.startTime} - {slot.endTime}</div>
+                                      </div>
+                                      <input
+                                        type="radio"
+                                        className="h-4 w-4 text-gray-800"
+                                        checked={rescheduleModal.selectedSlot?.startTime === slot.startTime}
+                                        onChange={() => setRescheduleModal(prev => prev ? ({ ...prev, selectedSlot: slot }) : prev)}
+                                      />
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Message to mentor (optional)</label>
+                            <textarea
+                              value={rescheduleModal.reason}
+                              onChange={(e) => setRescheduleModal(prev => prev ? ({ ...prev, reason: e.target.value }) : prev)}
+                              rows={3}
+                              className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                              placeholder="Share helpful context around the change..."
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                          <button
+                            type="button"
+                            onClick={handleCloseRescheduleModal}
+                            disabled={rescheduleSubmitting}
+                            className="w-full sm:w-auto px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRescheduleSubmit}
+                            disabled={rescheduleSubmitting || !rescheduleModal.date || !rescheduleModal.selectedSlot}
+                            className="w-full sm:w-auto px-4 py-2 rounded-xl text-white font-semibold disabled:opacity-60"
+                            style={{ backgroundColor: '#3E5F44' }}
+                          >
+                            {rescheduleSubmitting ? 'Sending...' : 'Send request'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Modern Toast Notification */}
                   {showMessageToast && (
@@ -1184,6 +1463,15 @@ export default function DashboardPage() {
                       </button>
                     </div>
                     <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
+                      {sessionActionMessage && (
+                        <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                          sessionActionMessage.type === 'success'
+                            ? 'bg-green-50 border-green-200 text-green-700'
+                            : 'bg-red-50 border-red-200 text-red-700'
+                        }`}>
+                          {sessionActionMessage.message}
+                        </div>
+                      )}
                       {sessionsLoading ? (
                         <div className="space-y-3">
                           <SkeletonLoader />
@@ -1236,6 +1524,33 @@ export default function DashboardPage() {
                                       <p className="text-sm text-gray-700">{session.notes}</p>
                                     </div>
                                   )}
+                                  {session.rescheduleRequest && (() => {
+                                    const request = session.rescheduleRequest;
+                                    const status = request.status;
+                                    const requestedDateLabel = formatReadableDate(request.requestedDate);
+                                    const requestedTimeLabel = `${formatReadableTime(request.requestedStartTime)} - ${formatReadableTime(request.requestedEndTime)}`;
+                                    return (
+                                      <div className={`mt-3 p-3 rounded-xl border ${getRescheduleStatusStyles(status)}`}>
+                                        <div className="flex items-center justify-between text-sm font-semibold">
+                                          <span>Reschedule Status</span>
+                                          <span className="capitalize">{status}</span>
+                                        </div>
+                                        <p className="text-sm mt-2">
+                                          New slot requested for <span className="font-medium">{requestedDateLabel}</span> at <span className="font-medium">{requestedTimeLabel}</span>.
+                                        </p>
+                                        {request.reason && (
+                                          <p className="text-xs mt-2">
+                                            <span className="font-semibold">Your note:</span> {request.reason}
+                                          </p>
+                                        )}
+                                        {request.responseNote && request.status !== 'pending' && (
+                                          <p className="text-xs mt-2">
+                                            <span className="font-semibold">Mentor note:</span> {request.responseNote}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                                 <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-shrink-0">
                                   <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -1289,6 +1604,24 @@ export default function DashboardPage() {
                                   <span className="text-orange-600 font-medium">Payment Pending</span>
                                 )}
                               </div>
+                              {sessionTab === 'upcoming' && session.paymentStatus === 'paid' && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenRescheduleModal(session)}
+                                    disabled={session.rescheduleRequest?.status === 'pending'}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-xl border transition-colors ${
+                                      session.rescheduleRequest?.status === 'pending'
+                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {session.rescheduleRequest?.status === 'pending'
+                                      ? 'Awaiting mentor response'
+                                      : 'Request reschedule'}
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

@@ -1,5 +1,29 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IRescheduleRequest {
+  requestedBy: 'client' | 'expert';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  requestedDate: Date;
+  requestedStartTime: string;
+  requestedEndTime: string;
+  requestedAt: Date;
+  respondedAt?: Date;
+  reason?: string;
+  responseNote?: string;
+}
+
+export interface IRescheduleHistoryEntry {
+  updatedBy: 'client' | 'expert' | 'system';
+  fromDate: Date;
+  fromStartTime: string;
+  fromEndTime: string;
+  toDate: Date;
+  toStartTime: string;
+  toEndTime: string;
+  updatedAt: Date;
+  note?: string;
+}
+
 export interface ISession {
   sessionId: mongoose.Types.ObjectId;
   expertId: mongoose.Types.ObjectId;
@@ -30,6 +54,8 @@ export interface ISession {
   finalAmount?: number; // Final amount after loyalty points deduction
   // Creation timestamp
   createdTime?: Date; // When the session was created (when book now was clicked)
+  rescheduleRequest?: IRescheduleRequest;
+  rescheduleHistory?: IRescheduleHistoryEntry[];
 }
 
 export interface IBooking extends Document {
@@ -42,6 +68,88 @@ export interface IBooking extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+const rescheduleRequestSchema = new Schema<IRescheduleRequest>({
+  requestedBy: {
+    type: String,
+    enum: ['client', 'expert'],
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'cancelled'],
+    required: true
+  },
+  requestedDate: {
+    type: Date,
+    required: true
+  },
+  requestedStartTime: {
+    type: String,
+    required: true,
+    match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format']
+  },
+  requestedEndTime: {
+    type: String,
+    required: true,
+    match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format']
+  },
+  requestedAt: {
+    type: Date,
+    default: Date.now
+  },
+  respondedAt: {
+    type: Date
+  },
+  reason: {
+    type: String,
+    maxlength: [500, 'Reason cannot exceed 500 characters']
+  },
+  responseNote: {
+    type: String,
+    maxlength: [500, 'Response note cannot exceed 500 characters']
+  }
+}, { _id: false });
+
+const rescheduleHistorySchema = new Schema<IRescheduleHistoryEntry>({
+  updatedBy: {
+    type: String,
+    enum: ['client', 'expert', 'system'],
+    required: true
+  },
+  fromDate: {
+    type: Date,
+    required: true
+  },
+  fromStartTime: {
+    type: String,
+    required: true
+  },
+  fromEndTime: {
+    type: String,
+    required: true
+  },
+  toDate: {
+    type: Date,
+    required: true
+  },
+  toStartTime: {
+    type: String,
+    required: true
+  },
+  toEndTime: {
+    type: String,
+    required: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  note: {
+    type: String,
+    maxlength: [500, 'Note cannot exceed 500 characters']
+  }
+}, { _id: false });
 
 const sessionSchema = new Schema<ISession>({
   sessionId: {
@@ -163,6 +271,13 @@ const sessionSchema = new Schema<ISession>({
   createdTime: {
     type: Date,
     default: Date.now
+  },
+  rescheduleRequest: {
+    type: rescheduleRequestSchema
+  },
+  rescheduleHistory: {
+    type: [rescheduleHistorySchema],
+    default: []
   }
 });
 

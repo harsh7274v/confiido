@@ -34,6 +34,25 @@ interface SessionConfirmationData {
   mentorTitle?: string; // Added for better display
 }
 
+interface BaseRescheduleEmailData {
+  oldDate: string;
+  oldTimeRange: string;
+  newDate: string;
+  newTimeRange: string;
+  meetingLink?: string;
+  timeZone?: string;
+  additionalNote?: string;
+}
+
+interface ClientRescheduleEmailData extends BaseRescheduleEmailData {
+  userName: string;
+  mentorName: string;
+}
+
+interface MentorRescheduleEmailData extends BaseRescheduleEmailData {
+  clientName: string;
+}
+
 /**
  * Sends a professional session confirmation email after successful payment
  */
@@ -561,4 +580,195 @@ The Confiido Team
   const emailTransporter = getTransporter();
   await emailTransporter.sendMail(mailOptions);
   console.log(`✅ Mentor notification email sent to ${to}`);
+};
+
+const buildRescheduleText = (
+  recipient: 'client' | 'mentor',
+  data: (ClientRescheduleEmailData & { mentorName?: string }) | (MentorRescheduleEmailData & { mentorName?: string })
+) => {
+  const {
+    oldDate,
+    oldTimeRange,
+    newDate,
+    newTimeRange,
+    meetingLink,
+    timeZone = 'IST',
+    additionalNote
+  } = data;
+
+  if (recipient === 'client') {
+    const { userName, mentorName } = data as ClientRescheduleEmailData;
+    return `Hello ${userName},
+
+Your session with ${mentorName} has been rescheduled.
+
+Previous slot:
+- ${oldDate}
+- ${oldTimeRange} ${timeZone}
+
+New slot:
+- ${newDate}
+- ${newTimeRange} ${timeZone}
+${meetingLink ? `\nJoin link: ${meetingLink}` : '\nThe new meeting link will be shared shortly.'}
+${additionalNote ? `\nMentor note: ${additionalNote}` : ''}
+
+Please join on time to make the most of your session.
+
+Best,
+Team Confiido`;
+  }
+
+  const { clientName } = data as MentorRescheduleEmailData;
+  return `Hello,
+
+The session with ${clientName} has been rescheduled.
+
+Previous slot:
+- ${oldDate}
+- ${oldTimeRange} ${timeZone}
+
+New slot:
+- ${newDate}
+- ${newTimeRange} ${timeZone}
+${meetingLink ? `\nUpdated meeting link: ${meetingLink}` : '\nMeeting link remains unchanged.'}
+${additionalNote ? `\nNote shared: ${additionalNote}` : ''}
+
+Please ensure your calendar is updated accordingly.
+
+Best,
+Team Confiido`;
+};
+
+const buildRescheduleHtml = (
+  recipient: 'client' | 'mentor',
+  data: (ClientRescheduleEmailData & { mentorName?: string }) | (MentorRescheduleEmailData & { mentorName?: string })
+) => {
+  const {
+    oldDate,
+    oldTimeRange,
+    newDate,
+    newTimeRange,
+    meetingLink,
+    timeZone = 'IST',
+    additionalNote
+  } = data;
+
+  const headline =
+    recipient === 'client'
+      ? 'Your session has been rescheduled'
+      : 'A session has been rescheduled';
+
+  const subHeadline =
+    recipient === 'client'
+      ? `We have confirmed your new slot with ${(data as ClientRescheduleEmailData).mentorName}.`
+      : `Please review the updated slot with ${(data as MentorRescheduleEmailData).clientName}.`;
+
+  const noteLabel = recipient === 'client' ? 'Mentor note' : 'Note shared';
+
+  return `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: 'Arial', sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+      .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+      .header { background: #000000; color: #ffffff; padding: 28px 32px; text-align: center; }
+      .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+      .content { padding: 32px; color: #111827; }
+      .content h2 { margin-top: 0; font-size: 20px; }
+      .subtext { color: #6b7280; font-size: 15px; margin-bottom: 24px; }
+      .card { background: #f9fafb; border-radius: 10px; padding: 20px; margin-bottom: 16px; border: 1px solid #e5e7eb; }
+      .card-title { font-weight: 600; margin-bottom: 8px; }
+      .link-box { text-align: center; margin: 24px 0; }
+      .link-box a { display: inline-block; padding: 12px 24px; background: #000000; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 600; }
+      .note { margin-top: 16px; padding: 16px; border-left: 4px solid #fde047; background: #fffbeb; color: #854d0e; border-radius: 6px; }
+      .footer { background: #f3f4f6; text-align: center; padding: 16px; font-size: 13px; color: #6b7280; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>CONFIIDO</h1>
+      </div>
+      <div class="content">
+        <h2>${headline}</h2>
+        <p class="subtext">${subHeadline}</p>
+        <div class="card">
+          <div class="card-title">Previous slot</div>
+          <div>${oldDate}</div>
+          <div>${oldTimeRange} ${timeZone}</div>
+        </div>
+        <div class="card" style="border-color: #d1fae5; background: #ecfdf5;">
+          <div class="card-title">New slot</div>
+          <div><strong>${newDate}</strong></div>
+          <div><strong>${newTimeRange} ${timeZone}</strong></div>
+        </div>
+        ${
+          meetingLink
+            ? `<div class="link-box"><a href="${meetingLink}">Join updated meeting</a></div>
+               <p style="text-align:center;color:#6b7280;font-size:14px;">Or copy this link: <a href="${meetingLink}" style="color:#111827;">${meetingLink}</a></p>`
+            : `<p style="text-align:center;color:#6b7280;">The updated meeting link will be shared shortly.</p>`
+        }
+        ${
+          additionalNote
+            ? `<div class="note"><strong>${noteLabel}:</strong><br />${additionalNote}</div>`
+            : ''
+        }
+      </div>
+      <div class="footer">
+        <p>© ${new Date().getFullYear()} Confiido. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+};
+
+export const sendSessionRescheduleEmail = async (
+  to: string,
+  data: ClientRescheduleEmailData
+) => {
+  const subject = 'Your Confiido session has been rescheduled';
+  const text = buildRescheduleText('client', data);
+  const html = buildRescheduleHtml('client', data);
+
+  const mailOptions = {
+    from: {
+      name: 'Confiido',
+      address: process.env.EMAIL_USER || 'noreply@confiido.in'
+    },
+    to,
+    subject,
+    text,
+    html
+  };
+
+  const emailTransporter = getTransporter();
+  await emailTransporter.sendMail(mailOptions);
+  console.log(`✅ Reschedule email sent to client ${to}`);
+};
+
+export const sendMentorRescheduleEmail = async (
+  to: string,
+  data: MentorRescheduleEmailData
+) => {
+  const subject = 'A session has been rescheduled';
+  const text = buildRescheduleText('mentor', data as any);
+  const html = buildRescheduleHtml('mentor', data as any);
+
+  const mailOptions = {
+    from: {
+      name: 'Confiido',
+      address: process.env.EMAIL_USER || 'noreply@confiido.in'
+    },
+    to,
+    subject,
+    text,
+    html
+  };
+
+  const emailTransporter = getTransporter();
+  await emailTransporter.sendMail(mailOptions);
+  console.log(`✅ Reschedule email sent to mentor ${to}`);
 };

@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Calendar, Clock, User, DollarSign, CheckCircle, AlertCircle, Phone, Mail, Video, Mic, MessageSquare, Users, Briefcase, Globe, MapPin as LocationIcon, UserCheck, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Calendar, Clock, User, DollarSign, CheckCircle, AlertCircle, Phone, Mail, Video, Mic, MessageSquare, Users, Briefcase, Globe, MapPin as LocationIcon, UserCheck, ExternalLink, ChevronDown, ChevronUp, X } from "lucide-react";
 import Image from "next/image";
 import { bookingApi } from "../services/bookingApi";
+import { availabilityApi } from "../services/availabilityApi";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +25,28 @@ interface Session {
   _id: string;
   createdAt: string;
   updatedAt: string;
+  rescheduleRequest?: {
+    requestedBy: 'client' | 'expert';
+    status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+    requestedDate: string;
+    requestedStartTime: string;
+    requestedEndTime: string;
+    requestedAt: string;
+    respondedAt?: string;
+    reason?: string;
+    responseNote?: string;
+  };
+  rescheduleHistory?: Array<{
+    updatedBy: 'client' | 'expert' | 'system';
+    fromDate: string;
+    fromStartTime: string;
+    fromEndTime: string;
+    toDate: string;
+    toStartTime: string;
+    toEndTime: string;
+    updatedAt: string;
+    note?: string;
+  }>;
 }
 
 interface Client {
@@ -69,6 +92,13 @@ interface Booking {
   __v: number;
 }
 
+interface SlotOption {
+  startTime: string;
+  endTime: string;
+  startDisplayTime: string;
+  endDisplayTime: string;
+}
+
 const MentorBookings: React.FC = () => {
   const { user, loading: userLoading } = useCurrentUser();
   const router = useRouter();
@@ -79,6 +109,19 @@ const MentorBookings: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
   const [expandedSessionBookings, setExpandedSessionBookings] = useState<Set<string>>(new Set());
+  const [respondingAction, setRespondingAction] = useState<string | null>(null);
+  const [rescheduleModal, setRescheduleModal] = useState<{
+    bookingId: string;
+    session: Session | null;
+    date: string;
+    note: string;
+    selectedSlot: SlotOption | null;
+  } | null>(null);
+  const [mentorRescheduleSlots, setMentorRescheduleSlots] = useState<SlotOption[]>([]);
+  const [mentorRescheduleSlotsLoading, setMentorRescheduleSlotsLoading] = useState(false);
+  const [mentorRescheduleSlotsError, setMentorRescheduleSlotsError] = useState<string | null>(null);
+  const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const toggleBookingDetails = (bookingId: string) => {
     setExpandedBookings(prev => {
@@ -102,6 +145,140 @@ const MentorBookings: React.FC = () => {
       }
       return newSet;
     });
+  };
+
+  const fetchMentorRescheduleSlots = useCallback(async (sessionData: Session, targetDate: string, preferredStart?: string | null) => {
+    if (!sessionData?.expertUserId || !targetDate) {
+      setMentorRescheduleSlots([]);
+      return;
+    }
+    setMentorRescheduleSlotsLoading(true);
+    setMentorRescheduleSlotsError(null);
+    try {
+      const sessionDuration = typeof sessionData.duration === 'number' ? sessionData.duration : null;
+      let durationMinutes = sessionDuration && sessionDuration > 0 ? sessionDuration : null;
+      if (!durationMinutes && sessionData.startTime && sessionData.endTime) {
+        const startTimeObj = new Date(`2000-01-01T${sessionData.startTime}:00`);
+        const endTimeObj = new Date(`2000-01-01T${sessionData.endTime}:00`);
+        durationMinutes = Math.round((endTimeObj.getTime() - startTimeObj.getTime()) / (1000 * 60));
+      }
+      if (!durationMinutes || durationMinutes < 15) {
+        durationMinutes = 30;
+      }
+
+      const response = await availabilityApi.getConsecutiveSlotsByUserId(
+        sessionData.expertUserId,
+        targetDate,
+        durationMinutes,
+        sessionData.sessionId
+      );
+      const consecutiveSlots = response?.data?.consecutiveSlots || [];
+      const options: SlotOption[] = consecutiveSlots
+        .filter((slot: any) => slot.available)
+        .map((slot: any) => ({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          startDisplayTime: slot.startDisplayTime,
+          endDisplayTime: slot.endDisplayTime
+        }));
+      setMentorRescheduleSlots(options);
+
+      if (preferredStart) {
+        const matching = options.find(slot => slot.startTime === preferredStart);
+        if (matching) {
+          setRescheduleModal(prev => prev ? { ...prev, selectedSlot: matching } : prev);
+        }
+      } else {
+        setRescheduleModal(prev => prev ? { ...prev, selectedSlot: null } : prev);
+      }
+    } catch (err: any) {
+      console.error('Error fetching mentor reschedule slots:', err);
+      setMentorRescheduleSlots([]);
+      setMentorRescheduleSlotsError(err?.response?.data?.error || 'Unable to load available slots');
+    } finally {
+      setMentorRescheduleSlotsLoading(false);
+    }
+  }, []);
+
+  const handleRescheduleResponse = async (bookingId: string, sessionId: string, action: 'approve' | 'reject') => {
+    const actionKey = `${sessionId}-${action}`;
+    try {
+      setRespondingAction(actionKey);
+      await bookingApi.respondSessionReschedule(bookingId, sessionId, action);
+      setToastMessage({
+        type: 'success',
+        message: action === 'approve' ? 'Reschedule approved and updated.' : 'Reschedule request declined.'
+      });
+      await fetchBookings(currentPage);
+    } catch (err: any) {
+      setToastMessage({
+        type: 'error',
+        message: err?.response?.data?.error || err?.message || 'Failed to update reschedule request.'
+      });
+    } finally {
+      setRespondingAction(null);
+    }
+  };
+
+  const openMentorRescheduleModal = (bookingId: string, session: Session) => {
+    const initialDate = formatDateInputValue(session.scheduledDate);
+    setRescheduleModal({
+      bookingId,
+      session,
+      date: initialDate,
+      note: '',
+      selectedSlot: null
+    });
+    setMentorRescheduleSlots([]);
+    setMentorRescheduleSlotsError(null);
+    fetchMentorRescheduleSlots(session, initialDate, session.startTime);
+  };
+
+  const closeMentorRescheduleModal = () => {
+    if (rescheduleSubmitting) return;
+    setRescheduleModal(null);
+    setMentorRescheduleSlots([]);
+    setMentorRescheduleSlotsError(null);
+  };
+
+  const handleMentorDateChange = (newDate: string) => {
+    if (!rescheduleModal?.session) return;
+    const sessionData = rescheduleModal.session;
+    setRescheduleModal(prev => prev ? { ...prev, date: newDate, selectedSlot: null } : prev);
+    setMentorRescheduleSlots([]);
+    setMentorRescheduleSlotsError(null);
+    fetchMentorRescheduleSlots(sessionData, newDate);
+  };
+
+  const handleMentorReschedule = async () => {
+    if (!rescheduleModal?.session || !rescheduleModal.date || !rescheduleModal.selectedSlot) return;
+    try {
+      setRescheduleSubmitting(true);
+      await bookingApi.mentorRescheduleSession(
+        rescheduleModal.bookingId,
+        rescheduleModal.session.sessionId,
+        {
+          scheduledDate: rescheduleModal.date,
+          startTime: rescheduleModal.selectedSlot.startTime,
+          reason: rescheduleModal.note?.trim() ? rescheduleModal.note.trim() : undefined
+        }
+      );
+      setToastMessage({
+        type: 'success',
+        message: 'Session has been rescheduled.'
+      });
+      setRescheduleModal(null);
+      setMentorRescheduleSlots([]);
+      setMentorRescheduleSlotsError(null);
+      await fetchBookings(currentPage);
+    } catch (err: any) {
+      setToastMessage({
+        type: 'error',
+        message: err?.response?.data?.error || err?.message || 'Failed to reschedule session.'
+      });
+    } finally {
+      setRescheduleSubmitting(false);
+    }
   };
 
   const fetchBookings = async (page: number = 1) => {
@@ -153,6 +330,12 @@ const MentorBookings: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userLoading]);
 
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -168,6 +351,26 @@ const MentorBookings: React.FC = () => {
       hour12: true,
     });
   };
+
+const formatDateInputValue = (value?: string) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
+const getRescheduleStatusClasses = (status: string) => {
+  switch (status) {
+    case 'approved':
+      return 'bg-green-50 border-green-200 text-green-700';
+    case 'rejected':
+      return 'bg-red-50 border-red-200 text-red-700';
+    case 'pending':
+      return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+    default:
+      return 'bg-gray-50 border-gray-200 text-gray-600';
+  }
+};
 
   const getSessionTypeIcon = (type: string) => {
     switch (type) {
@@ -307,6 +510,18 @@ const MentorBookings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {toastMessage && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            toastMessage.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}
+        >
+          {toastMessage.message}
+        </div>
+      )}
 
       {/* Bookings List */}
       {paidBookings.length === 0 ? (
@@ -565,10 +780,17 @@ const MentorBookings: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Reschedule
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {booking.sessions.map((session) => (
+                      {booking.sessions.map((session) => {
+                        const isApproving = respondingAction === `${session.sessionId}-approve`;
+                        const isRejecting = respondingAction === `${session.sessionId}-reject`;
+                        const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
+                        return (
                         <tr key={session.sessionId} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -612,8 +834,48 @@ const MentorBookings: React.FC = () => {
                               </div>
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {session.rescheduleRequest ? (
+                              <div className={`text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)} mb-3`}>
+                                <p className="font-semibold">Request from {session.rescheduleRequest.requestedBy}</p>
+                                <p className="mt-1">
+                                  {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
+                                </p>
+                                {session.rescheduleRequest.reason && (
+                                  <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500 mb-3">No reschedule requests</p>
+                            )}
+                            {pendingClientRequest && (
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <button
+                                  onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
+                                  disabled={isApproving}
+                                  className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
+                                >
+                                  {isApproving ? 'Approving...' : 'Approve'}
+                                </button>
+                                <button
+                                  onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
+                                  disabled={isRejecting}
+                                  className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
+                                >
+                                  {isRejecting ? 'Rejecting...' : 'Decline'}
+                                </button>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => openMentorRescheduleModal(booking._id, session)}
+                              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 w-full"
+                            >
+                              Reschedule session
+                            </button>
+                          </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -622,7 +884,11 @@ const MentorBookings: React.FC = () => {
                 {/* Mobile Card View */}
                 {expandedSessionBookings.has(booking._id) && (
                 <div className="md:hidden space-y-4">
-                  {booking.sessions.map((session) => (
+                  {booking.sessions.map((session) => {
+                    const isApproving = respondingAction === `${session.sessionId}-approve`;
+                    const isRejecting = respondingAction === `${session.sessionId}-reject`;
+                    const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
+                    return (
                     <div key={session.sessionId} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
@@ -665,8 +931,44 @@ const MentorBookings: React.FC = () => {
                           <p className="text-gray-600 text-xs">ID: {session.expertUserId}</p>
                         </div>
                       </div>
+                      {session.rescheduleRequest && (
+                        <div className={`mt-3 text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)}`}>
+                          <p className="font-semibold">Reschedule ({session.rescheduleRequest.requestedBy})</p>
+                          <p className="mt-1">
+                            {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
+                          </p>
+                          {session.rescheduleRequest.reason && (
+                            <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
+                          )}
+                        </div>
+                      )}
+                      {pendingClientRequest && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
+                            disabled={isApproving}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
+                          >
+                            {isApproving ? 'Approving...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
+                            disabled={isRejecting}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
+                          >
+                            {isRejecting ? 'Declining...' : 'Decline'}
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => openMentorRescheduleModal(booking._id, session)}
+                        className="mt-3 w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        Reschedule session
+                      </button>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
                 )}
               </div>
@@ -698,6 +1000,108 @@ const MentorBookings: React.FC = () => {
                   Next
                 </button>
               </div>
+      )}
+      {rescheduleModal?.session && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              onClick={closeMentorRescheduleModal}
+              disabled={rescheduleSubmitting}
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Reschedule Session</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Pick a new slot for this session. The client will be notified automatically.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
+                <input
+                  type="date"
+                  value={rescheduleModal.date}
+                  min={formatDateInputValue(new Date().toISOString())}
+                  onChange={(e) => handleMentorDateChange(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Available slots</label>
+                  <button
+                    type="button"
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => rescheduleModal.session && fetchMentorRescheduleSlots(rescheduleModal.session, rescheduleModal.date, rescheduleModal.selectedSlot?.startTime || null)}
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-2">
+                  {mentorRescheduleSlotsLoading ? (
+                    <div className="py-6 text-center text-sm text-gray-500">Loading available slots...</div>
+                  ) : mentorRescheduleSlotsError ? (
+                    <div className="py-4 text-sm text-red-600">{mentorRescheduleSlotsError}</div>
+                  ) : mentorRescheduleSlots.length === 0 ? (
+                    <div className="py-4 text-sm text-gray-500">No slots available for this date.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {mentorRescheduleSlots.map((slot) => (
+                        <label
+                          key={slot.startTime}
+                          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${
+                            rescheduleModal.selectedSlot?.startTime === slot.startTime
+                              ? 'border-blue-600 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {slot.startDisplayTime} – {slot.endDisplayTime}
+                            </div>
+                            <div className="text-xs text-gray-500">{slot.startTime} - {slot.endTime}</div>
+                          </div>
+                          <input
+                            type="radio"
+                            className="h-4 w-4 text-blue-600"
+                            checked={rescheduleModal.selectedSlot?.startTime === slot.startTime}
+                            onChange={() => setRescheduleModal(prev => prev ? ({ ...prev, selectedSlot: slot }) : prev)}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Note to client (optional)</label>
+                <textarea
+                  rows={3}
+                  value={rescheduleModal.note}
+                  onChange={(e) => setRescheduleModal(prev => prev ? { ...prev, note: e.target.value } : prev)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                  placeholder="Share the reason for the change or preparation notes."
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={closeMentorRescheduleModal}
+                disabled={rescheduleSubmitting}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMentorReschedule}
+                disabled={rescheduleSubmitting || !rescheduleModal.date || !rescheduleModal.selectedSlot}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-60"
+              >
+                {rescheduleSubmitting ? 'Rescheduling...' : 'Confirm reschedule'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -526,6 +526,7 @@ router.get('/mentor/:mentorId', async (req, res, next) => {
 router.get('/userid/:user_id/consecutive-slots/:date/:duration', async (req, res, next) => {
   try {
     const { user_id, date, duration } = req.params;
+    const excludeSessionId = typeof req.query.excludeSessionId === 'string' ? req.query.excludeSessionId : undefined;
     
     // Validate user_id format
     if (!/^\d{4}$/.test(user_id)) {
@@ -591,6 +592,11 @@ router.get('/userid/:user_id/consecutive-slots/:date/:duration', async (req, res
           session.paymentStatus === 'paid' &&
           new Date(session.scheduledDate).toDateString() === selectedDate.toDateString()
         ) {
+          const sessionIdString = session.sessionId ? session.sessionId.toString() : null;
+          const isExcluded = excludeSessionId && sessionIdString === excludeSessionId;
+          if (isExcluded) {
+            continue;
+          }
           const start = new Date(`2000-01-01T${session.startTime}:00`);
           const end = new Date(`2000-01-01T${session.endTime}:00`);
           const t = new Date(start);

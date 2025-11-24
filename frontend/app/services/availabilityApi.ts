@@ -174,7 +174,7 @@ class AvailabilityApi {
     }
 
     // Get available consecutive time slots for a specific mentor by 4-digit user_id on a specific date for a specific duration
-    async getConsecutiveSlotsByUserId(user_id: string, date: string, duration: number): Promise<{ 
+    async getConsecutiveSlotsByUserId(user_id: string, date: string, duration: number, excludeSessionId?: string): Promise<{ 
       success: boolean; 
       data: { 
         consecutiveSlots: Array<{ 
@@ -192,8 +192,13 @@ class AvailabilityApi {
       } 
     }> {
       try {
+        const params = new URLSearchParams();
+        if (excludeSessionId) {
+          params.append('excludeSessionId', excludeSessionId);
+        }
+        const querySuffix = params.toString() ? `?${params.toString()}` : '';
         const response = await axios.get(
-          `${API_BASE_URL}/api/availability/userid/${user_id}/consecutive-slots/${date}/${duration}`,
+          `${API_BASE_URL}/api/availability/userid/${user_id}/consecutive-slots/${date}/${duration}${querySuffix}`,
           { headers: this.getAuthHeaders() }
         );
         return response.data;

@@ -7,7 +7,7 @@ import User from '../models/User';
 import mongoose, { Types } from 'mongoose';
 import SocketService from '../services/socketService';
 import { sendSessionEmail } from '../services/mailer';
-import { sendSessionConfirmationEmail, sendMentorSessionNotification } from '../services/sessionEmailTemplate';
+import { sendSessionConfirmationEmail, sendMentorSessionNotification, sendSessionRescheduleEmail, sendMentorRescheduleEmail } from '../services/sessionEmailTemplate';
 import { createMeetEventForSession } from '../services/googleCalendar';
 
 const router = express.Router();
@@ -23,6 +23,194 @@ export const setSocketService = (service: SocketService) => {
 const STANDARD_DURATION_PRICING: Record<number, number> = {
   30: 750,
   60: 1150
+};
+
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(':').map((value) => parseInt(value, 10));
+  return hours * 60 + minutes;
+};
+
+const calculateEndTime = (startTime: string, duration: number) => {
+  const startMinutes = toMinutes(startTime);
+  const totalMinutes = startMinutes + duration;
+  const endHour = Math.floor(totalMinutes / 60) % 24;
+  const endMinute = totalMinutes % 60;
+  return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+};
+
+const getDayBounds = (date: Date) => {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+};
+
+const hasScheduleConflict = async ({
+  expertId,
+  scheduledDate,
+  startTime,
+  endTime,
+  sessionIdToExclude
+}: {
+  expertId: mongoose.Types.ObjectId;
+  scheduledDate: Date;
+  startTime: string;
+  endTime: string;
+  sessionIdToExclude?: mongoose.Types.ObjectId;
+}) => {
+  const { start, end } = getDayBounds(scheduledDate);
+
+  const conflict = await Booking.findOne({
+    sessions: {
+      $elemMatch: {
+        expertId,
+        scheduledDate: { $gte: start, $lt: end },
+        startTime: { $lt: endTime },
+        endTime: { $gt: startTime },
+        status: { $nin: ['cancelled'] },
+        paymentStatus: { $in: ['pending', 'paid', 'confirmed'] },
+        ...(sessionIdToExclude ? { sessionId: { $ne: sessionIdToExclude } } : {})
+      }
+    }
+  });
+
+  return Boolean(conflict);
+};
+
+const isPastDateTime = (date: Date, startTime: string) => {
+  const dateTime = new Date(date);
+  const [hours, minutes] = startTime.split(':').map((value) => parseInt(value, 10));
+  dateTime.setHours(hours, minutes, 0, 0);
+  return dateTime <= new Date();
+};
+
+const isMentorForSession = (session: ISession, user: any) => {
+  if (!session || !user) return false;
+  if (session.expertId && session.expertId.toString() === user._id.toString()) {
+    return true;
+  }
+  if (session.expertUserId && user.user_id && session.expertUserId === user.user_id) {
+    return true;
+  }
+  return false;
+};
+
+const formatSessionDateForEmail = (date: Date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const getDisplayName = (user: any, fallback: string) => {
+  if (!user) return fallback;
+  const parts = [user.firstName, user.lastName].filter(Boolean);
+  if (parts.length === 0) {
+    if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return fallback;
+  }
+  return parts.join(' ');
+};
+
+interface RescheduleNotificationContext {
+  booking: any;
+  session: ISession;
+  oldDate: Date;
+  oldStartTime: string;
+  oldEndTime: string;
+  note?: string;
+}
+
+const handleRescheduleFollowups = async ({
+  booking,
+  session,
+  oldDate,
+  oldStartTime,
+  oldEndTime,
+  note
+}: RescheduleNotificationContext) => {
+  try {
+    const clientUser = await User.findById(booking.clientId);
+    const expertProfile = await Expert.findById(session.expertId);
+    let mentorUser = null;
+    if (session.expertUserId) {
+      mentorUser = await User.findOne({ user_id: session.expertUserId });
+    }
+    if (!mentorUser && expertProfile?.userId) {
+      mentorUser = await User.findById(expertProfile.userId);
+    }
+
+    const newDate = new Date(session.scheduledDate);
+    const oldTimeRange = `${oldStartTime} - ${oldEndTime}`;
+    const newTimeRange = `${session.startTime} - ${session.endTime}`;
+    let meetingLink = session.meetingLink;
+
+    const expertUserObjectId = mentorUser?._id || expertProfile?.userId;
+    const expertEmail = (mentorUser as any)?.mentor_email || mentorUser?.email || session.expertEmail;
+    const clientEmail = clientUser?.email || booking.clientEmail;
+
+    if (expertUserObjectId && (clientEmail || expertEmail)) {
+      try {
+        const calendarResult = await createMeetEventForSession({
+          expertUserObjectId,
+          clientEmail: clientEmail || booking.clientEmail,
+          expertEmail,
+          title: `[Confiido] - Session with ${getDisplayName(mentorUser, 'Mentor')}`,
+          description: note || session.notes || undefined,
+          scheduledDate: newDate,
+          startTime: session.startTime,
+          endTime: session.endTime
+        });
+        if (calendarResult?.hangoutLink) {
+          meetingLink = calendarResult.hangoutLink;
+          session.meetingLink = calendarResult.hangoutLink;
+        }
+      } catch (calendarError) {
+        console.error('❌ Failed to regenerate Google Meet link after reschedule:', calendarError);
+      }
+    }
+
+    const basePayload = {
+      oldDate: formatSessionDateForEmail(oldDate),
+      oldTimeRange,
+      newDate: formatSessionDateForEmail(newDate),
+      newTimeRange,
+      meetingLink,
+      timeZone: 'IST',
+      additionalNote: note
+    };
+
+    if (clientEmail) {
+      await sendSessionRescheduleEmail(clientEmail, {
+        ...basePayload,
+        userName: getDisplayName(clientUser, 'there'),
+        mentorName: getDisplayName(mentorUser, 'your mentor')
+      });
+    }
+
+    const mentorNotificationEmail = expertEmail || session.expertEmail;
+    if (mentorNotificationEmail) {
+      await sendMentorRescheduleEmail(mentorNotificationEmail, {
+        ...basePayload,
+        clientName: getDisplayName(clientUser, 'Client')
+      });
+    }
+  } catch (notificationError) {
+    console.error('❌ Failed to process reschedule notifications:', notificationError);
+  }
 };
 
 const ensureExpertProfile = async (expertUserId: string) => {
@@ -727,6 +915,405 @@ router.put('/:id/cancel', protect, [
     res.json({
       success: true,
       message: 'Session cancelled successfully',
+      data: { booking, session }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/bookings/:bookingId/sessions/:sessionId/reschedule-request
+// @desc    Allow a user to request rescheduling an upcoming session
+// @access  Private (Client)
+router.post('/:bookingId/sessions/:sessionId/reschedule-request', protect, [
+  body('scheduledDate')
+    .isISO8601()
+    .withMessage('Invalid date format'),
+  body('startTime')
+    .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Invalid time format'),
+  body('reason')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Reason cannot exceed 500 characters')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { bookingId, sessionId } = req.params;
+    const { scheduledDate, startTime, reason } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    if (booking.clientId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to reschedule this session'
+      });
+    }
+
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    if (session.paymentStatus !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        error: 'Only paid sessions can be rescheduled'
+      });
+    }
+
+    if (session.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cancelled sessions cannot be rescheduled'
+      });
+    }
+
+    if (session.rescheduleRequest && session.rescheduleRequest.status === 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: 'There is already a pending reschedule request for this session'
+      });
+    }
+
+    const requestedDate = new Date(scheduledDate);
+    if (Number.isNaN(requestedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid scheduled date'
+      });
+    }
+
+    if (isPastDateTime(requestedDate, startTime)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reschedule date must be in the future'
+      });
+    }
+
+    const endTime = calculateEndTime(startTime, session.duration);
+    const expertObjectId = session.expertId as mongoose.Types.ObjectId;
+
+    const conflict = await hasScheduleConflict({
+      expertId: expertObjectId,
+      scheduledDate: requestedDate,
+      startTime,
+      endTime,
+      sessionIdToExclude: session.sessionId as mongoose.Types.ObjectId
+    });
+
+    if (conflict) {
+      return res.status(400).json({
+        success: false,
+        error: 'The selected time slot is no longer available. Please choose another time.'
+      });
+    }
+
+    session.rescheduleRequest = {
+      requestedBy: 'client',
+      status: 'pending',
+      requestedDate,
+      requestedStartTime: startTime,
+      requestedEndTime: endTime,
+      requestedAt: new Date(),
+      reason
+    };
+
+    booking.markModified('sessions');
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: 'Reschedule request sent to mentor',
+      data: { booking, session }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/bookings/:bookingId/sessions/:sessionId/reschedule-request/respond
+// @desc    Allow mentor to approve or reject a reschedule request
+// @access  Private (Mentor)
+router.post('/:bookingId/sessions/:sessionId/reschedule-request/respond', protect, [
+  body('action')
+    .isIn(['approve', 'reject'])
+    .withMessage('Action must be approve or reject'),
+  body('mentorNote')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Note cannot exceed 500 characters')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { bookingId, sessionId } = req.params;
+    const { action, mentorNote } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    if (!isMentorForSession(session, req.user)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to process this reschedule request'
+      });
+    }
+
+    if (!session.rescheduleRequest || session.rescheduleRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        error: 'There is no pending reschedule request to process'
+      });
+    }
+
+    const previousSchedule = {
+      date: new Date(session.scheduledDate),
+      startTime: session.startTime,
+      endTime: session.endTime
+    };
+
+    if (action === 'reject') {
+      session.rescheduleRequest.status = 'rejected';
+      session.rescheduleRequest.respondedAt = new Date();
+      session.rescheduleRequest.responseNote = mentorNote;
+
+      booking.markModified('sessions');
+      await booking.save();
+
+      return res.json({
+        success: true,
+        message: 'Reschedule request rejected',
+        data: { booking, session }
+      });
+    }
+
+    const requestedDate = new Date(session.rescheduleRequest.requestedDate);
+    const requestedStartTime = session.rescheduleRequest.requestedStartTime;
+    const requestedEndTime = session.rescheduleRequest.requestedEndTime;
+
+    const expertObjectId = session.expertId as mongoose.Types.ObjectId;
+    const conflict = await hasScheduleConflict({
+      expertId: expertObjectId,
+      scheduledDate: requestedDate,
+      startTime: requestedStartTime,
+      endTime: requestedEndTime,
+      sessionIdToExclude: session.sessionId as mongoose.Types.ObjectId
+    });
+
+    if (conflict) {
+      return res.status(400).json({
+        success: false,
+        error: 'The requested time slot is no longer available'
+      });
+    }
+
+    session.rescheduleHistory = session.rescheduleHistory || [];
+    session.rescheduleHistory.push({
+      updatedBy: 'expert',
+      fromDate: session.scheduledDate,
+      fromStartTime: session.startTime,
+      fromEndTime: session.endTime,
+      toDate: requestedDate,
+      toStartTime: requestedStartTime,
+      toEndTime: requestedEndTime,
+      updatedAt: new Date(),
+      note: mentorNote || 'Client reschedule request approved'
+    });
+
+    session.scheduledDate = requestedDate;
+    session.startTime = requestedStartTime;
+    session.endTime = requestedEndTime;
+
+    session.rescheduleRequest.status = 'approved';
+    session.rescheduleRequest.respondedAt = new Date();
+    session.rescheduleRequest.responseNote = mentorNote;
+
+    await handleRescheduleFollowups({
+      booking,
+      session,
+      oldDate: previousSchedule.date,
+      oldStartTime: previousSchedule.startTime,
+      oldEndTime: previousSchedule.endTime,
+      note: mentorNote
+    });
+
+    booking.markModified('sessions');
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: 'Session rescheduled successfully',
+      data: { booking, session }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   PUT /api/bookings/:bookingId/sessions/:sessionId/reschedule
+// @desc    Allow mentor to directly reschedule a session without client request
+// @access  Private (Mentor)
+router.put('/:bookingId/sessions/:sessionId/reschedule', protect, [
+  body('scheduledDate')
+    .isISO8601()
+    .withMessage('Invalid date format'),
+  body('startTime')
+    .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Invalid time format'),
+  body('reason')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Reason cannot exceed 500 characters')
+], async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { bookingId, sessionId } = req.params;
+    const { scheduledDate, startTime, reason } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Booking not found'
+      });
+    }
+
+    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: 'Session not found'
+      });
+    }
+
+    if (!isMentorForSession(session, req.user)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to reschedule this session'
+      });
+    }
+
+    const previousSchedule = {
+      date: new Date(session.scheduledDate),
+      startTime: session.startTime,
+      endTime: session.endTime
+    };
+
+    const targetDate = new Date(scheduledDate);
+    if (Number.isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid scheduled date'
+      });
+    }
+
+    if (isPastDateTime(targetDate, startTime)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reschedule date must be in the future'
+      });
+    }
+
+    const endTime = calculateEndTime(startTime, session.duration);
+    const expertObjectId = session.expertId as mongoose.Types.ObjectId;
+
+    const conflict = await hasScheduleConflict({
+      expertId: expertObjectId,
+      scheduledDate: targetDate,
+      startTime,
+      endTime,
+      sessionIdToExclude: session.sessionId as mongoose.Types.ObjectId
+    });
+
+    if (conflict) {
+      return res.status(400).json({
+        success: false,
+        error: 'The selected time slot is no longer available. Please choose another time.'
+      });
+    }
+
+    session.rescheduleHistory = session.rescheduleHistory || [];
+    session.rescheduleHistory.push({
+      updatedBy: 'expert',
+      fromDate: session.scheduledDate,
+      fromStartTime: session.startTime,
+      fromEndTime: session.endTime,
+      toDate: targetDate,
+      toStartTime: startTime,
+      toEndTime: endTime,
+      updatedAt: new Date(),
+      note: reason
+    });
+
+    if (session.rescheduleRequest && session.rescheduleRequest.status === 'pending') {
+      session.rescheduleRequest.status = 'cancelled';
+      session.rescheduleRequest.respondedAt = new Date();
+      session.rescheduleRequest.responseNote = 'Mentor manually rescheduled this session';
+    }
+
+    session.scheduledDate = targetDate;
+    session.startTime = startTime;
+    session.endTime = endTime;
+
+    await handleRescheduleFollowups({
+      booking,
+      session,
+      oldDate: previousSchedule.date,
+      oldStartTime: previousSchedule.startTime,
+      oldEndTime: previousSchedule.endTime,
+      note: reason
+    });
+
+    booking.markModified('sessions');
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: 'Session rescheduled successfully',
       data: { booking, session }
     });
   } catch (error) {

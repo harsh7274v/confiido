@@ -221,6 +221,65 @@ class BookingApi {
       throw error;
     }
   }
+
+  async requestSessionReschedule(bookingId: string, sessionId: string, payload: { scheduledDate: string; startTime: string; reason?: string }) {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/bookings/${bookingId}/sessions/${sessionId}/reschedule-request`,
+        payload,
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error requesting session reschedule:', error);
+      throw error;
+    }
+  }
+
+  async respondSessionReschedule(bookingId: string, sessionId: string, action: 'approve' | 'reject', mentorNote?: string) {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/bookings/${bookingId}/sessions/${sessionId}/reschedule-request/respond`,
+        { action, mentorNote },
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error responding to reschedule request:', error);
+      throw error;
+    }
+  }
+
+  async mentorRescheduleSession(bookingId: string, sessionId: string, payload: { scheduledDate: string; startTime: string; reason?: string }) {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/bookings/${bookingId}/sessions/${sessionId}/reschedule`,
+        payload,
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error rescheduling session as mentor:', error);
+      throw error;
+    }
+  }
+
+  async getAvailableConsecutiveSlots(expertUserId: string, date: string, duration: number, excludeSessionId?: string) {
+    try {
+      const params = new URLSearchParams();
+      if (excludeSessionId) {
+        params.append('excludeSessionId', excludeSessionId);
+      }
+      const querySuffix = params.toString() ? `?${params.toString()}` : '';
+      const response = await axios.get(
+        `${API_BASE_URL}/api/availability/userid/${expertUserId}/consecutive-slots/${date}/${duration}${querySuffix}`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [FRONTEND] Error fetching available slots:', error);
+      throw error;
+    }
+  }
 }
 
 export const bookingApi = new BookingApi();
