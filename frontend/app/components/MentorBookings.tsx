@@ -22,6 +22,7 @@ interface Session {
   price: number;
   currency: string;
   notes?: string;
+  meetingLink?: string;
   _id: string;
   createdAt: string;
   updatedAt: string;
@@ -281,7 +282,7 @@ const MentorBookings: React.FC = () => {
     }
   };
 
-  const fetchBookings = async (page: number = 1) => {
+  const fetchBookings = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -320,15 +321,25 @@ const MentorBookings: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     console.log('MentorBookings useEffect - user:', user, 'userLoading:', userLoading);
     if (user && !userLoading) {
       fetchBookings();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, userLoading]);
+  }, [user, userLoading, fetchBookings]);
+
+  // Auto-refresh bookings every 30 seconds
+  useEffect(() => {
+    if (!user || userLoading) return;
+
+    const interval = setInterval(() => {
+      fetchBookings(currentPage);
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, userLoading, currentPage, fetchBookings]);
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -775,7 +786,7 @@ const getRescheduleStatusClasses = (status: string) => {
                           Amount
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Expert Details
+                          Meeting Link
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
@@ -821,10 +832,23 @@ const getRescheduleStatusClasses = (status: string) => {
                             <div className="text-xs text-gray-500">{session.currency}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{session.expertEmail}</div>
-                            <div className="text-sm text-gray-500">
-                              Expert ID: {session.expertUserId}
-                            </div>
+                            {session.meetingLink ? (
+                              <a
+                                href={session.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+                                style={{ backgroundColor: '#3E5F44' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                              >
+                                <Video className="h-4 w-4" />
+                                <span>Join Meeting</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-500">Meeting link not available</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col space-y-1">
@@ -910,7 +934,7 @@ const getRescheduleStatusClasses = (status: string) => {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                         <div>
                           <p className="text-gray-500 text-xs">Date & Time</p>
                           <p className="font-medium text-gray-900">{formatDate(session.scheduledDate)}</p>
@@ -925,11 +949,28 @@ const getRescheduleStatusClasses = (status: string) => {
                           <p className="font-medium text-gray-900">₹{session.price}</p>
                           <p className="text-gray-600 text-xs">{session.currency}</p>
                         </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Expert Details</p>
-                          <p className="font-medium text-gray-900">{session.expertEmail}</p>
-                          <p className="text-gray-600 text-xs">ID: {session.expertUserId}</p>
-                        </div>
+                      </div>
+                      
+                      {/* Meeting Link Button - Full Width */}
+                      <div className="mb-4">
+                        <p className="text-gray-500 text-xs mb-2">Meeting Link</p>
+                        {session.meetingLink ? (
+                          <a
+                            href={session.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+                            style={{ backgroundColor: '#3E5F44' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                          >
+                            <Video className="h-4 w-4" />
+                            <span>Join Meeting</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-500">Meeting link not available</span>
+                        )}
                       </div>
                       {session.rescheduleRequest && (
                         <div className={`mt-3 text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)}`}>

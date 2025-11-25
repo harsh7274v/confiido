@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { availabilityApi, type TimeSlot, type AvailabilityPeriod } from '../../services/availabilityApi';
 
@@ -21,11 +21,7 @@ const AvailabilityManager: React.FC = () => {
     notes: ''
   });
 
-  useEffect(() => {
-    loadAvailabilities();
-  }, []);
-
-  const loadAvailabilities = async () => {
+  const loadAvailabilities = useCallback(async () => {
     try {
       setLoading(true);
       const response = await availabilityApi.getAvailability();
@@ -40,7 +36,20 @@ const AvailabilityManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAvailabilities();
+  }, [loadAvailabilities]);
+
+  // Auto-refresh availability every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAvailabilities();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [loadAvailabilities]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
