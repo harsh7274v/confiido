@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  // Remove console.log statements in production builds
+  // This uses Next.js built-in SWC compiler to remove console statements
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // Keep console.error and console.warn for critical debugging
+    } : false,
+  },
   images: {
     remotePatterns: [
       {
