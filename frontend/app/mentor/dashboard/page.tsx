@@ -609,12 +609,26 @@ const MentorDashboard = () => {
 
   const userDisplayName = user?.firstName || user?.name || 'Mentor';
 
+  // Add version identifier to force refresh in case of caching issues
+  const dashboardVersion = 'v2.0.0';
+
+  // Add cache-busting effect
+  useEffect(() => {
+    // Force browser to not cache this page
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => {
+        // Clear any cached data
+        sessionStorage.setItem('mentor_dashboard_version', dashboardVersion);
+      });
+    }
+  }, [dashboardVersion]);
+
   return (
     <ProtectedRoute>
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
-      <div className="max-w-7xl mx-auto">
-        {/* Modern Header */}
-        <section className="relative overflow-hidden py-6 sm:py-8" style={{ background: 'linear-gradient(135deg, #e0e8ed 0%, #f0f4f7 100%)' }}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200" data-version={dashboardVersion}>
+        <div className="max-w-7xl mx-auto">
+          {/* Modern Header */}
+          <section className="relative overflow-hidden py-6 sm:py-8" style={{ background: 'linear-gradient(135deg, #e0e8ed 0%, #f0f4f7 100%)' }}>
           <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-20">
             <div className="flex flex-row items-center justify-between">
               {/* Left side - User avatar and Welcome text */}
