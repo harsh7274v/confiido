@@ -607,18 +607,51 @@ const MentorDashboard = () => {
     }
   };
 
-  const userDisplayName = user?.firstName || user?.name || 'Mentor';
+  const userDisplayName = user?.firstName 
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` 
+    : 'Mentor';
 
   // Add version identifier to force refresh in case of caching issues
-  const dashboardVersion = 'v2.0.0';
+  const dashboardVersion = 'v2.1.0';
 
-  // Add cache-busting effect
+  // Aggressive cache-busting effect
   useEffect(() => {
-    // Force browser to not cache this page
     if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        // Clear any cached data
+      // Set version immediately
+      const currentVersion = sessionStorage.getItem('mentor_dashboard_version');
+      
+      // If version doesn't match or doesn't exist, force reload
+      if (!currentVersion || currentVersion !== dashboardVersion) {
         sessionStorage.setItem('mentor_dashboard_version', dashboardVersion);
+        // Small delay to ensure state is set before reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+        return;
+      }
+
+      // Prevent browser back/forward cache
+      window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      });
+
+      // Add meta tags to prevent caching
+      const metaTags = [
+        { httpEquiv: 'Cache-Control', content: 'no-cache, no-store, must-revalidate' },
+        { httpEquiv: 'Pragma', content: 'no-cache' },
+        { httpEquiv: 'Expires', content: '0' }
+      ];
+
+      metaTags.forEach(tag => {
+        let meta = document.querySelector(`meta[http-equiv="${tag.httpEquiv}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('http-equiv', tag.httpEquiv);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', tag.content);
       });
     }
   }, [dashboardVersion]);
