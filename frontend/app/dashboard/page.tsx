@@ -1062,7 +1062,7 @@ export default function DashboardPage() {
         />
         
         {/* Main content */}
-        <main ref={mainContentRef} className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen">
+        <main ref={mainContentRef} className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen safe-area-main">
           {currentView === 'transactions' ? (
             <div className="w-full">
               <TransactionsPage />

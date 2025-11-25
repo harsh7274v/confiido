@@ -9,6 +9,8 @@
   --surface-light: #ffffff;
   --text-muted: #6b7280;
   --border: #e5e7eb;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body {
@@ -434,4 +436,21 @@ button:hover {
   opacity: 0.3;
   z-index: 0;
   pointer-events: none;
+}
+
+/* Safe area helpers for mobile/PWA layouts */
+.safe-area-main {
+  padding-top: var(--safe-area-top);
+}
+
+@media (max-width: 1023px) {
+  .safe-area-main {
+    padding-bottom: calc(var(--safe-area-bottom) + 80px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .safe-area-main {
+    padding-bottom: 0;
+  }
 }
