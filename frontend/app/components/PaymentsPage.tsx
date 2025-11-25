@@ -768,7 +768,7 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-8 safe-area-main">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <SkeletonLoader />
@@ -779,7 +779,7 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-4 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-4 sm:py-8 safe-area-main">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Modern Header */}
         <div className="mb-6 sm:mb-8 pt-12">

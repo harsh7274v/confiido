@@ -9,7 +9,6 @@ import Testimonials from './components/ui/testimonials';
 import { HeroGeometric } from './components/ui/shape-landing-hero';
 import { MoonLoader } from 'react-spinners';
 import { useAuth } from './contexts/AuthContext';
-import SessionLoadingScreen from './components/SessionLoadingScreen';
 import '/public/WEB/css/clash-grotesk.css';
 import '/public/web1/css/bespoke-stencil.css';
 import '/public/web1/css/clash-display.css';
@@ -61,49 +60,16 @@ export default function Home() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isSignupLoading, setIsSignupLoading] = useState(false);
-  const [isRestoringSession, setIsRestoringSession] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Handle mounting
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Check for existing session immediately on mount (for PWA)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      const sessionTimestamp = localStorage.getItem('sessionTimestamp');
-      
-      // If there's a valid session, show loading screen immediately
-      if (token && sessionTimestamp) {
-        console.log('📱 Existing session detected, showing loading screen...');
-        setIsRestoringSession(true);
-      }
-    }
-  }, []);
 
   // Auto-redirect logged-in users to dashboard
   useEffect(() => {
     const checkAuth = () => {
-      if (typeof window === 'undefined') return; // Server-side, skip
-      
       const token = localStorage.getItem('token');
-      const userRole = localStorage.getItem('userRole');
       
-      // If user is already authenticated, redirect to appropriate dashboard
+      // If user is already authenticated, redirect to dashboard
       if (user || token) {
         console.log('User already logged in, redirecting to dashboard from home page');
-        
-        // Redirect based on role
-        if (userRole === 'expert') {
-          router.replace('/mentor/dashboard');
-        } else {
-          router.replace('/dashboard');
-        }
-      } else {
-        // No valid session, hide loading screen
-        setIsRestoringSession(false);
+        router.push('/dashboard');
       }
     };
 
@@ -556,18 +522,8 @@ export default function Home() {
     },
   ];
 
-  // Don't render anything server-side to prevent hydration issues
-  if (!isMounted) {
-    return null;
-  }
-
-  // Show loading screen if restoring session (PWA reopen) or during initial load if user is logged in
-  if (isRestoringSession || (loading && user)) {
-    return <SessionLoadingScreen />;
-  }
-
   return (
-    <div className="min-h-screen overflow-x-hidden relative" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen overflow-x-hidden relative safe-area-main" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {/* Simple, performant background pattern - removed for clean look */}
       
       <style jsx global>{`
@@ -2188,10 +2144,10 @@ export default function Home() {
                 <div className="bg-gray-50 p-6 rounded-xl">
                   <p className="text-sm text-gray-600 mb-2">Email us at:</p>
                   <a 
-                    href="mailto:confiido.io@gmail.com"
+                    href="mailto:confiido.io+support@gmail.com"
                     className="text-2xl font-semibold text-black hover:text-gray-700 transition-colors break-all"
                   >
-                    confiido.io@gmail.com
+                    confiido.io+support@gmail.com
                   </a>
                 </div>
 
