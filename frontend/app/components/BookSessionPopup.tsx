@@ -567,17 +567,9 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                     <span className="text-sm text-red-600">{error}</span>
                   ) : availableSlots.length > 0 ? (
                     <div className="space-y-1">
-                      <span className="text-sm text-green-600">
-                        ✅ {availableSlots.filter(slot => slot.available).length} individual slots available on {new Date(date).toLocaleDateString()}
-                      </span>
                       {availableSlots.some(slot => !slot.available) && (
                         <span className="text-sm text-red-600 block">
                           🔒 {availableSlots.filter(slot => !slot.available).length} slots already booked
-                        </span>
-                      )}
-                      {service && consecutiveSlots.length > 0 && (
-                        <span className="text-sm text-blue-600 block">
-                          📅 {consecutiveSlots.length} {getSelectedServiceDuration()} slots available
                         </span>
                       )}
                     </div>

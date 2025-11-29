@@ -111,6 +111,8 @@ const MentorBookings: React.FC = () => {
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
   const [expandedSessionBookings, setExpandedSessionBookings] = useState<Set<string>>(new Set());
   const [respondingAction, setRespondingAction] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [rescheduleModal, setRescheduleModal] = useState<{
     bookingId: string;
     session: Session | null;
@@ -330,13 +332,17 @@ const MentorBookings: React.FC = () => {
     }
   }, [user, userLoading, fetchBookings]);
 
-  // Auto-refresh bookings every 30 seconds
+  // Auto-refresh bookings every 3 minutes
   useEffect(() => {
     if (!user || userLoading) return;
 
     const interval = setInterval(() => {
-      fetchBookings(currentPage);
-    }, 30000); // Refresh every 30 seconds
+      fetchBookings(currentPage).catch((err) => {
+        if (err?.response?.status === 429) {
+          console.warn('⚠️ Rate limit reached, skipping this refresh');
+        }
+      });
+    }, 180000); // Refresh every 3 minutes
 
     return () => clearInterval(interval);
   }, [user, userLoading, currentPage, fetchBookings]);
@@ -346,6 +352,24 @@ const MentorBookings: React.FC = () => {
     const timer = setTimeout(() => setToastMessage(null), 5000);
     return () => clearTimeout(timer);
   }, [toastMessage]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    if (showFilterDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -511,6 +535,25 @@ const getRescheduleStatusClasses = (status: string) => {
     .map((b) => ({ ...b, sessions: b.sessions.filter((s) => s.paymentStatus === 'paid') }))
     .filter((b) => b.sessions.length > 0);
 
+  // Filter bookings based on session date/time
+  const filteredBookings = paidBookings.filter((booking) => {
+    if (filterStatus === 'all') return true;
+    
+    const now = new Date();
+    const hasUpcoming = booking.sessions.some(session => {
+      const sessionDateTime = new Date(`${session.scheduledDate}T${session.endTime}`);
+      return sessionDateTime > now;
+    });
+    
+    if (filterStatus === 'upcoming') {
+      return hasUpcoming;
+    } else if (filterStatus === 'completed') {
+      return !hasUpcoming;
+    }
+    
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200">
@@ -545,10 +588,63 @@ const getRescheduleStatusClasses = (status: string) => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
-              Showing {paidBookings.length} bookings
+              Showing {filteredBookings.length} bookings
             </h3>
+            
+            {/* Filter Dropdown */}
+            <div className="relative filter-dropdown-container">
+              <button
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+              >
+                <span>
+                  {filterStatus === 'all' && 'All Sessions'}
+                  {filterStatus === 'upcoming' && 'Upcoming'}
+                  {filterStatus === 'completed' && 'Completed'}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showFilterDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <button
+                    onClick={() => {
+                      setFilterStatus('all');
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg ${
+                      filterStatus === 'all' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    All Sessions
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilterStatus('upcoming');
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 ${
+                      filterStatus === 'upcoming' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    Upcoming
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilterStatus('completed');
+                      setShowFilterDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 last:rounded-b-lg ${
+                      filterStatus === 'completed' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    Completed
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          {paidBookings.map((booking) => (
+          {filteredBookings.map((booking) => (
             <div key={booking._id} className="bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden">
               {/* User Header */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-100">

@@ -30,9 +30,15 @@ const AvailabilityManager: React.FC = () => {
       console.log('🔍 [FRONTEND] Array length:', response.data.availability?.length);
       setAvailabilityPeriods(response.data.availability);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as { response?: { data?: { error?: string; message?: string }; status?: number }; message?: string };
       console.error('❌ [FRONTEND] Error loading availabilities:', error);
-      setError('Failed to load availability: ' + (err.response?.data?.error || err.message));
+      
+      // Don't show error for rate limiting, just log it
+      if (err.response?.status === 429) {
+        console.warn('⚠️ Rate limit reached, skipping this refresh');
+      } else {
+        setError('Failed to load availability: ' + (err.response?.data?.error || err.response?.data?.message || err.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -42,11 +48,11 @@ const AvailabilityManager: React.FC = () => {
     loadAvailabilities();
   }, [loadAvailabilities]);
 
-  // Auto-refresh availability every 30 seconds
+  // Auto-refresh availability every 5 minutes (reduced frequency)
   useEffect(() => {
     const interval = setInterval(() => {
       loadAvailabilities();
-    }, 30000); // Refresh every 30 seconds
+    }, 300000); // Refresh every 5 minutes instead of 30 seconds
 
     return () => clearInterval(interval);
   }, [loadAvailabilities]);

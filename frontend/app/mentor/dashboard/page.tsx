@@ -22,11 +22,8 @@ const MentorDashboard = () => {
     totalSessions: 0,
     activeStudents: 0,
     unreadMessages: 0,
-    pendingBookings: 0,
     totalEarnings: 0,
-    completedSessions: 0,
-    confirmedSessions: 0,
-    cancelledSessions: 0
+    completedSessions: 0
   });
   const [overviewLoading, setOverviewLoading] = useState(true);
   const [overviewError, setOverviewError] = useState<string | null>(null);
@@ -142,25 +139,35 @@ const MentorDashboard = () => {
         });
 
         setOverviewData({
-          totalSessions: stats.totalSessions || 0,
+          totalSessions: stats.completedSessions || 0,
           activeStudents: uniqueClients.size,
           unreadMessages: unreadRescheduleCount,
-          pendingBookings: stats.pendingSessions || 0,
           totalEarnings: stats.totalEarnings || 0,
-          completedSessions: stats.completedSessions || 0,
-          confirmedSessions: stats.confirmedSessions || 0,
-          cancelledSessions: stats.cancelledSessions || 0
+          completedSessions: stats.completedSessions || 0
         });
 
-        // Set recent activity from bookings
-        const recentBookings = bookings.slice(0, 5).map((booking: any) => ({
-          id: booking._id,
-          type: 'booking',
-          title: `New booking from ${booking.clientId?.firstName || 'Student'} ${booking.clientId?.lastName || ''}`,
-          description: `Session scheduled for ${new Date(booking.sessions[0]?.scheduledDate).toLocaleDateString()}`,
-          time: new Date(booking.createdAt).toLocaleDateString(),
-          amount: booking.sessions[0]?.price || 0
-        }));
+        // Set recent activity from bookings - sorted by creation date (latest first)
+        const recentBookings = bookings
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5)
+          .map((booking: any) => {
+            const sessionDate = new Date(booking.sessions[0]?.scheduledDate).toLocaleDateString();
+            const sessionTime = booking.sessions[0]?.startTime && booking.sessions[0]?.endTime
+              ? `${booking.sessions[0].startTime} - ${booking.sessions[0].endTime}`
+              : '';
+            
+            return {
+              id: booking._id,
+              type: 'booking',
+              title: `New booking from ${booking.clientId?.firstName || 'Student'} ${booking.clientId?.lastName || ''}`,
+              description: sessionTime 
+                ? `Session scheduled for ${sessionDate} at ${sessionTime}`
+                : `Session scheduled for ${sessionDate}`,
+              time: new Date(booking.createdAt).toLocaleDateString(),
+              amount: booking.sessions[0]?.price || 0,
+              createdAt: booking.createdAt
+            };
+          });
         setRecentActivity(recentBookings);
       } else {
         throw new Error('Failed to fetch overview data');
@@ -181,7 +188,7 @@ const MentorDashboard = () => {
     }
   }, [user, userLoading, fetchOverviewData, fetchRescheduleMessages]);
 
-  // Auto-refresh overview data every 30 seconds
+  // Auto-refresh overview data every 2 minutes
   useEffect(() => {
     if (!user || userLoading) return;
 
@@ -190,8 +197,13 @@ const MentorDashboard = () => {
       fetchRescheduleMessages().then(() => {
         // Then refresh overview to get updated stats including unread count
         fetchOverviewData();
+      }).catch((err) => {
+        // Silently handle rate limit errors
+        if (err?.response?.status === 429) {
+          console.warn('⚠️ Rate limit reached, skipping this refresh');
+        }
       });
-    }, 30000); // Refresh every 30 seconds
+    }, 120000); // Refresh every 2 minutes
 
     return () => clearInterval(interval);
   }, [user, userLoading, fetchOverviewData, fetchRescheduleMessages]);
@@ -201,12 +213,20 @@ const MentorDashboard = () => {
     if (activeTab === 'messages' && user && !userLoading) {
       fetchRescheduleMessages();
       
-      // Auto-refresh messages every 30 seconds when tab is active
+      // Auto-refresh messages every 2 minutes when tab is active
       const interval = setInterval(() => {
-        fetchRescheduleMessages();
+        fetchRescheduleMessages().catch((err) => {
+          if (err?.response?.status === 429) {
+            console.warn('⚠️ Rate limit reached, skipping this refresh');
+          }
+        });
         // Also refresh overview to update unread count
-        fetchOverviewData();
-      }, 30000); // Refresh every 30 seconds
+        fetchOverviewData().catch((err) => {
+          if (err?.response?.status === 429) {
+            console.warn('⚠️ Rate limit reached, skipping this refresh');
+          }
+        });
+      }, 120000); // Refresh every 2 minutes
 
       return () => clearInterval(interval);
     }
@@ -306,7 +326,7 @@ const MentorDashboard = () => {
             ) : (
               <>
                 {/* Main Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="flex items-center">
                       <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
@@ -334,62 +354,11 @@ const MentorDashboard = () => {
                   <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="flex items-center">
                       <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <BookOpen className="h-5 md:h-6 w-5 md:w-6 text-white" />
-                      </div>
-                      <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Pending Bookings</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.pendingBookings}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
                         <DollarSign className="h-5 md:h-6 w-5 md:w-6 text-white" />
                       </div>
                       <div className="ml-3 md:ml-4">
                         <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Earnings</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>₹{overviewData.totalEarnings}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Stats Row */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-white" />
-                      </div>
-                      <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Completed</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.completedSessions}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-white" />
-                      </div>
-                      <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Confirmed</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.confirmedSessions}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Calendar className="h-5 md:h-6 w-5 md:w-6 text-white" />
-                      </div>
-                      <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Cancelled</p>
-                        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.cancelledSessions}</p>
                       </div>
                     </div>
                   </div>
