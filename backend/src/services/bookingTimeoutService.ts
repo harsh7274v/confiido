@@ -29,10 +29,12 @@ class BookingTimeoutService {
     this.isRunning = true;
     this.intervalId = setInterval(async () => {
       await this.checkAndCancelExpiredBookings();
+      await this.checkAndCancelExpiredRescheduleRequests();
     }, intervalMinutes * 60 * 1000);
 
     // Run immediately on start
     this.checkAndCancelExpiredBookings();
+    this.checkAndCancelExpiredRescheduleRequests();
   }
 
   /**
@@ -158,6 +160,117 @@ class BookingTimeoutService {
   }
 
   /**
+   * Check for reschedule requests that should be auto-cancelled
+   * (1 hour before the original session time)
+   */
+  async checkAndCancelExpiredRescheduleRequests() {
+    try {
+      const now = new Date();
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+      
+      console.log(`🔍 [TIMEOUT_SERVICE] Checking for reschedule requests to auto-cancel at ${now.toISOString()}`);
+      
+      // Find all bookings with pending reschedule requests
+      const bookings = await Booking.find({
+        'sessions.rescheduleRequest.status': 'pending'
+      });
+
+      if (bookings.length === 0) {
+        console.log('✅ [TIMEOUT_SERVICE] No pending reschedule requests found');
+        return;
+      }
+
+      let totalCancelledRequests = 0;
+      const cancelledRequests = [];
+
+      for (const booking of bookings) {
+        let bookingUpdated = false;
+        
+        for (const session of booking.sessions) {
+          if (session.rescheduleRequest && session.rescheduleRequest.status === 'pending') {
+            // Create datetime for original session (1 hour before start)
+            const sessionDateTime = new Date(session.scheduledDate);
+            const [hours, minutes] = session.startTime.split(':').map(Number);
+            sessionDateTime.setHours(hours, minutes, 0, 0);
+            
+            // Check if we're within 1 hour of the original session time
+            if (sessionDateTime <= oneHourFromNow) {
+              // Auto-cancel the reschedule request
+              session.rescheduleRequest.status = 'cancelled';
+              session.rescheduleRequest.respondedAt = new Date();
+              session.rescheduleRequest.responseNote = 'Auto-cancelled: Less than 1 hour before original session time';
+              
+              totalCancelledRequests++;
+              bookingUpdated = true;
+              
+              cancelledRequests.push({
+                bookingId: booking._id,
+                sessionId: session.sessionId,
+                expertUserId: session.expertUserId,
+                clientUserId: booking.clientUserId,
+                originalDate: session.scheduledDate,
+                originalTime: session.startTime,
+                requestedDate: session.rescheduleRequest.requestedDate,
+                requestedTime: session.rescheduleRequest.requestedStartTime
+              });
+
+              console.log(`⏰ [TIMEOUT_SERVICE] Auto-cancelled reschedule request:`, {
+                sessionId: session.sessionId,
+                expertUserId: session.expertUserId,
+                clientUserId: booking.clientUserId,
+                originalDate: session.scheduledDate,
+                originalTime: session.startTime,
+                sessionDateTime: sessionDateTime.toISOString(),
+                oneHourFromNow: oneHourFromNow.toISOString()
+              });
+            }
+          }
+        }
+        
+        // Save the booking if any reschedule requests were cancelled
+        if (bookingUpdated) {
+          await booking.save();
+          console.log(`💾 [TIMEOUT_SERVICE] Updated booking ${booking._id} - cancelled reschedule request(s)`);
+        }
+      }
+
+      if (totalCancelledRequests > 0) {
+        console.log(`✅ [TIMEOUT_SERVICE] Successfully auto-cancelled ${totalCancelledRequests} reschedule request(s)`);
+        this.logRescheduleCancellationSummary(cancelledRequests);
+      } else {
+        console.log('✅ [TIMEOUT_SERVICE] No reschedule requests needed to be cancelled');
+      }
+
+    } catch (error) {
+      console.error('❌ [TIMEOUT_SERVICE] Error checking expired reschedule requests:', error);
+    }
+  }
+
+  /**
+   * Log a summary of cancelled reschedule requests
+   */
+  private logRescheduleCancellationSummary(cancelledRequests: Array<{
+    bookingId: any;
+    sessionId: any;
+    expertUserId: string;
+    clientUserId: string;
+    originalDate: Date;
+    originalTime: string;
+    requestedDate: Date;
+    requestedTime: string;
+  }>) {
+    console.log('📊 [TIMEOUT_SERVICE] Reschedule Cancellation Summary:');
+    console.log(`   Total requests auto-cancelled: ${cancelledRequests.length}`);
+    
+    cancelledRequests.forEach((req, index) => {
+      console.log(`   ${index + 1}. Session ${req.sessionId}:`);
+      console.log(`      Expert: ${req.expertUserId}, Client: ${req.clientUserId}`);
+      console.log(`      Original: ${req.originalDate.toISOString().split('T')[0]} at ${req.originalTime}`);
+      console.log(`      Requested: ${req.requestedDate.toISOString().split('T')[0]} at ${req.requestedTime}`);
+    });
+  }
+
+  /**
    * Log a summary of cancelled sessions
    */
   private logCancellationSummary(cancelledSessions: Array<{
@@ -224,6 +337,7 @@ class BookingTimeoutService {
   async manualCheck() {
     console.log('🔧 [TIMEOUT_SERVICE] Manual check triggered');
     await this.checkAndCancelExpiredBookings();
+    await this.checkAndCancelExpiredRescheduleRequests();
   }
 }
 

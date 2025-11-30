@@ -20,6 +20,36 @@ export const setSocketService = (service: SocketService) => {
   socketService = service;
 };
 
+/**
+ * Auto-cancel reschedule requests that are within 1 hour of original session time
+ */
+const autoCancelExpiredRescheduleRequests = (sessions: ISession[]): boolean => {
+  const now = new Date();
+  const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+  let hasChanges = false;
+
+  for (const session of sessions) {
+    if (session.rescheduleRequest && session.rescheduleRequest.status === 'pending') {
+      // Create datetime for original session
+      const sessionDateTime = new Date(session.scheduledDate);
+      const [hours, minutes] = session.startTime.split(':').map(Number);
+      sessionDateTime.setHours(hours, minutes, 0, 0);
+      
+      // Check if we're within 1 hour of the original session time
+      if (sessionDateTime <= oneHourFromNow) {
+        session.rescheduleRequest.status = 'cancelled';
+        session.rescheduleRequest.respondedAt = new Date();
+        session.rescheduleRequest.responseNote = 'Auto-cancelled: Less than 1 hour before original session time';
+        hasChanges = true;
+        
+        console.log(`⏰ [AUTO-CANCEL] Reschedule request auto-cancelled for session ${session.sessionId}`);
+      }
+    }
+  }
+  
+  return hasChanges;
+};
+
 const STANDARD_DURATION_PRICING: Record<number, number> = {
   30: 750,
   60: 1150
@@ -706,6 +736,14 @@ router.get('/user', protect, async (req, res, next) => {
       }
     ]);
 
+    // Auto-cancel expired reschedule requests
+    for (const booking of populatedBookings) {
+      const hasChanges = autoCancelExpiredRescheduleRequests(booking.sessions);
+      if (hasChanges) {
+        await Booking.findByIdAndUpdate(booking._id, { sessions: booking.sessions });
+      }
+    }
+
     const total = await Booking.countDocuments(filter);
 
     // Get total counts across all bookings for this user
@@ -780,6 +818,12 @@ router.get('/:id', protect, async (req, res, next) => {
         success: false,
         error: 'Booking not found'
       });
+    }
+
+    // Auto-cancel expired reschedule requests
+    const hasChanges = autoCancelExpiredRescheduleRequests(booking.sessions);
+    if (hasChanges) {
+      await booking.save();
     }
 
     // Check if user is authorized to view this booking
@@ -2051,6 +2095,15 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
       const filteredSessions = booking.sessions.filter(session => 
         session.expertUserId === mentorId
       );
+      
+      // Auto-cancel expired reschedule requests
+      const hasChanges = autoCancelExpiredRescheduleRequests(filteredSessions);
+      if (hasChanges) {
+        // Save changes asynchronously
+        Booking.findByIdAndUpdate(booking._id, { sessions: booking.sessions }).catch(err => {
+          console.error('❌ [MENTOR BOOKINGS] Error saving auto-cancelled reschedule requests:', err);
+        });
+      }
       
       return {
         ...booking.toObject(),
