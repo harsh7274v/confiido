@@ -164,11 +164,21 @@ const handleRescheduleFollowups = async ({
 
     if (expertUserObjectId && (clientEmail || expertEmail)) {
       try {
+        // Extract session name from notes (e.g., "Service: 1:1 Career Guidance" → "1:1 Career Guidance")
+        let calendarSessionName: string = session.sessionType;
+        if (session.notes && session.notes.includes('Service:')) {
+          calendarSessionName = session.notes.replace('Service:', '').trim();
+        }
+        
+        // Format: [Confiido] - [Session name] with [Mentor name]
+        const mentorName = getDisplayName(mentorUser, 'Mentor');
+        const title = `[Confiido] - ${calendarSessionName} with ${mentorName}`;
+        
         const calendarResult = await createMeetEventForSession({
           expertUserObjectId,
           clientEmail: clientEmail || booking.clientEmail,
           expertEmail,
-          title: `[Confiido] - Session with ${getDisplayName(mentorUser, 'Mentor')}`,
+          title,
           description: note || session.notes || undefined,
           scheduledDate: newDate,
           startTime: session.startTime,

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip/schema.json",
+
+  "ignore": [
+    "**/.next/**",
+    "**/node_modules/**",
+    "frontend/public/**",
+    "frontend/.next/**"
+  ],
+
+  "entry": [
+    // Backend
+    "backend/src/index.ts",
+    "backend/src/routes/**/*.ts",
+    "backend/src/controllers/**/*.ts",
+    "backend/src/services/**/*.ts",
+    "backend/src/models/**/*.ts",
+    "backend/src/middleware/**/*.ts",
+
+    // Backend scripts (optional)
+    "backend/src/scripts/**/*.ts",
+
+    // Frontend (Next.js)
+    "frontend/next.config.ts",
+    "frontend/app/**/*.{ts,tsx}"
+  ],
+
+  "project": [
+    "backend/**/*.{ts,js}",
+    "frontend/**/*.{ts,tsx,js}"
+  ]
+}
