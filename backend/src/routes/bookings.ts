@@ -2078,7 +2078,7 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
       'sessions.expertUserId': mentorId
     })
       .populate('clientId', 'firstName lastName email phone phoneNumber user_id profession domain location bio category age gender whatsappNumber socialLinks createdAt')
-      .sort({ 'sessions.scheduledDate': -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit as string));
 

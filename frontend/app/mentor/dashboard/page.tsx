@@ -146,28 +146,37 @@ const MentorDashboard = () => {
           completedSessions: stats.completedSessions || 0
         });
 
-        // Set recent activity from bookings - sorted by creation date (latest first)
-        const recentBookings = bookings
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5)
-          .map((booking: any) => {
-            const sessionDate = new Date(booking.sessions[0]?.scheduledDate).toLocaleDateString();
-            const sessionTime = booking.sessions[0]?.startTime && booking.sessions[0]?.endTime
-              ? `${booking.sessions[0].startTime} - ${booking.sessions[0].endTime}`
+        // Set recent activity from bookings - sorted by session creation time (latest first)
+        const allRecentSessions: any[] = [];
+        
+        bookings.forEach((booking: any) => {
+          booking.sessions.forEach((session: any) => {
+            const sessionDate = new Date(session.scheduledDate).toLocaleDateString();
+            const sessionTime = session.startTime && session.endTime
+              ? `${session.startTime} - ${session.endTime}`
               : '';
             
-            return {
-              id: booking._id,
+            allRecentSessions.push({
+              id: `${booking._id}_${session.sessionId}`,
               type: 'booking',
               title: `New booking from ${booking.clientId?.firstName || 'Student'} ${booking.clientId?.lastName || ''}`,
               description: sessionTime 
                 ? `Session scheduled for ${sessionDate} at ${sessionTime}`
                 : `Session scheduled for ${sessionDate}`,
-              time: new Date(booking.createdAt).toLocaleDateString(),
-              amount: booking.sessions[0]?.price || 0,
-              createdAt: booking.createdAt
-            };
+              time: new Date(session.createdTime || booking.createdAt).toLocaleDateString(),
+              amount: session.price || 0,
+              createdAt: session.createdTime || booking.createdAt,
+              status: session.status,
+              paymentStatus: session.paymentStatus
+            });
           });
+        });
+        
+        // Sort by creation time and take the 5 most recent
+        const recentBookings = allRecentSessions
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5);
+          
         setRecentActivity(recentBookings);
       } else {
         throw new Error('Failed to fetch overview data');
