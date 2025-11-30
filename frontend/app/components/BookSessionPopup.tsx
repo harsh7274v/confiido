@@ -566,13 +566,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                   ) : error ? (
                     <span className="text-sm text-red-600">{error}</span>
                   ) : availableSlots.length > 0 ? (
-                    <div className="space-y-1">
-                      {availableSlots.some(slot => !slot.available) && (
-                        <span className="text-sm text-red-600 block">
-                          🔒 {availableSlots.filter(slot => !slot.available).length} slots already booked
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-sm text-green-600">✓ Availability loaded</span>
                   ) : (
                     <span className="text-sm text-orange-600">No availability found for this date</span>
                   )}
