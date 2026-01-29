@@ -98,8 +98,8 @@ function HeroGeometric({
     };
 
     return (
-        <div className="relative min-h-[70vh] w-full flex items-center justify-center overflow-hidden bg-transparent py-12">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
+        <div className="relative min-h-[70vh] w-full flex items-center justify-center overflow-hidden py-12" style={{ backgroundColor: '#F3E8DF' }}>
+            {/* <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" /> */}
 
             <div className="absolute inset-0 overflow-hidden">
                 <ElegantShape
@@ -186,7 +186,7 @@ function HeroGeometric({
                     >
                         <button 
                             onClick={onButtonClick}
-                            className="bg-black text-white px-8 py-3 sm:px-10 sm:py-4 text-sm sm:text-base md:text-lg font-semibold rounded-lg hover:bg-gray-900 transition-colors inline-block mx-auto sm:mx-0"
+                            className="bg-black text-white px-6 py-2.5 text-sm sm:text-base font-semibold rounded-full hover:bg-gray-900 transition-colors inline-block mx-auto sm:mx-0 w-auto"
                         >
                             {buttonText}
                         </button>
@@ -194,8 +194,6 @@ function HeroGeometric({
                     
                 </div>
             </div>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-50/80 via-transparent to-slate-50/80 pointer-events-none" />
         </div>
     );
 }

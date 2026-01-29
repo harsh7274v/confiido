@@ -523,7 +523,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden relative safe-area-main" style={{ backgroundColor: '#B6CEB4', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+    <div className="min-h-screen overflow-x-hidden relative safe-area-main" style={{ backgroundColor: '#F3E8DF', scrollbarWidth: 'none', msOverflowStyle: 'none' }} suppressHydrationWarning>
       {/* Simple, performant background pattern - removed for clean look */}
       
       <style jsx global>{`
@@ -604,18 +604,20 @@ export default function Home() {
       </Navbar>
 
       {/* Hero Section */}
-      <HeroGeometric 
-        title1="Speak with Confidence"
-        title2="Lead with Clarity"
-        description="Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable."
-        buttonText="Book your Session"
-        onButtonClick={() => {
-          setIsSignupLoading(true);
-          setTimeout(() => {
-            router.push('/signup');
-          }, 1000);
-        }}
-      />
+      <div className="pt-24">
+        <HeroGeometric 
+          title1="Speak with Confidence"
+          title2="Lead with Clarity"
+          description="Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable."
+          buttonText="Book your Session"
+          onButtonClick={() => {
+            setIsSignupLoading(true);
+            setTimeout(() => {
+              router.push('/signup');
+            }, 1000);
+          }}
+        />
+      </div>
 
       {/* Meet Your Mentors Section */}
       <section id="mentors-section" className="py-8 bg-white/60 relative z-10">
@@ -660,124 +662,124 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="relative max-w-5xl mx-auto"
           >
-            {/* Navigation Arrows */}
-            <button
-              onClick={prevMentor}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-600" />
-            </button>
-            
-            <button
-              onClick={nextMentor}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-            >
-              <ChevronRight className="w-6 h-6 text-gray-600" />
-            </button>
-
             {/* Mentor Card */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-              <div className="flex flex-col lg:flex-row lg:h-[500px]">
-                {/* Left Side - Photo/Video Area */}
-                <div className="lg:w-1/2 relative">
-                  {playingVideo === mentors[currentMentorIndex].id ? (
-                    <div className="w-full h-80 lg:h-full">
-                      <iframe
-                        src={mentors[currentMentorIndex].videoUrl}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        title={`${mentors[currentMentorIndex].name} Introduction Video`}
-                      />
+            <div className="flex flex-col lg:flex-row gap-12 lg:gap-40 items-start">
+              {/* Left Side - Photo/Video Area */}
+              <div className="lg:w-1/2 relative">
+                {playingVideo === mentors[currentMentorIndex].id ? (
+                  <div className="w-full h-80 lg:h-full rounded-3xl overflow-hidden shadow-xl">
+                    <iframe
+                      src={mentors[currentMentorIndex].videoUrl}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`${mentors[currentMentorIndex].name} Introduction Video`}
+                    />
+                  </div>
+                ) : (
+                  <div className="relative w-full h-80 lg:h-[500px] rounded-3xl overflow-hidden shadow-xl">
+                    <img 
+                      src={mentors[currentMentorIndex].image}
+                      alt={mentors[currentMentorIndex].name}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Video Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+                      <button
+                        onClick={() => toggleVideo(mentors[currentMentorIndex].id)}
+                        className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all duration-300 transform hover:scale-110 shadow-lg"
+                      >
+                        <Play className="w-8 h-8 text-gray-800 ml-1" />
+                      </button>
                     </div>
-                  ) : (
-                    <div className="relative w-full h-80 lg:h-full">
-                      <img 
-                        src={mentors[currentMentorIndex].image}
-                        alt={mentors[currentMentorIndex].name}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Video Play Button */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-                        <button
-                          onClick={() => toggleVideo(mentors[currentMentorIndex].id)}
-                          className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all duration-300 transform hover:scale-110 shadow-lg"
-                        >
-                          <Play className="w-8 h-8 text-gray-800 ml-1" />
-                        </button>
-                      </div>
-                      {/* Video Duration Badge */}
-                      <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
-                        {mentors[currentMentorIndex].videoDuration}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Side - Mentor Details */}
-                <div className="lg:w-1/2 p-8 flex flex-col">
-                  <div className="flex-1 overflow-y-auto">
-                    {/* Mentor Info */}
-                    <div className="mb-6">
-                      <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                        {mentors[currentMentorIndex].name}
-                      </h3>
-                      <p className="text-gray-600 font-semibold text-lg mb-1">
-                        {mentors[currentMentorIndex].title}
-                      </p>
-                      <p className="text-gray-500 text-sm mb-4">
-                        {mentors[currentMentorIndex].experience} • {mentors[currentMentorIndex].company}
-                      </p>
-                    </div>
-
-                    {/* Quote */}
-                    <div className="bg-gray-100 p-4 rounded-lg mb-6">
-                      <p className="text-gray-700 text-sm leading-relaxed italic">
-                        &quot;{mentors[currentMentorIndex].quote}&quot;
-                      </p>
-                    </div>
-
-                    {/* Skills */}
-                    <div className="mb-6">
-                      <h4 className="font-semibold text-gray-900 mb-3">What I can help you with:</h4>
-                      <ul className="space-y-2 text-sm text-gray-600">
-                        {mentors[currentMentorIndex].skills.map((skill, index) => (
-                          <li key={index} className="flex items-start space-x-2">
-                            <span className="text-green-500 mt-1 flex-shrink-0">✓</span>
-                            <span>{skill}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    {/* Video Duration Badge */}
+                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                      {mentors[currentMentorIndex].videoDuration}
                     </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Bottom Section - Rating and Price */}
-                  <div className="flex items-center justify-center pt-6 border-t border-gray-100 flex-shrink-0">
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span className="flex items-center">
-                        <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                        {mentors[currentMentorIndex].rating} ({mentors[currentMentorIndex].reviews} reviews)
-                      </span>
-                      <span className="font-semibold text-gray-900">
-                        {mentors[currentMentorIndex].price}
-                      </span>
-                    </div>
+              {/* Right Side - Mentor Details */}
+              <div className="lg:w-1/2 flex flex-col">
+                <div className="flex-1">
+                  {/* Mentor Info */}
+                  <div className="mb-6">
+                    <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                      {mentors[currentMentorIndex].name}
+                    </h3>
+                    <p className="text-gray-600 font-semibold text-lg mb-1">
+                      {mentors[currentMentorIndex].title}
+                    </p>
+                    <p className="text-gray-500 text-sm mb-4">
+                      {mentors[currentMentorIndex].experience} • {mentors[currentMentorIndex].company}
+                    </p>
+                  </div>
+
+                  {/* Quote */}
+                  <div className="mb-6">
+                    <p className="text-gray-700 text-base leading-relaxed italic">
+                      &quot;{mentors[currentMentorIndex].quote}&quot;
+                    </p>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-900 mb-3 text-lg">What I can help you with:</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      {mentors[currentMentorIndex].skills.map((skill, index) => (
+                        <li key={index} className="flex items-start space-x-2">
+                          <span className="text-green-500 mt-1 flex-shrink-0">✓</span>
+                          <span>{skill}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Rating and Price */}
+                  <div className="flex items-center space-x-4 text-sm text-gray-500 pt-4">
+                    <span className="flex items-center">
+                      <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                      {mentors[currentMentorIndex].rating} ({mentors[currentMentorIndex].reviews} reviews)
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {mentors[currentMentorIndex].price}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Carousel Indicators */}
-            <div className="flex justify-center mt-8 space-x-2">
-              {mentors.map((_, index) => (
+            {/* Carousel Navigation */}
+            <div className="flex justify-between items-center mt-8 gap-8">
+              {/* Left Side Navigation */}
+              <div className="flex items-center gap-4">
                 <button
-                  key={index}
-                  onClick={() => setCurrentMentorIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentMentorIndex ? 'bg-gray-600' : 'bg-gray-300'
-                  }`}
+                  onClick={prevMentor}
+                  className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-600" />
+                </button>
+                
+                <div className="text-gray-900 font-medium text-lg">
+                  {currentMentorIndex + 1}/{mentors.length} Mentors
+                </div>
+                
+                <button
+                  onClick={nextMentor}
+                  className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Right Side Progress Bar */}
+              <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gray-600 transition-all duration-500 ease-out"
+                  style={{ width: `${((currentMentorIndex + 1) / mentors.length) * 100}%` }}
                 />
-              ))}
+              </div>
             </div>
           </motion.div>
         </div>
@@ -809,127 +811,72 @@ export default function Home() {
             </motion.p>
           </div>
           
-          {/* 4 Cards in One Row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-            {/* Card 1 - Number 3 with Steps and Arrow */}
+          {/* Image and Steps Container */}
+          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+            {/* Left Side - Image */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 30 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              whileHover={{ 
-                scale: 1.05, 
-                rotate: [0, -2, 2, 0],
-                transition: { duration: 0.3 }
-              }}
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4, type: "spring", stiffness: 100 }}
-              className="bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl md:rounded-2xl p-6 md:p-8 flex flex-col items-center justify-center text-center shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform min-h-[200px] md:min-h-auto"
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="w-full lg:w-1/2"
             >
-              <motion.div 
-                className="text-5xl md:text-8xl font-bold text-white mb-2 md:mb-4"
-                whileHover={{ scale: 1.2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                3
-              </motion.div>
-              <motion.div 
-                className="text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6" 
-                style={{ fontFamily: "'Rubik', sans-serif" }}
-                whileHover={{ letterSpacing: "0.1em" }}
-                transition={{ duration: 0.3 }}
-              >
-                Steps
-              </motion.div>
-              <motion.div 
-                className="text-white text-2xl md:text-4xl"
-                animate={{ x: [0, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                →
-              </motion.div>
+              <img 
+                src="/home.webp" 
+                alt="Get Started" 
+                className="w-full h-auto"
+              />
             </motion.div>
 
-            {/* Card 2 - Step 1: Book Your Session */}
+            {/* Right Side - Steps Tube Container */}
             <motion.div
-              initial={{ opacity: 0, x: -50, y: 30 }}
-              whileInView={{ opacity: 1, x: 0, y: 0 }}
-              whileHover={{ 
-                scale: 1.05, 
-                y: -10,
-                transition: { duration: 0.3 }
-              }}
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.5, type: "spring", stiffness: 100 }}
-              className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl md:rounded-2xl p-5 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-red-200 cursor-pointer transform hover:border-red-300"
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="w-full lg:w-1/2 space-y-6"
             >
-              <motion.div 
-                className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-xl md:text-2xl font-bold mb-4 md:mb-6 shadow-lg"
-                whileHover={{ rotate: 360, scale: 1.1 }}
-                transition={{ duration: 0.6 }}
+              {/* Step 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="rounded-full p-6 md:p-8 shadow-xl"
+                style={{ backgroundColor: '#948979' }}
               >
-                1
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                  Book Your Session with Your Preferred Coach
+                </p>
               </motion.div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Book Your Session
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Choose your preferred coach and schedule a personalized 1-on-1 session at a time that works best for you.
-              </p>
-            </motion.div>
 
-            {/* Card 3 - Step 2: Make Payment */}
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              whileHover={{ 
-                scale: 1.05, 
-                y: -10,
-                transition: { duration: 0.3 }
-              }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.6, type: "spring", stiffness: 100 }}
-              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl md:rounded-2xl p-5 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-blue-200 cursor-pointer transform hover:border-blue-300"
-            >
-              <motion.div 
-                className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-xl md:text-2xl font-bold mb-4 md:mb-6 shadow-lg"
-                whileHover={{ rotate: 360, scale: 1.1 }}
-                transition={{ duration: 0.6 }}
+              {/* Step 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="rounded-full p-6 md:p-8 shadow-xl"
+                style={{ backgroundColor: '#948979' }}
               >
-                2
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                  Secure Your Session with Easy Payment
+                </p>
               </motion.div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Make Payment
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Secure your session with our easy payment process. Multiple payment options available for your convenience.
-              </p>
-            </motion.div>
 
-            {/* Card 4 - Step 3: Join via Google Meet */}
-            <motion.div
-              initial={{ opacity: 0, x: 50, y: 30 }}
-              whileInView={{ opacity: 1, x: 0, y: 0 }}
-              whileHover={{ 
-                scale: 1.05, 
-                y: -10,
-                transition: { duration: 0.3 }
-              }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.7, type: "spring", stiffness: 100 }}
-              className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl md:rounded-2xl p-5 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-green-200 cursor-pointer transform hover:border-green-300"
-            >
-              <motion.div 
-                className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white text-xl md:text-2xl font-bold mb-4 md:mb-6 shadow-lg"
-                whileHover={{ rotate: 360, scale: 1.1 }}
-                transition={{ duration: 0.6 }}
+              {/* Step 3 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="rounded-full p-6 md:p-8 shadow-xl"
+                style={{ backgroundColor: '#948979' }}
               >
-                3
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                  Join via Google Meet for Your Coaching
+                </p>
               </motion.div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Join via Google Meet
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Connect with your mentor seamlessly through Google Meet for your personalized coaching session.
-              </p>
             </motion.div>
           </div>
         </div>
@@ -980,500 +927,64 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 4 Cards Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-            {/* Card 1 - Toggle Card with Image */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotateY: -15 }}
-              whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
-              whileHover={{ 
-                scale: 1.05, 
-                rotateY: 5,
-                transition: { duration: 0.3 }
-              }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3, type: "spring", stiffness: 100 }}
-              className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl md:rounded-2xl p-5 md:p-6 shadow-lg hover:shadow-2xl relative overflow-hidden cursor-pointer transform-gpu"
-              style={{ perspective: "1000px" }}
-            >
-              <motion.div 
-                className="text-center mb-3 md:mb-4"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                  {selectedCategory === 'student' ? 'Student' : 'Professional'}
-                </h3>
-              </motion.div>
-
-              {/* Image Container */}
-              <motion.div 
+          {/* Image Carousel */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="relative max-w-4xl mx-auto"
+          >
+            {/* Image Display */}
+            <div className="w-full mb-8">
+              <motion.img
                 key={selectedCategory}
-                initial={{ opacity: 0, scale: 0.8, rotateX: 90 }}
-                animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-                whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="relative w-full h-32 md:h-48 mb-4 md:mb-6 rounded-lg md:rounded-xl overflow-hidden bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-md"
-              >
-                {selectedCategory === 'student' ? (
-                  <motion.div 
-                    className="text-center"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <motion.div 
-                      className="text-4xl md:text-6xl mb-2"
-                      animate={{ rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      🎓
-                    </motion.div>
-                    <p className="text-xs md:text-sm font-semibold text-gray-700">Student Life</p>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    className="text-center"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <motion.div 
-                      className="text-4xl md:text-6xl mb-2"
-                      animate={{ rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      💼
-                    </motion.div>
-                    <p className="text-xs md:text-sm font-semibold text-gray-700">Professional</p>
-                  </motion.div>
-                )}
-              </motion.div>
+                src={selectedCategory === 'student' ? '/student.webp' : '/professional.webp'}
+                alt={selectedCategory === 'student' ? 'Student' : 'Professional'}
+                className="w-full h-auto rounded-3xl shadow-2xl"
+              />
+            </div>
 
-              {/* Switch Button */}
-              <div className="flex justify-center">
-                <motion.button
-                  onClick={() => setSelectedCategory(selectedCategory === 'student' ? 'professional' : 'student')}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative inline-flex h-10 w-20 md:h-12 md:w-24 items-center rounded-full bg-gradient-to-r from-gray-600 to-gray-800 transition-all duration-300 hover:shadow-lg focus:outline-none"
+            {/* Navigation Controls */}
+            <div className="flex justify-between items-center gap-8">
+              {/* Left Side Navigation */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSelectedCategory('student')}
+                  className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
                 >
-                  <motion.span
-                    layout
-                    transition={{ type: "spring", stiffness: 700, damping: 30 }}
-                    className={`inline-block h-8 w-8 md:h-10 md:w-10 transform rounded-full bg-white shadow-lg transition ${
-                      selectedCategory === 'professional' ? 'translate-x-10 md:translate-x-12' : 'translate-x-1'
-                    }`}
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                    {selectedCategory === 'student' ? 'S' : 'P'}
-                  </span>
-                </motion.button>
+                  <ChevronLeft className="w-6 h-6 text-gray-600" />
+                </button>
+                
+                <div className="text-gray-900 font-medium text-lg">
+                  {selectedCategory === 'student' ? 'Student' : 'Professional'}
+                </div>
+                
+                <button
+                  onClick={() => setSelectedCategory('professional')}
+                  className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-600" />
+                </button>
               </div>
-            </motion.div>
 
-            {/* Cards 2, 3, 4 - Content Cards */}
-            {selectedCategory === 'student' ? (
-              <>
-                {/* Card 2 - School Students */}
-                <motion.div
-                  key="school-students"
-                  initial={{ opacity: 0, x: -50, rotateY: -20 }}
-                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                  exit={{ opacity: 0, x: -50, rotateY: -20 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(34, 197, 94, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-green-200 shadow-lg hover:border-green-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Star className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    School Students
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Students participating in debates</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Class representatives and student leaders</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-green-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Young minds building early skills</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-
-                {/* Card 3 - College Students */}
-                <motion.div
-                  key="college-students"
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 50 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(168, 85, 247, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.5, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-purple-200 shadow-lg hover:border-purple-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Calendar className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    College Students
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Students preparing for presentations</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Campus leaders and organization heads</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Job seekers preparing for interviews</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-
-                {/* Card 4 - Students with Stage Fear */}
-                <motion.div
-                  key="stage-fear"
-                  initial={{ opacity: 0, x: 50, rotateY: 20 }}
-                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                  exit={{ opacity: 0, x: 50, rotateY: 20 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(249, 115, 22, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.6, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-orange-200 shadow-lg hover:border-orange-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Shield className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Students with Stage Fear
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-orange-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Those nervous before speaking publicly</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-orange-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Students avoiding speaking opportunities</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.9 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-orange-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Anyone ready to overcome anxiety</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-              </>
-            ) : (
-              <>
-                {/* Card 2 - Working Professionals */}
-                <motion.div
-                  key="working-professionals"
-                  initial={{ opacity: 0, x: -50, rotateY: -20 }}
-                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                  exit={{ opacity: 0, x: -50, rotateY: -20 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(20, 184, 166, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-teal-200 shadow-lg hover:border-teal-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <ArrowRight className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Working Professionals
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-teal-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Professionals seeking career advancement</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-teal-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Team leaders and managers</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-teal-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Anyone wanting confident communication</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-
-                {/* Card 3 - Aspiring Professionals */}
-                <motion.div
-                  key="aspiring-professionals"
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 50 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.5, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-blue-200 shadow-lg hover:border-blue-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Users className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Aspiring Professionals
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Recent graduates entering the workforce</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Career changers seeking new opportunities</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Entrepreneurs building their personal brand</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-
-                {/* Card 4 - Executive Leaders */}
-                <motion.div
-                  key="executive-leaders"
-                  initial={{ opacity: 0, x: 50, rotateY: 20 }}
-                  animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                  exit={{ opacity: 0, x: 50, rotateY: 20 }}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    y: -10,
-                    boxShadow: "0 20px 40px rgba(99, 102, 241, 0.3)",
-                    transition: { duration: 0.3 }
-                  }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.6, type: "spring", stiffness: 100 }}
-                  className="bg-white p-5 md:p-6 rounded-xl md:rounded-2xl border-2 border-indigo-200 shadow-lg hover:border-indigo-400 transition-all duration-300 cursor-pointer transform-gpu"
-                >
-                  <motion.div 
-                    className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg md:rounded-xl flex items-center justify-center mb-3 md:mb-4 shadow-md"
-                    whileHover={{ rotate: 360, scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Shield className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                  </motion.div>
-                  <motion.h3 
-                    className="text-lg md:text-xl font-bold text-gray-900 mb-3 md:mb-4" 
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    Executive Leaders
-                  </motion.h3>
-                  <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-gray-700">
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>C-suite executives and directors</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Public speakers and thought leaders</span>
-                    </motion.li>
-                    <motion.li 
-                      className="flex items-start space-x-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.9 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="w-2 h-2 bg-indigo-600 rounded-full mt-1.5 md:mt-2 flex-shrink-0"></div>
-                      <span>Industry experts sharing knowledge</span>
-                    </motion.li>
-                  </ul>
-                </motion.div>
-              </>
-            )}
-          </div>
+              {/* Right Side Progress Bar */}
+              <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gray-600 transition-all duration-500 ease-out"
+                  style={{ width: selectedCategory === 'student' ? '50%' : '100%' }}
+                />
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-black">
+      <section className="py-16" style={{ backgroundColor: '#F3E8DF' }}>
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
             <motion.h2
@@ -1481,7 +992,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl md:text-4xl font-bold text-white mb-3" 
+              className="text-3xl md:text-4xl font-bold text-black mb-3" 
               style={{ fontFamily: "'Rubik', sans-serif" }}
             >
               Frequently asked questions
@@ -1491,7 +1002,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-base text-gray-400" 
+              className="text-base text-gray-700" 
               style={{ fontFamily: "'Rubik', sans-serif" }}
             >
               Hopefully we can answer all your questions here.
@@ -1506,7 +1017,7 @@ export default function Home() {
             className="space-y-6"
           >
             {/* FAQ 1 - How do I get started? */}
-            <div>
+            <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
                 onClick={() => handleFaqClick(0)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
@@ -1519,7 +1030,7 @@ export default function Home() {
                     animate={{ rotate: openFaq === 0 ? 180 : 0 }}
                     transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                   >
-                    <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
+                    <ChevronDown className="h-5 w-5 text-white flex-shrink-0 ml-4" />
                   </motion.div>
                 </div>
               </button>
@@ -1529,11 +1040,11 @@ export default function Home() {
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
                     style={{ transformOrigin: 'top' }}
-                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                    className="px-5 pb-5 mt-2"
                   >
-                    <p className="text-gray-300 leading-relaxed pt-4">
+                    <p className="text-white leading-relaxed pt-4">
                       Simply sign up and follow the onboarding process.
                     </p>
                   </motion.div>
@@ -1542,7 +1053,7 @@ export default function Home() {
             </div>
 
             {/* FAQ 2 - What payment methods do you accept? */}
-            <div>
+            <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
                 onClick={() => handleFaqClick(1)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
@@ -1555,7 +1066,7 @@ export default function Home() {
                     animate={{ rotate: openFaq === 1 ? 180 : 0 }}
                     transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                   >
-                    <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
+                    <ChevronDown className="h-5 w-5 text-white flex-shrink-0 ml-4" />
                   </motion.div>
                 </div>
               </button>
@@ -1565,11 +1076,11 @@ export default function Home() {
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
                     style={{ transformOrigin: 'top' }}
-                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                    className="px-5 pb-5 mt-2"
                   >
-                    <p className="text-gray-300 leading-relaxed pt-4">
+                    <p className="text-white leading-relaxed pt-4">
                       We accept payments through Razorpay, including UPI, credit cards, debit cards, net banking, and wallets.
                     </p>
                   </motion.div>
@@ -1578,7 +1089,7 @@ export default function Home() {
             </div>
 
             {/* FAQ 3 - What is the refund policy? */}
-            <div>
+            <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
                 onClick={() => handleFaqClick(2)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
@@ -1591,7 +1102,7 @@ export default function Home() {
                     animate={{ rotate: openFaq === 2 ? 180 : 0 }}
                     transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                   >
-                    <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
+                    <ChevronDown className="h-5 w-5 text-white flex-shrink-0 ml-4" />
                   </motion.div>
                 </div>
               </button>
@@ -1601,96 +1112,46 @@ export default function Home() {
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
                     style={{ transformOrigin: 'top' }}
-                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
+                    className="px-5 pb-5 mt-2"
                   >
-                    <p className="text-gray-300 leading-relaxed pt-4">
-                      We truly value your trust in booking a session with us. Since each session is personalized and time is reserved exclusively for you, all bookings are non-refundable. However, if you're unable to attend, we'll be happy to help you reschedule (subject to availability).
+                    <p className="text-white leading-relaxed pt-4">
+                      Refunds are processed according to our refund policy. Please contact support for specific cases.
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
-            {/* FAQ 4 - Are sessions online? */}
-            <div>
-              <button 
-                onClick={() => handleFaqClick(3)}
-                className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base md:text-lg font-normal text-white">
-                    Are sessions conducted online?
-                  </h3>
-                  <motion.div
-                    animate={{ rotate: openFaq === 3 ? 180 : 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                  >
-                    <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0 ml-4" />
-                  </motion.div>
-                </div>
-              </button>
-              <AnimatePresence initial={false}>
-                {openFaq === 3 && (
-                  <motion.div 
-                    initial={{ opacity: 0, scaleY: 0 }}
-                    animate={{ opacity: 1, scaleY: 1 }}
-                    exit={{ opacity: 0, scaleY: 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ transformOrigin: 'top' }}
-                    className="px-5 pb-5 bg-gray-800 rounded-lg mt-2"
-                  >
-                    <p className="text-gray-300 leading-relaxed pt-4">
-                      Yes, all our coaching sessions are conducted online via Google Meet. This allows you to learn from the comfort of your own space and gives us access to top coaches worldwide. You'll receive a meeting link before your session, and all you need is a stable internet connection and a device with a camera.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-
-          {/* FAQ CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-center mt-10"
-          >
-            <p className="text-gray-400 mb-4">Still have questions?</p>
-            <button onClick={openChatbot} className="inline-flex items-center px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-200 transition-all duration-300">
-              Contact Support <ArrowRight className="ml-2 h-4 w-4" />
-            </button>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900">
+      <footer style={{ backgroundColor: '#F3E8DF' }}>
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
             {/* Brand Section */}
             <div className="max-w-md">
-              <h3 className="text-xl font-bold text-white mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Confiido</h3>
-              <p className="text-gray-400" style={{ fontFamily: "'Rubik', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
+              <h3 className="text-xl font-bold text-black mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Confiido</h3>
+              <p className="text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
             </div>
             
             {/* Company Links */}
             <div>
-              <h4 className="text-white font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><button onClick={() => setIsAboutOpen(true)} className="hover:text-white transition-colors text-left">About</button></li>
-                <li><button onClick={() => setIsContactOpen(true)} className="hover:text-white transition-colors text-left">Contact Us</button></li>
-                <li><button onClick={() => setIsTermsOpen(true)} className="hover:text-white transition-colors text-left">Terms Of Service</button></li>
-                <li><button onClick={() => setIsPrivacyOpen(true)} className="hover:text-white transition-colors text-left">Privacy</button></li>
+              <h4 className="text-black font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-gray-700">
+                <li><button onClick={() => setIsAboutOpen(true)} className="hover:text-black transition-colors text-left">About</button></li>
+                <li><button onClick={() => setIsContactOpen(true)} className="hover:text-black transition-colors text-left">Contact Us</button></li>
+                <li><button onClick={() => setIsTermsOpen(true)} className="hover:text-black transition-colors text-left">Terms Of Service</button></li>
+                <li><button onClick={() => setIsPrivacyOpen(true)} className="hover:text-black transition-colors text-left">Privacy</button></li>
               </ul>
             </div>
           </div>
           
           {/* Copyright */}
-          <div className="border-t border-gray-800 pt-8 text-center">
-            <p className="text-gray-400">©2025 Confiido. All rights reserved.</p>
+          <div className="border-t border-gray-300 pt-8 text-center">
+            <p className="text-gray-700">©2025 Confiido. All rights reserved.</p>
           </div>
         </div>
       </footer>

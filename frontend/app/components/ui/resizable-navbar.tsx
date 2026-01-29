@@ -69,8 +69,9 @@ export const Navbar = ({ children, className }: NavbarProps) => {
   return (
     <motion.div
       ref={ref}
-      className={cn("sticky inset-x-0 top-0 z-50 w-full py-4", className)}
-      style={{ backgroundColor: '#B6CEB4' }}
+      suppressHydrationWarning
+      className={cn("fixed inset-x-0 top-0 z-50 w-full py-4", className)}
+      style={{ backgroundColor: '#F3E8DF' }}
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
@@ -87,8 +88,8 @@ export const Navbar = ({ children, className }: NavbarProps) => {
 export const NavBody = ({ children, className, visible }: NavBodyProps) => {
   return (
     <motion.div
+      suppressHydrationWarning
       animate={{
-        backdropFilter: visible ? "blur(16px)" : "blur(12px)",
         boxShadow: visible
           ? "0 4px 30px rgba(0, 0, 0, 0.15)"
           : "0 4px 30px rgba(0, 0, 0, 0.1)",
@@ -102,7 +103,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
       }}
       style={{
         minWidth: "800px",
-        backgroundColor: 'rgba(150, 167, 141, 0.95)',
+        backgroundColor: '#948979',
       }}
       className={cn(
         "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between rounded-full px-6 py-2 lg:flex",
@@ -153,8 +154,8 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (
     <motion.div
+      suppressHydrationWarning
       animate={{
-        backdropFilter: visible ? "blur(16px)" : "blur(12px)",
         boxShadow: visible
           ? "0 4px 30px rgba(0, 0, 0, 0.15)"
           : "0 4px 30px rgba(0, 0, 0, 0.1)",
@@ -170,7 +171,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       style={{
-        backgroundColor: 'rgba(150, 167, 141, 0.95)',
+        backgroundColor: '#948979',
       }}
       className={cn(
         "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between px-0 py-2 lg:hidden",
@@ -281,20 +282,17 @@ export const NavbarButton = ({
   | React.ComponentPropsWithoutRef<"button">
 )) => {
   const baseStyles =
-    "px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out transform hover:scale-105 backdrop-blur-sm inline-block text-center";
+    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-in-out transform hover:scale-105 inline-block text-center whitespace-nowrap";
 
   const variantStyles = {
     primary:
-      "text-gray-800 hover:text-black font-semibold hover:shadow-xl relative overflow-hidden group shadow-[0_4px_12px_rgba(0,0,0,0.15)]",
-    secondary: "text-gray-800 hover:text-black border-2 border-transparent hover:border-gray-800/20 shadow-[0_2px_8px_rgba(0,0,0,0.1)]",
+      "bg-black text-white hover:bg-gray-900 shadow-md hover:shadow-lg w-20",
+    secondary: "bg-black text-white hover:bg-gray-900 shadow-md hover:shadow-lg w-20",
   };
 
   const content = (
     <>
       <span className="relative z-10">{children}</span>
-      {variant === "primary" && (
-        <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      )}
     </>
   );
 
@@ -303,7 +301,7 @@ export const NavbarButton = ({
       <Link
         href={href}
         className={cn(baseStyles, variantStyles[variant], className)}
-        style={{ backgroundColor: '#F0F0F0', fontFamily: "'Rubik', sans-serif" }}
+        style={{ fontFamily: "'Rubik', sans-serif" }}
         onClick={onClick}
         {...(props as any)}
       >
@@ -315,7 +313,7 @@ export const NavbarButton = ({
   return (
     <button
       className={cn(baseStyles, variantStyles[variant], className)}
-      style={{ backgroundColor: '#F0F0F0', fontFamily: "'Rubik', sans-serif" }}
+      style={{ fontFamily: "'Rubik', sans-serif" }}
       onClick={onClick}
       {...(props as any)}
     >
