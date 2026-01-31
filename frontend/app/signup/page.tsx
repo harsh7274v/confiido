@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, CheckCircle, AlertCircle, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleSignInButton } from '../components/AuthComponents';
@@ -30,7 +30,6 @@ export default function Signup() {
   
   // OTP verification states
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [otpLoading, setOtpLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
@@ -106,12 +105,6 @@ export default function Signup() {
       </div>
     );
   }
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleOtpInputChange = (index: number, value: string) => {
     if (value && !/^[0-9]$/.test(value)) return; // only digits
@@ -378,7 +371,6 @@ export default function Signup() {
       setSuccess('Verification code resent!');
       setTimeLeft(300);
       setCanResend(false);
-      setOtp('');
       setOtpDigits(['', '', '', '', '', '']);
       
     } catch (error: any) {
@@ -392,177 +384,87 @@ export default function Signup() {
   const isConfirmPasswordValid = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#D9E9CF' }}>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#F3E8DF' }}>
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
         }
       `}</style>
-      <div className="max-w-2xl w-full space-y-8">
-        {/* Header - Only show when NOT on OTP screen */}
-        {!otpSent && (
-          <>
-            <div className="text-center">
-              <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
-                <img 
-                  src="/icons/icon-96x96.png" 
-                  alt="Confiido Logo" 
-                  className="h-10 w-10 object-contain"
-                />
-                <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
-              </Link>
-              <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Create your account
-              </h2>
-              <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Join thousands of professionals and start your mentorship journey
-              </p>
-            </div>
-
-            {/* Category Selection */}
-            <div className="flex justify-center mb-6">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('student')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 mr-1 ${
-                  selectedCategory === 'student'
-                    ? 'bg-black text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
-                }`}
-              >
-                Student
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('professional')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ml-1 ${
-                  selectedCategory === 'professional'
-                    ? 'bg-black text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900 bg-white border border-gray-200'
-                }`}
-              >
-                Working Professional
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Error/Success Messages */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+      <div className="max-w-7xl w-full">
+        {/* Two Column Layout - Always show */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+          {/* Left Side - Branding */}
+          <div className="text-left space-y-4">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
+              <img 
+                src="/icons/icon-96x96.png" 
+                alt="Confiido Logo" 
+                className="h-12 w-12 object-contain"
+              />
+              <span className="text-3xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
+            </Link>
+            <p className="text-lg text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Join thousands of professionals and start your mentorship journey
+            </p>
           </div>
-        )}
 
-        {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-              <p className="text-sm text-green-700">{success}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Redirecting Spinner */}
-        {(redirecting || authRedirecting) && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-            <MoonLoader color="#000000" size={60} />
-          </div>
-        )}
-
-        {/* OTP Verification Screen */}
-        {otpSent && !redirecting ? (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-            {/* Confiido Logo - Top Left */}
-            <div className="mb-6">
-              <Link href="/" className="inline-flex items-center gap-2">
-                <img 
-                  src="/icons/icon-96x96.png" 
-                  alt="Confiido Logo" 
-                  className="h-8 w-8 object-contain"
-                />
-                <span className="text-xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
-              </Link>
-            </div>
-
-            <div className="flex flex-col items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                Verify Your Email
-              </h2>
-              <p className="text-sm text-gray-500 mt-1 text-center">
-                We sent a verification code to <strong>{formData.email}</strong>
-              </p>
-            </div>
-
-            <form onSubmit={verifyOTP} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                  Enter 6-digit code
-                </label>
-                <div className="grid grid-cols-6 gap-2">
-                  {[0, 1, 2, 3, 4, 5].map(i => (
-                    <input
-                      key={i}
-                      id={`otp-${i}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={otpDigits[i]}
-                      onChange={(e) => handleOtpInputChange(i, e.target.value)}
-                      disabled={otpLoading}
-                      className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  ))}
+          {/* Right Side - Form or OTP */}
+          <div className="space-y-6">
+              {/* Error/Success Messages */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={otpLoading || timeLeft === 0 || otpDigits.join('').length !== 6}
-              >
-                {otpLoading ? 'Verifying...' : 'Verify & Create Account'}
-              </button>
-
-              {/* Resend Button */}
-              {canResend && (
-                <button
-                  type="button"
-                  onClick={resendOTP}
-                  className="w-full text-blue-600 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                  disabled={otpLoading}
-                >
-                  Resend Verification Code
-                </button>
               )}
 
-              {/* Back Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setOtpSent(false);
-                  setOtp('');
-                  setOtpDigits(['', '', '', '', '', '']);
-                  setError('');
-                  setSuccess('');
-                  setTimeLeft(300);
-                  setCanResend(false);
-                }}
-                className="w-full text-gray-600 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                disabled={otpLoading}
-              >
-                Back to Sign Up
-              </button>
-            </form>
-          </div>
-        ) : null}
+              {success && (
+                <div className="bg-black rounded-full px-6 py-3 inline-flex items-center gap-2 shadow-md">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                  <p className="text-sm text-white font-medium">Verification code sent</p>
+                </div>
+              )}
 
-        {/* Signup Form */}
-        {!otpSent && !redirecting && (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+              {/* Signup Form */}
+              {!otpSent && !redirecting && (
+              <div className="bg-transparent rounded-xl p-8">
+            {/* Category Selection */}
+            <div className="mb-6">
+              <div className="inline-flex rounded-full p-0.5" style={{ backgroundColor: '#948979' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('student')}
+                  className={`px-6 py-1.5 text-sm rounded-full font-medium transition-all duration-300 ${
+                    selectedCategory === 'student'
+                      ? 'bg-black text-white shadow-sm'
+                      : 'text-white/90 hover:text-white'
+                  }`}
+                >
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('professional')}
+                  className={`px-6 py-1.5 text-sm rounded-full font-medium transition-all duration-300 ${
+                    selectedCategory === 'professional'
+                      ? 'bg-black text-white shadow-sm'
+                      : 'text-white/90 hover:text-white'
+                  }`}
+                >
+                  Working Professional
+                </button>
+              </div>
+            </div>
+
+            {/* Create Account Heading */}
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                Create Account
+              </h2>
+            </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div>
@@ -581,7 +483,7 @@ export default function Signup() {
                     required
                     disabled={isSubmitting}
                     suppressHydrationWarning
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -597,7 +499,7 @@ export default function Signup() {
                     required
                     disabled={isSubmitting}
                     suppressHydrationWarning
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -617,7 +519,7 @@ export default function Signup() {
                 disabled={isSubmitting}
                 suppressHydrationWarning
                 aria-invalid={!!formData.email && !isValidEmailForSupport(formData.email)}
-                className={`w-full px-3 py-2 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full px-4 py-2 bg-white border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed ${
                   formData.email && !isValidEmailForSupport(formData.email) ? 'border-red-400' : 'border-gray-300'
                 }`}
               />
@@ -638,7 +540,7 @@ export default function Signup() {
                     onChange={handleInputChange}
                     required
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
@@ -679,7 +581,7 @@ export default function Signup() {
                     onChange={handleInputChange}
                     required
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10 text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
@@ -737,7 +639,8 @@ export default function Signup() {
             <button
               type="submit"
               disabled={!isPasswordValid || !isConfirmPasswordValid || isSubmitting || !formData.agreeToTerms || !isValidEmailForSupport(formData.email)}
-              className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center"
+              className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold flex items-center justify-center"
+              style={{ backgroundColor: '#948979' }}
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -750,7 +653,7 @@ export default function Signup() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">or</span>
+                <span className="px-2 text-gray-500" style={{ backgroundColor: '#F3E8DF' }}>or</span>
               </div>
             </div>
           </div>
@@ -767,6 +670,90 @@ export default function Signup() {
             </p>
           </div>
         </div>
+              )}
+
+              {/* OTP Verification Section - Shows in right column */}
+              {otpSent && !redirecting && (
+                <div className="bg-transparent rounded-xl p-8">
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                      Verify Your Email
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-2">
+                      We sent a verification code to <strong>{formData.email}</strong>
+                    </p>
+                  </div>
+
+                  <form onSubmit={verifyOTP} className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Enter 6-digit code
+                      </label>
+                      <div className="grid grid-cols-6 gap-2">
+                        {[0, 1, 2, 3, 4, 5].map(i => (
+                          <input
+                            key={i}
+                            id={`otp-${i}`}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={otpDigits[i]}
+                            onChange={(e) => handleOtpInputChange(i, e.target.value)}
+                            disabled={otpLoading}
+                            className="text-center text-lg font-semibold border border-gray-300 rounded-lg py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full text-white py-3 rounded-full hover:opacity-90 transition-all font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: '#948979' }}
+                      disabled={otpLoading || timeLeft === 0 || otpDigits.join('').length !== 6}
+                    >
+                      {otpLoading ? 'Verifying...' : 'Verify & Create Account'}
+                    </button>
+
+                    {/* Resend Button */}
+                    {canResend && (
+                      <button
+                        type="button"
+                        onClick={resendOTP}
+                        className="w-full text-gray-600 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors"
+                        disabled={otpLoading}
+                      >
+                        Resend Verification Code
+                      </button>
+                    )}
+
+                    {/* Back Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpSent(false);
+                        setOtpDigits(['', '', '', '', '', '']);
+                        setError('');
+                        setSuccess('');
+                        setTimeLeft(300);
+                        setCanResend(false);
+                      }}
+                      className="w-full text-gray-600 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors"
+                      disabled={otpLoading}
+                    >
+                      Back to Sign Up
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+
+        {/* Redirecting Spinner */}
+        {(redirecting || authRedirecting) && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+            <MoonLoader color="#000000" size={60} />
+          </div>
         )}
       </div>
     </div>

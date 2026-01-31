@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowRight, Star, Users, Clock, Shield, Calendar, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Play, MessageCircle, X, Send, CheckCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Star, ChevronDown, ChevronLeft, ChevronRight, Play, MessageCircle, X, Send, CheckCircle } from 'lucide-react';
 import { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,15 +34,10 @@ CenterSpinner.displayName = 'CenterSpinner';
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentTestimonialSlide, setCurrentTestimonialSlide] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [isTestimonialPaused, setIsTestimonialPaused] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<'student' | 'professional'>('student');
   const [currentMentorIndex, setCurrentMentorIndex] = useState(0);
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
-  const [faqButtonColors, setFaqButtonColors] = useState<{ [key: number]: string }>({});
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [chatbotStep, setChatbotStep] = useState<'email' | 'subject' | 'query'>('email');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,43 +73,7 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  // Generate random light background colors for testimonials
-  const getRandomBackgroundColor = (index: number) => {
-    const colors = [
-      'bg-pink-50',
-      'bg-blue-50', 
-      'bg-green-50',
-      'bg-yellow-50',
-      'bg-purple-50',
-      'bg-indigo-50',
-      'bg-cyan-50',
-      'bg-emerald-50',
-      'bg-orange-50',
-      'bg-rose-50',
-      'bg-sky-50',
-      'bg-lime-50'
-    ];
-    return colors[index % colors.length];
-  };
 
-  // Generate random light shadow colors for testimonials
-  const getRandomShadowColor = (index: number) => {
-    const colors = [
-      'shadow-pink-200',
-      'shadow-blue-200', 
-      'shadow-green-200',
-      'shadow-yellow-200',
-      'shadow-purple-200',
-      'shadow-indigo-200',
-      'shadow-cyan-200',
-      'shadow-emerald-200',
-      'shadow-orange-200',
-      'shadow-rose-200',
-      'shadow-sky-200',
-      'shadow-lime-200'
-    ];
-    return colors[index % colors.length];
-  };
 
   const handleLoginClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
     e.preventDefault();
@@ -137,31 +95,6 @@ export default function Home() {
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
-  };
-
-  const handleFaqHover = (index: number, isHovering: boolean) => {
-    if (isHovering && openFaq !== index) {
-      // Generate a random color for hover state
-      const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100', 'bg-indigo-100'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      setFaqButtonColors(prev => ({ ...prev, [index]: randomColor }));
-    } else if (!isHovering && openFaq !== index) {
-      // Reset to default color when not hovering and not open
-      setFaqButtonColors(prev => ({ ...prev, [index]: 'bg-gray-50' }));
-    }
-  };
-
-  const handleFaqClick = (index: number) => {
-    if (openFaq === index) {
-      // Closing the FAQ, reset to default color
-      setFaqButtonColors(prev => ({ ...prev, [index]: 'bg-gray-50' }));
-    } else {
-      // Opening the FAQ, set a random color
-      const colors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-pink-100', 'bg-yellow-100', 'bg-indigo-100'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      setFaqButtonColors(prev => ({ ...prev, [index]: randomColor }));
-    }
-    toggleFaq(index);
   };
 
   const nextMentor = () => {
@@ -264,35 +197,9 @@ export default function Home() {
     }
   };
 
-  // Check screen size for mobile optimization
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint
-    };
-    
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 2);
-    }, 4000); // Change slide every 4 seconds
 
-    return () => clearInterval(timer);
-  }, []);
 
-  useEffect(() => {
-    if (!isTestimonialPaused) {
-      const timer = setInterval(() => {
-        setCurrentTestimonialSlide((prev) => (prev + 0.05) % 12);
-      }, 150); // Much slower and smoother movement
-
-      return () => clearInterval(timer);
-    }
-  }, [isTestimonialPaused]);
   const mentors = [
     {
       id: 1,
@@ -341,173 +248,8 @@ export default function Home() {
     }
   ];
 
-  const experts = [
-    {
-      id: 1,
-      name: "Animesh Pandit",
-      title: "Senior Consultant",
-      company: "Sanofi",
-      expertise: "Product Strategy, Go-to-Market",
-      rating: 4.9,
-      reviews: 127,
-      price: "Rs500",
-      duration: "30 min",
-      avatar: "SC",
-      verified: true
-    },
-    // {
-    //   id: 2,
-    //   name: "Ajatika Singh",
-    //   title: "Tech Startup Advisor",
-    //   company: "Microsoft",
-    //   expertise: "Startup Growth, Fundraising",
-    //   rating: 4.8,
-    //   reviews: 89,
-    //   price: "$200",
-    //   duration: "45 min",
-    //   avatar: "MR",
-    //   verified: true
-    // },
-    // {
-    //   id: 3,
-    //   name: "Dr. Emily Watson",
-    //   title: "Career Development Coach",
-    //   company: "Self-employed",
-    //   expertise: "Career Transition, Leadership",
-    //   rating: 4.9,
-    //   reviews: 156,
-    //   price: "$120",
-    //   duration: "30 min",
-    //   avatar: "EW",
-    //   verified: true
-    // },
-    // {
-    //   id: 4,
-    //   name: "Alex Kumar",
-    //   title: "Digital Marketing Expert",
-    //   company: "Meta",
-    //   expertise: "Growth Marketing, SEO",
-    //   rating: 4.7,
-    //   reviews: 203,
-    //   price: "$100",
-    //   duration: "30 min",
-    //   avatar: "AK",
-    //   verified: true
-    // },
-    // {
-    //   id: 5,
-    //   name: "Lisa Wang",
-    //   title: "UX Designer",
-    //   company: "Apple",
-    //   expertise: "UI/UX Design, User Research",
-    //   rating: 4.6,
-    //   reviews: 78,
-    //   price: "$180",
-    //   duration: "60 min",
-    //   avatar: "LW",
-    //   verified: true
-    // },
-    // {
-    //   id: 6,
-    //   name: "David Kim",
-    //   title: "Financial Advisor",
-    //   company: "Morgan Stanley",
-    //   expertise: "Investment Planning, Retirement",
-    //   rating: 4.9,
-    //   reviews: 203,
-    //   price: "$250",
-    //   duration: "90 min",
-    //   avatar: "DK",
-    //   verified: true
-    // }
-  ];
 
-  const testimonials = [
-    {
-      name: "Rahul Vansh",
-      avatar: "RV",
-      content: "Before joining, I wasn't that confident about interviews for on-camera roles, though I did have good enough understanding of concepts but 'what I don't know' was stopping me to apply for such roles. Ma'am made it realised that it's an iterative process, I'll learn to tackle my loopholes by actually giving interviews.",
-      mentor: {
-        name: "Megha Updadhyay",
-        title: "Ex-ABP News",
-        avatar: "MU"
-      }
-    },
-    {
-      name: "Pradeep M",
-      avatar: "PM",
-      content: "Just wanted to say a big thank you for your insightful guidance. Your clear advice on improving my speaking and writing skills was exactly what I needed. I appreciate your genuine interest in my growth, and I'm excited to start working on your suggestions.",
-      mentor: {
-        name: "Ajatika Singh",
-        title: "ABP News",
-        avatar: "AS"
-      }
-    },
-    {
-      name: "Kirti Sharma",
-      avatar: "KS",
-      content: "Happy to talk to you!! I loved the way she was clearing my doubts related to my career. She is frank, loving and motivating person. I recommend everyone to take advice from her as she is very genuine and realistic in nature.",
-      mentor: {
-        name: "Megha Updadhyay",
-        title: "Ex-ABP News",
-        avatar: "MU"
-      }
-    },
-    {
-      name: "Abhijeet Pathak",
-      avatar: "AP",
-      content: "I recently had a conversation with a Megha Didi who guided me regarding my career and shared valuable advice. she patiently answered all my questions and motivated me to work hard and stay focused. The guidance I received has given me clarity and confidence to move forward in life, not just in my career but in every field. I am truly grateful for their time and support. Thank so much didi for being such a positive influence.🙏🏻❤️I am always grateful to you.",
-      mentor: {
-        name: "Megha Upadhyay",
-        title: "Ex-ABP News",
-        avatar: "MU"
-      }
-    },
-    {
-      name: "Harjeet Kaur",
-      avatar: "HK",
-      content: "The call is really worth it. And very helpful. I could say she is the best person to guide in the caarer.",
-      mentor: {
-        name: "Ajatika Singh",
-        title: "ABP News",
-        avatar: "AS"
-      }
-    },
-    {
-      name: "Arvind",
-      avatar: "AR",
-      content: "It was nice talking to Megha. She patiently clarified each and every doubt I had. Thank you, Megha.",
-      mentor: {
-        name: "Megha Upadhyay",
-        title: "Ex-ABP News",
-        avatar: "MU"
-      }
-    },
-    {
-      name: "Shruti Suman",
-      avatar: "SS",
-      content: "The session was extremely wonderful! Being a fresher it always seems to be hard or almost impossible to get in touch with the people who are already on a good note or position. It was truly grateful of maam , the way she thought and explained me the things in such a friendly and easy manner that made me comfortable to express and put on my points and queries freely , along with that she really helped me overcome finding a solution for me. Thanks to her! I would really suggest the students to have a session with her , you will really be amazed and happy finding it very helpful.",
-      mentor: {
-        name: "Megha Upadhyay",
-        title: "Ex-ABP News",
-        avatar: "MU"
-      }
-    },
-    {
-      name: "Sunny Shukla",
-      avatar: "SS",
-      content: "It was nice talking to Ajatika Ma'am. She patiently clarified each and every doubt I had. Thank you ma'am.",
-      mentor: {
-        name: "Ajatika Singh",
-        title: "ABP News",
-        avatar: "AS"
-      }
-    }
-  ];
 
-  const categories = [
-    "Career Guidance", "Public Speaking", "Debate", "Mentorship", "Others"
-  ];
 
   const navItems = [
     {
@@ -604,7 +346,12 @@ export default function Home() {
       </Navbar>
 
       {/* Hero Section */}
-      <div className="pt-24">
+      <motion.div 
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="pt-24"
+      >
         <HeroGeometric 
           title1="Speak with Confidence"
           title2="Lead with Clarity"
@@ -617,10 +364,17 @@ export default function Home() {
             }, 1000);
           }}
         />
-      </div>
+      </motion.div>
 
       {/* Meet Your Mentors Section */}
-      <section id="mentors-section" className="py-8 bg-white/60 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        id="mentors-section" 
+        className="py-8 bg-white/60 relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-16">
             <motion.div
@@ -783,10 +537,17 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Get Started in 3 Easy Steps Section */}
-      <section id="mentors" className="py-8 md:py-16 bg-white/50 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        id="mentors" 
+        className="py-8 md:py-16 bg-white/50 relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="text-center mb-8 md:mb-16">
             <motion.h2
@@ -880,15 +641,28 @@ export default function Home() {
             </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* New Testimonials Section */}
-      <Testimonials />
+      <motion.div
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <Testimonials />
+      </motion.div>
 
 
 
       {/* Who This is For Section */}
-      <section className="py-8 md:py-12 bg-white/50 relative z-10">
+      <motion.section 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="py-8 md:py-12 bg-white/50 relative z-10"
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="text-center mb-6 md:mb-10">
             <motion.div
@@ -981,10 +755,17 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* FAQ Section */}
-      <section className="py-16" style={{ backgroundColor: '#F3E8DF' }}>
+      <motion.section 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="py-16" 
+        style={{ backgroundColor: '#F3E8DF' }}
+      >
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
             <motion.h2
@@ -1019,7 +800,7 @@ export default function Home() {
             {/* FAQ 1 - How do I get started? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
-                onClick={() => handleFaqClick(0)}
+                onClick={() => toggleFaq(0)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
@@ -1055,7 +836,7 @@ export default function Home() {
             {/* FAQ 2 - What payment methods do you accept? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
-                onClick={() => handleFaqClick(1)}
+                onClick={() => toggleFaq(1)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
@@ -1091,7 +872,7 @@ export default function Home() {
             {/* FAQ 3 - What is the refund policy? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
               <button 
-                onClick={() => handleFaqClick(2)}
+                onClick={() => toggleFaq(2)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
                 <div className="flex items-center justify-between">
@@ -1125,10 +906,16 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer */}
-      <footer style={{ backgroundColor: '#F3E8DF' }}>
+      <motion.footer 
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        style={{ backgroundColor: '#F3E8DF' }}
+      >
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
             {/* Brand Section */}
@@ -1154,7 +941,7 @@ export default function Home() {
             <p className="text-gray-700">©2025 Confiido. All rights reserved.</p>
           </div>
         </div>
-      </footer>
+      </motion.footer>
 
       {/* Center Loading Spinner */}
       {(isLoginLoading || isSignupLoading) && <CenterSpinner />}

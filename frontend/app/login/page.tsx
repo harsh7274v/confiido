@@ -353,7 +353,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#D9E9CF' }}>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#F3E8DF' }}>
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
@@ -364,37 +364,40 @@ export default function Login() {
           <MoonLoader color="#000000" size={60} />
         </div>
       )}
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
-            <img 
-              src="/icons/icon-96x96.png" 
-              alt="Confiido Logo" 
-              className="h-10 w-10 object-contain"
-            />
-            <span className="text-2xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
-          </Link>
-          <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>
-            Welcome back
-          </h2>
-          <p className="mt-2 text-sm text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>
-            Sign in to your account to continue your learning journey
-          </p>
-        </div>
+      <div className="max-w-7xl w-full">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
+          {/* Left Side - Branding */}
+          <div className="text-left space-y-4">
+            <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
+              <img 
+                src="/icons/icon-96x96.png" 
+                alt="Confiido Logo" 
+                className="h-12 w-12 object-contain"
+              />
+              <span className="text-3xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
+            </Link>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Welcome back
+            </h2>
+            <p className="text-lg text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
+              Sign in to your account to continue your learning journey
+            </p>
+          </div>
 
-        {/* Login Form */}
-        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                <p className="text-sm text-red-700">{error}</p>
+          {/* Right Side - Login Form */}
+          <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           
+            <div className="bg-transparent rounded-xl p-8">
           {!redirecting && (
             <>
               {loginStep === 'email' ? (
@@ -411,7 +414,7 @@ export default function Login() {
                       onChange={handleInputChange}
                       required
                       suppressHydrationWarning
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -419,7 +422,8 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{ backgroundColor: '#948979' }}
                   >
                     {isLoading ? (
                       'Checking...'
@@ -457,7 +461,7 @@ export default function Login() {
                           value={resetCode}
                           onChange={(e) => setResetCode(e.target.value)}
                           placeholder="Paste the code from your email"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <div>
@@ -467,7 +471,7 @@ export default function Login() {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="At least 8 characters, include a special character"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">Must be 8+ characters and include at least one special character.</p>
                       </div>
@@ -506,7 +510,7 @@ export default function Login() {
                           onChange={handleInputChange}
                           required
                           suppressHydrationWarning
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10"
                           placeholder="Enter your password"
                         />
                         <button
@@ -564,7 +568,8 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-900 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    style={{ backgroundColor: '#948979' }}
                   >
                     {isLoading ? (
                       isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'
@@ -589,7 +594,8 @@ export default function Login() {
                           type="button"
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); sendOtp(); }}
                           disabled={otpLoading}
-                          className="w-full inline-flex items-center justify-center px-4 py-3 bg-black text-white font-semibold text-sm rounded-lg hover:bg-gray-900 transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
+                          className="w-full inline-flex items-center justify-center px-4 py-3 text-white font-semibold text-sm rounded-full hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
+                          style={{ backgroundColor: '#948979' }}
                         >
                           {otpLoading ? (
                             'Sending code...'
@@ -634,19 +640,7 @@ export default function Login() {
             </p>
           </div>
         </div>
-
-        {/* Additional Info */}
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-gray-600 hover:text-gray-800">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link href="/privacy" className="text-gray-600 hover:text-gray-800">
-              Privacy Policy
-            </Link>
-          </p>
+          </div>
         </div>
       </div>
     </div>

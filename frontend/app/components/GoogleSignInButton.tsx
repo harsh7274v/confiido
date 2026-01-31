@@ -27,7 +27,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         disabled={loading || disabled}
         className={`
           flex items-center justify-center gap-3 w-full px-6 py-3 
-          bg-white border border-gray-300 rounded-lg 
+          bg-white border border-gray-300 rounded-full 
           hover:bg-gray-50 
           transition-colors duration-200 
           disabled:opacity-50 disabled:cursor-not-allowed
