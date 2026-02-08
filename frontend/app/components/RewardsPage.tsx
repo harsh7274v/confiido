@@ -252,9 +252,9 @@ export default function RewardsPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full" style={{ backgroundColor: '#fff0f3' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <SkeletonLoader />
@@ -266,27 +266,14 @@ export default function RewardsPage() {
           {/* Left Side - Header and Info */}
           <div className="flex flex-col">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 rounded-lg shadow-lg" style={{ background: '#5E936C' }}>
+              <div className="p-2 shadow-lg" style={{ backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }}>
                 <Gift className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+              <h1 className="text-2xl font-bold" style={{ fontFamily: "'Rubik', sans-serif", color: '#5D5869' }}>
                 Rewards & Loyalty
               </h1>
             </div>
-            <style jsx>{`
-              @keyframes shimmer {
-                0% {
-                  background-position: -200% 0;
-                }
-                100% {
-                  background-position: 200% 0;
-                }
-              }
-              .animate-shimmer {
-                animation: shimmer 3s ease-in-out infinite;
-              }
-            `}</style>
-            <p className="text-base text-gray-600 mb-6">
+            <p className="text-base mb-6" style={{ color: '#5D5869', opacity: 0.8 }}>
               Earn points for every session and redeem them for amazing rewards!
             </p>
             
@@ -296,38 +283,38 @@ export default function RewardsPage() {
 
             {/* How to Earn Points - Compact */}
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900">How to Earn Points</h3>
+              <h3 className="text-base font-semibold" style={{ color: '#5D5869' }}>How to Earn Points</h3>
               <div className="space-y-2">
-                <div className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-all">
+                <div className="border p-3 hover:shadow-md transition-all" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-blue-100 rounded">
-                      <Calendar className="h-4 w-4 text-blue-600" />
+                    <div className="p-1.5" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
+                      <Calendar className="h-4 w-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Complete Session</p>
-                      <p className="text-xs text-gray-600">+50 points per session</p>
+                      <p className="text-sm font-medium" style={{ color: '#000000' }}>Complete Session</p>
+                      <p className="text-xs" style={{ color: '#000000', opacity: 0.8 }}>+50 points per session</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-all">
+                <div className="border p-3 hover:shadow-md transition-all" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-green-100 rounded">
-                      <Star className="h-4 w-4 text-green-600" />
+                    <div className="p-1.5" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
+                      <Star className="h-4 w-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Leave Review</p>
-                      <p className="text-xs text-gray-600">+25 points per review</p>
+                      <p className="text-sm font-medium" style={{ color: '#000000' }}>Leave Review</p>
+                      <p className="text-xs" style={{ color: '#000000', opacity: 0.8 }}>+25 points per review</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-all">
+                <div className="border p-3 hover:shadow-md transition-all" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded" style={{ backgroundColor: '#5E936C20' }}>
-                      <Target className="h-4 w-4" style={{ color: '#5E936C' }} />
+                    <div className="p-1.5" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
+                      <Target className="h-4 w-4 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Refer Friends</p>
-                      <p className="text-xs text-gray-600">+100 points per referral</p>
+                      <p className="text-sm font-medium" style={{ color: '#000000' }}>Refer Friends</p>
+                      <p className="text-xs" style={{ color: '#000000', opacity: 0.8 }}>+100 points per referral</p>
                     </div>
                   </div>
                 </div>
@@ -336,29 +323,29 @@ export default function RewardsPage() {
           </div>
 
           {/* Right Side - Loyalty Points Card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-lg">
+          <div className="shadow-xl border p-6 max-w-lg" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '3rem' }}>
             <div className="text-center mb-6">
-              <div className="p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center" style={{ background: '#5E936C' }}>
+              <div className="p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#3a3a3a' }}>
                 <Coins className="h-8 w-8 text-white" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-1">{loyaltyPoints}</h2>
-              <p className="text-base text-gray-600">Loyalty Points</p>
-              <p className="text-sm text-gray-500">1 Point = ₹1</p>
+              <h2 className="text-3xl font-bold mb-1" style={{ color: '#5D5869' }}>{loyaltyPoints}</h2>
+              <p className="text-base" style={{ color: '#5D5869', opacity: 0.8 }}>Loyalty Points</p>
+              <p className="text-sm" style={{ color: '#5D5869', opacity: 0.7 }}>1 Point = ₹1</p>
             </div>
 
             {/* Points Summary */}
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+              <div className="flex justify-between items-center p-3" style={{ backgroundColor: '#f4acb7', borderRadius: '1.5rem' }}>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Total Earned</span>
+                  <span className="text-sm font-medium" style={{ color: '#000000' }}>Total Earned</span>
                 </div>
                 <span className="text-sm font-bold text-green-600">{totalEarned}</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+              <div className="flex justify-between items-center p-3" style={{ backgroundColor: '#f4acb7', borderRadius: '1.5rem' }}>
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium text-gray-700">Total Spent</span>
+                  <span className="text-sm font-medium" style={{ color: '#000000' }}>Total Spent</span>
                 </div>
                 <span className="text-sm font-bold text-red-600">{totalSpent}</span>
               </div>
@@ -366,10 +353,10 @@ export default function RewardsPage() {
 
             {/* Recent Activity */}
             <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Recent Activity</h3>
+              <h3 className="text-base font-semibold mb-3" style={{ color: '#5D5869' }}>Recent Activity</h3>
               <div className="space-y-2">
                 {recentActivity.slice(0, 3).map((activity, idx) => (
-                  <div key={activity.id ?? `${activity.date.getTime()}-${idx}`} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div key={activity.id ?? `${activity.date.getTime()}-${idx}`} className="flex items-center justify-between p-2" style={{ backgroundColor: '#f4acb7', borderRadius: '1rem' }}>
                     <div className="flex items-center gap-2">
                       {activity.type === 'earned' ? (
                         <CheckCircle className="h-3 w-3 text-green-600" />
@@ -377,8 +364,8 @@ export default function RewardsPage() {
                         <Gift className="h-3 w-3 text-red-600" />
                       )}
                       <div>
-                        <p className="text-xs font-medium text-gray-900">{activity.description}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs font-medium" style={{ color: '#000000' }}>{activity.description}</p>
+                        <p className="text-xs" style={{ color: '#000000', opacity: 0.7 }}>
                           {activity.date.toLocaleDateString()}
                         </p>
                       </div>
@@ -397,52 +384,52 @@ export default function RewardsPage() {
 
         {/* Available Rewards Section */}
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Available Rewards</h2>
+          <h2 className="text-xl font-bold mb-6" style={{ fontFamily: "'Rubik', sans-serif", color: '#5D5869' }}>Available Rewards</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {rewards.map((reward) => (
-                  <div key={reward.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
+                  <div key={reward.id} className="border p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '3rem' }}>
                     <div className="flex items-start justify-between mb-4">
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: '#5E936C20' }}>
-                        <reward.icon className="h-6 w-6" style={{ color: '#5E936C' }} />
+                      <div className="p-3" style={{ backgroundColor: '#f4acb7', borderRadius: '1.5rem' }}>
+                        <reward.icon className="h-6 w-6" style={{ color: '#3a3a3a' }} />
                       </div>
-                      <span 
+                      <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(reward.category)}`}
-                        style={reward.category === 'upgrade' ? { backgroundColor: '#5E936C' } : {}}
+                        style={reward.category === 'upgrade' ? { backgroundColor: '#3a3a3a', color: 'white' } : {}}
                       >
                         {reward.category.charAt(0).toUpperCase() + reward.category.slice(1)}
                       </span>
                     </div>
-                    
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{reward.title}</h3>
-                    <p className="text-gray-600 mb-4">{reward.description}</p>
-                    
+
+                    <h3 className="text-lg font-semibold mb-2" style={{ color: '#5D5869' }}>{reward.title}</h3>
+                    <p className="mb-4" style={{ color: '#5D5869', opacity: 0.8 }}>{reward.description}</p>
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Coins className="h-4 w-4 text-yellow-600" />
-                        <span className="text-sm font-medium text-gray-700">{reward.pointsRequired} points</span>
+                        <span className="text-sm font-medium" style={{ color: '#5D5869' }}>{reward.pointsRequired} points</span>
                       </div>
-                      
+
                       <button
                         onClick={() => handleRedeemReward(reward)}
                         disabled={!reward.isAvailable || (reward.id !== '1' && loyaltyPoints < reward.pointsRequired)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                        className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 ${
                           reward.isAvailable && (reward.id === '1' || loyaltyPoints >= reward.pointsRequired)
                             ? 'text-white'
                             : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         }`}
                         style={
                           reward.isAvailable && (reward.id === '1' || loyaltyPoints >= reward.pointsRequired)
-                            ? { backgroundColor: '#5E936C' }
-                            : {}
+                            ? { backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }
+                            : { borderRadius: '1.5rem' }
                         }
                         onMouseEnter={(e) => {
                           if (reward.isAvailable && (reward.id === '1' || loyaltyPoints >= reward.pointsRequired)) {
-                            e.currentTarget.style.backgroundColor = '#4A7556';
+                            e.currentTarget.style.backgroundColor = '#2a2a2a';
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (reward.isAvailable && (reward.id === '1' || loyaltyPoints >= reward.pointsRequired)) {
-                            e.currentTarget.style.backgroundColor = '#5E936C';
+                            e.currentTarget.style.backgroundColor = '#3a3a3a';
                           }
                         }}
                       >
@@ -475,16 +462,16 @@ export default function RewardsPage() {
             </div>
 
             {/* Coming Soon */}
-            <div className="rounded-2xl p-6 border mt-8" style={{ background: 'linear-gradient(to right, #5E936C15, #3B82F615)', borderColor: '#5E936C50' }}>
+            <div className="p-6 border mt-8" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '3rem' }}>
               <div className="text-center">
-                <div className="p-2 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#5E936C' }}>
+                <div className="p-2 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#3a3a3a' }}>
                   <Award className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">More Rewards Coming Soon!</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#5D5869' }}>More Rewards Coming Soon!</h3>
+                <p className="text-sm mb-3" style={{ color: '#5D5869', opacity: 0.8 }}>
                   We&apos;re constantly adding new rewards and exclusive offers. Keep earning points to unlock more amazing benefits!
                 </p>
-                <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
+                <div className="flex items-center justify-center gap-3 text-xs" style={{ color: '#5D5869', opacity: 0.7 }}>
                   <span>🎁 Exclusive merchandise</span>
                   <span>•</span>
                   <span>🏆 VIP events</span>

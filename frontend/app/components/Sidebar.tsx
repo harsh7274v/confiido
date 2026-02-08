@@ -8,11 +8,14 @@ import {
   User, 
   CreditCard, 
   Mail,
-  ChevronLeft,
-  ChevronRight,
   Calendar,
   Wallet,
-  Star
+  Star,
+  Grid,
+  FileText,
+  MessageSquare,
+  Settings,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -38,22 +41,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   onPaymentsClick,
   isProfileIncomplete = false
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeItem, setActiveItem] = useState('profile');
+  const [activeItem, setActiveItem] = useState('home');
 
   const navigationItems = [
-    { id: 'home', label: 'Home', icon: Home, path: '/dashboard' },
-    { id: 'sessions', label: 'Sessions', icon: Calendar, path: '/sessions' },
-    { id: 'payments', label: 'Payments', icon: Wallet, path: '/payments' },
-    { id: 'rewards', label: 'Rewards', icon: Gift, path: '/rewards' },
-    { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
-    { id: 'transactions', label: 'Transactions', icon: CreditCard, path: '/transactions' },
-    { id: 'contact', label: 'Contact', icon: Mail, path: '/contact' },
+    { id: 'home', label: 'Home', icon: Grid },
+    { id: 'sessions', label: 'Sessions', icon: Calendar },
+    { id: 'payments', label: 'Payments', icon: Wallet },
+    { id: 'rewards', label: 'Rewards', icon: Gift },
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'transactions', label: 'Transactions', icon: CreditCard },
+    { id: 'contact', label: 'Contact', icon: Mail },
   ];
-
-  const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
 
   const handleItemClick = (itemId: string) => {
     setActiveItem(itemId);
@@ -94,160 +92,111 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+  };
+
   return (
     <>
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <div className="h-full min-h-screen w-64 flex flex-col shadow-xl" style={{ backgroundColor: '#E5E7EB', borderTopRightRadius: '3rem', borderBottomRightRadius: '3rem' }}>
+          {/* Brand/Title */}
+          <div className="px-6 pt-8 pb-4">
+            <h1 className="text-2xl font-bold" style={{ color: '#5D5869', fontFamily: "'Rubik', sans-serif" }}>
+              Confiido
+            </h1>
+          </div>
 
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes fadeOut {
-          from {
-            opacity: 1;
-            transform: translateX(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-        }
-
-        .sidebar-container {
-          animation: slideIn 0.4s ease-out;
-        }
-
-        .sidebar-label-enter {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        .sidebar-label-exit {
-          animation: fadeOut 0.2s ease-out forwards;
-        }
-
-        .collapse-transition {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}</style>
-             {/* Desktop Sidebar */}
-       <div className="hidden lg:block">
-                                                                           <div className={`sidebar-container bg-gray-200 h-full min-h-screen collapse-transition ${
-              isCollapsed ? 'w-20' : 'w-64'
-            } flex flex-col shadow-lg`}>
-                     {/* Header with user name and collapse button */}
-           <div className={`border-b border-gray-200 collapse-transition ${isCollapsed ? 'p-3' : 'p-4'}`}>
-             <div className="flex items-center justify-between">
-               {!isCollapsed && (
-                 <h2 className="text-lg font-bold text-gray-800 sidebar-label-enter">{userName}.</h2>
-               )}
-               <button
-                 onClick={toggleCollapse}
-                 className={`p-2 rounded-full border collapse-transition hover:scale-110 active:scale-95 ${
-                   isCollapsed ? 'mx-auto' : ''
-                 }`}
-                 style={{ borderColor: '#5E936C' }}
-                 onMouseEnter={(e) => {
-                   e.currentTarget.style.backgroundColor = '#5E936C20';
-                   e.currentTarget.style.transform = 'scale(1.1) rotate(360deg)';
-                 }}
-                 onMouseLeave={(e) => {
-                   e.currentTarget.style.backgroundColor = 'transparent';
-                   e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-                 }}
-               >
-                {isCollapsed ? (
-                  <ChevronRight className="w-4 h-4 collapse-transition" style={{ color: '#5E936C' }} />
-                ) : (
-                  <ChevronLeft className="w-4 h-4 collapse-transition" style={{ color: '#5E936C' }} />
-                )}
-              </button>
+          {/* Profile Section */}
+          <div className="px-6 py-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center flex-shrink-0 shadow-md">
+                <User className="w-8 h-8 text-blue-700" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: '#5D5869', fontFamily: "'Rubik', sans-serif" }}>
+                  {userName}
+                </h2>
+              </div>
             </div>
           </div>
 
-                     {/* Navigation items */}
-           <nav className={`flex-1 space-y-2 collapse-transition ${isCollapsed ? 'p-2' : 'p-4'}`}>
+          {/* Navigation Items */}
+          <nav className="flex-1 pl-4 py-4 space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeItem === item.id;
               
               return (
-                                                  <button
-                   key={item.id}
-                   onClick={() => handleItemClick(item.id)}
-                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg collapse-transition hover:scale-105 active:scale-95 relative ${
-                     isActive
-                       ? 'text-white shadow-lg'
-                       : 'text-gray-700 hover:bg-gray-200'
-                   } ${isCollapsed ? 'justify-center px-2' : ''}`}
-                   style={isActive ? { backgroundColor: '#5E936C' } : {}}
-                 >
-                   <Icon className={`w-6 h-6 collapse-transition ${
-                     isActive ? 'text-white' : 'text-current'
-                   }`} />
-                   {!isCollapsed && (
-                     <span className="font-medium sidebar-label-enter flex items-center gap-2">
-                       {item.label}
-                       {item.id === 'profile' && isProfileIncomplete && (
-                         <Star className="w-3 h-3 fill-red-500 text-red-500" />
-                       )}
-                     </span>
-                   )}
-                   {isCollapsed && item.id === 'profile' && isProfileIncomplete && (
-                     <Star className="absolute top-1 right-1 w-3 h-3 fill-red-500 text-red-500" />
-                   )}
-                 </button>
+                <button
+                  key={item.id}
+                  onClick={() => handleItemClick(item.id)}
+                  className={`w-full flex items-center gap-4 py-3 transition-all duration-200 relative group ${
+                    isActive
+                      ? 'rounded-l-[2rem] shadow-md pl-5 mr-4'
+                      : 'rounded-xl hover:bg-white/30 px-5 mr-4'
+                  }`}
+                  style={isActive ? { backgroundColor: '#fff0f3' } : {}}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                    isActive ? 'shadow-sm' : ''
+                  }`} style={{ backgroundColor: isActive ? '#5D5869' : 'transparent' }}>
+                    <Icon className={`w-5 h-5 transition-colors duration-200 ${
+                      isActive ? 'text-white' : 'text-[#5D5869]'
+                    }`} />
+                  </div>
+                  <span className={`text-base font-medium transition-colors duration-200 flex items-center gap-2 ${
+                    isActive ? 'text-[#5D5869]' : 'text-[#7A7381]'
+                  }`} style={{ fontFamily: "'Rubik', sans-serif" }}>
+                    {item.label}
+                    {item.id === 'profile' && isProfileIncomplete && (
+                      <Star className="w-3 h-3 fill-red-500 text-red-500" />
+                    )}
+                  </span>
+                </button>
               );
             })}
           </nav>
+
+          {/* Logout Button */}
+          <div className="pl-4 py-6 mt-auto">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all duration-200 hover:bg-white/30 mr-4"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'transparent' }}>
+                <LogOut className="w-5 h-5" style={{ color: '#5D5869' }} />
+              </div>
+              <span className="text-base font-medium" style={{ color: '#7A7381', fontFamily: "'Rubik', sans-serif" }}>
+                Log out
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50" style={{ animation: 'slideIn 0.4s ease-out' }}>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 border-t border-gray-200 shadow-lg z-50" style={{ backgroundColor: '#E5E7EB', borderTopLeftRadius: '1.5rem', borderTopRightRadius: '1.5rem' }}>
         <div className="flex justify-around items-center py-2">
           {navigationItems.slice(0, 5).map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
-            
+
             return (
-                             <button
-                 key={item.id}
-                 onClick={() => handleItemClick(item.id)}
-                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg collapse-transition hover:scale-110 active:scale-95 min-w-[60px] ${
-                   isActive
-                     ? 'text-white'
-                     : 'text-gray-700 hover:bg-gray-100'
-                 }`}
-                 style={isActive ? { backgroundColor: '#5E936C' } : {}}
-               >
-                 <div className="relative">
-                   <Icon className={`w-5 h-5 mb-1 collapse-transition ${
-                     isActive ? 'text-white' : 'text-current'
-                   }`} />
-                   {item.id === 'profile' && isProfileIncomplete && (
-                     <Star className="absolute -top-1 -right-1 w-3 h-3 fill-red-500 text-red-500" />
-                   )}
-                 </div>
-                 <span className={`text-xs font-medium collapse-transition ${
-                   isActive ? 'text-white' : 'text-current'
-                 }`}>
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className="flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 min-w-[60px]"
+              >
+                <div className="relative">
+                  <Icon className="w-5 h-5 mb-1 transition-colors duration-200" style={{ color: isActive ? '#5D5869' : '#9CA3AF' }} />
+                  {item.id === 'profile' && isProfileIncomplete && (
+                    <Star className="absolute -top-1 -right-1 w-3 h-3 fill-red-500 text-red-500" />
+                  )}
+                </div>
+                <span className="text-xs font-medium transition-colors duration-200" style={{ color: isActive ? '#5D5869' : '#9CA3AF' }}>
                   {item.label}
                 </span>
               </button>

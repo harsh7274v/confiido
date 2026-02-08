@@ -768,7 +768,7 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 safe-area-main">
+      <div className="min-h-screen py-8 safe-area-main" style={{ backgroundColor: '#fff0f3' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <SkeletonLoader />
@@ -779,32 +779,35 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-4 sm:py-8 safe-area-main">
+    <div className="min-h-screen py-4 sm:py-8 safe-area-main" style={{ backgroundColor: '#fff0f3' }}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Modern Header */}
         <div className="mb-6 sm:mb-8 pt-12">
           <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4">
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <div className="p-2 rounded-lg shadow-lg" style={{ background: '#5E936C' }}>
+              <div className="p-2 shadow-lg" style={{ backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }}>
                 <CreditCard className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl sm:text-2xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                <h1 className="text-2xl sm:text-2xl lg:text-2xl font-bold" style={{ fontFamily: "'Rubik', sans-serif", color: '#5D5869' }}>
                   Booking Status
                 </h1>
-                <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Track and manage all your session bookings</p>
+                <p className="mt-1 sm:mt-2 text-sm sm:text-base" style={{ color: '#5D5869', opacity: 0.8 }}>Track and manage all your session bookings</p>
               </div>
             </div>
-            
+
             {/* Refresh Button */}
             <button
               onClick={refreshPayments}
               disabled={isRefreshing || loading}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-0"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-0"
+              style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.15)', borderRadius: '1.5rem', color: '#5D5869' }}
+              onMouseEnter={(e) => !isRefreshing && !loading && (e.currentTarget.style.backgroundColor = '#f4acb7')}
+              onMouseLeave={(e) => !isRefreshing && !loading && (e.currentTarget.style.backgroundColor = '#fadde1')}
               title="Refresh bookings"
             >
-              <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-600 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline text-sm font-medium text-gray-700">
+              <RefreshCw className={`h-4 w-4 sm:h-5 sm:w-5 ${isRefreshing ? 'animate-spin' : ''}`} style={{ color: '#5D5869' }} />
+              <span className="hidden sm:inline text-sm font-medium">
                 {isRefreshing ? 'Refreshing...' : 'Refresh'}
               </span>
             </button>
@@ -828,39 +831,42 @@ export default function PaymentsPage() {
 
         {/* Bookings Grid */}
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <div className="text-red-700 text-lg font-medium">{error}</div>
+          <div className="border p-8 text-center" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '2.5rem' }}>
+            <AlertCircle className="h-12 w-12 mx-auto mb-4" style={{ color: '#ef4444' }} />
+            <div className="text-lg font-medium" style={{ color: '#dc2626' }}>{error}</div>
           </div>
         ) : filteredPayments.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Calendar className="h-12 w-12 text-gray-400" />
+          <div className="shadow-lg border p-12 text-center" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '2.5rem' }}>
+            <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: '#f4acb7' }}>
+              <Calendar className="h-12 w-12" style={{ color: '#5D5869' }} />
             </div>
-            <div className="text-gray-500 text-xl font-medium mb-2">No bookings found</div>
-            <p className="text-gray-400">Book your first session to see booking status</p>
+            <div className="text-xl font-medium mb-2" style={{ color: '#5D5869' }}>No bookings found</div>
+            <p style={{ color: '#5D5869', opacity: 0.7 }}>Book your first session to see booking status</p>
             </div>
           ) : (
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
-            <div className="space-y-3 sm:space-y-4">
+          <div className="shadow-lg overflow-hidden" style={{ backgroundColor: '#fadde1', borderRadius: '2.5rem' }}>
+            <div className="space-y-3 sm:space-y-4 p-4">
             {filteredPayments.map((payment, index) => {
                 const isExpanded = expandedPayments.has(payment._id);
               const isCompleting = completingTransactions.has(payment._id);
               const isPending = payment.paymentStatus === 'pending';
               const timeout = getTimeout(payment.bookingId, payment._id);
               const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
-              
+
                 return (
-                <div 
-                  key={payment._id} 
-                  data-payment-id={payment._id} 
-                  className="no-focus bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 group" 
+                <div
+                  key={payment._id}
+                  data-payment-id={payment._id}
+                  className="no-focus shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border group"
                   tabIndex={-1}
-                  style={{ 
+                  style={{
+                    backgroundColor: 'white',
+                    borderColor: 'rgba(93, 88, 105, 0.1)',
+                    borderRadius: '2rem',
                     transition: 'all 0.3s ease-in-out',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#E8FFD7';
+                    e.currentTarget.style.backgroundColor = '#f4acb7';
                     e.currentTarget.style.transform = 'translateY(-4px)';
                   }}
                   onMouseLeave={(e) => {
@@ -869,7 +875,7 @@ export default function PaymentsPage() {
                   }}
                 >
                   {/* Modern Header Bar */}
-                  <div className="h-2 bg-gradient-to-r from-gray-100 to-gray-200" style={{ background: isPending ? 'linear-gradient(90deg, #5E936C 0%, #3E5F44 100%)' : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
+                  <div className="h-2" style={{ background: isPending ? 'linear-gradient(90deg, #f4acb7 0%, #fadde1 100%)' : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
                   
                   {/* Main Payment Card */}
                   <div className="p-4 sm:p-5">
@@ -879,26 +885,26 @@ export default function PaymentsPage() {
                       <div className="flex items-start space-x-3 flex-1 min-w-0">
                         <div className="relative flex-shrink-0">
                           {/* Modern Avatar with Icon */}
-                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl shadow-lg flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #5E936C 0%, #3E5F44 100%)' }}>
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl shadow-lg flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f4acb7 0%, #fadde1 100%)' }}>
                             {/* Background Pattern */}
                             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
                             {/* User Icon */}
                             <div className="relative z-10 flex items-center justify-center">
-                              <User className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                              <User className="h-6 w-6 sm:h-7 sm:w-7" style={{ color: '#5D5869' }} />
                             </div>
                             {/* Shine Effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
                           </div>
                           {isPending && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#3E5F44' }}>
+                            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#3a3a3a' }}>
                               <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-base sm:text-lg font-bold truncate" style={{ color: '#3E5F44' }}>
+                            <h3 className="text-base sm:text-lg font-bold truncate" style={{ color: '#5D5869' }}>
                             {payment.expertId?.userId?.firstName || 'Expert'} {payment.expertId?.userId?.lastName || ''}
                           </h3>
                           </div>
@@ -939,7 +945,7 @@ export default function PaymentsPage() {
                       {/* Price and Actions Section */}
                       <div className="flex flex-col items-start sm:items-end space-y-2.5">
                         <div className="flex items-center justify-between w-full sm:w-auto sm:flex-col sm:items-end gap-2">
-                          <p className="text-xl sm:text-2xl font-bold" style={{ color: '#3E5F44' }}>
+                          <p className="text-xl sm:text-2xl font-bold" style={{ color: '#5D5869' }}>
                             {formatCurrency(payment.price, payment.currency)}
                           </p>
                           {isExpired(payment.bookingId, payment._id) ? (
@@ -961,10 +967,10 @@ export default function PaymentsPage() {
                             <button
                               onClick={() => handleCompleteTransaction(payment._id)}
                               disabled={isCompleting}
-                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-sm hover:scale-105"
-                              style={{ backgroundColor: isCompleting ? '#9CA3AF' : '#3E5F44' }}
-                              onMouseEnter={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
-                              onMouseLeave={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
+                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-sm hover:scale-105"
+                              style={{ backgroundColor: isCompleting ? '#9CA3AF' : '#3a3a3a', borderRadius: '1.5rem' }}
+                              onMouseEnter={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#2a2a2a'; }}
+                              onMouseLeave={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#3a3a3a'; }}
                             >
                               {isCompleting ? (
                                 <>
@@ -982,14 +988,15 @@ export default function PaymentsPage() {
                             </button>
                           )}
                           
-                          <button 
+                          <button
                             onClick={() => toggleExpanded(payment._id)}
-                            className="no-focus p-2 text-gray-500 hover:text-white hover:bg-gray-100 rounded-xl transition-all duration-200 flex-shrink-0"
-                            style={{ 
-                              backgroundColor: isExpanded ? '#3E5F44' : '',
-                              color: isExpanded ? 'white' : ''
+                            className="no-focus p-2 transition-all duration-200 flex-shrink-0"
+                            style={{
+                              backgroundColor: isExpanded ? '#3a3a3a' : '',
+                              color: isExpanded ? 'white' : '#5D5869',
+                              borderRadius: '1.5rem'
                             }}
-                            onMouseEnter={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = '#F3F4F6'; } }}
+                            onMouseEnter={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = '#fadde1'; } }}
                             onMouseLeave={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = ''; } }}
                             title="View Details"
                           >
@@ -1002,10 +1009,10 @@ export default function PaymentsPage() {
                     
                     {/* Expanded Details */}
                     {isExpanded && (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-5 rounded-xl mt-4 border-t-2" style={{ borderColor: '#3E5F44' }}>
+                    <div className="p-4 sm:p-5 mt-4 border-t-2" style={{ backgroundColor: '#fadde1', borderColor: '#3a3a3a', borderRadius: '1.5rem' }}>
                       {/* Countdown Timer Section */}
                       {hasActiveCountdown && (
-                        <div className="mb-4 p-4 rounded-xl border-2" style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }}>
+                        <div className="mb-4 p-4 border-2" style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderRadius: '1.5rem' }}>
                           <div className="flex items-center justify-center gap-3 mb-3">
                             <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
                             <span className="text-lg font-bold" style={{ color: '#92400E' }}>Payment Timeout</span>
@@ -1020,16 +1027,16 @@ export default function PaymentsPage() {
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="space-y-3">
-                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#3E5F44' }}>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: '#3E5F44' }}>
+                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
+                            <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
                               <Hash className="h-4 w-4 text-white" />
                             </div>
                             Session Details
                           </h4>
-                          <div className="space-y-2 text-sm bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                          <div className="space-y-2 text-sm p-4 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
                               <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Session ID:</span>
                               <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment._id}</span>
@@ -1054,36 +1061,36 @@ export default function PaymentsPage() {
                           </div>
                           
                         <div className="space-y-3">
-                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#3E5F44' }}>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: '#3E5F44' }}>
+                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
+                            <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
                               <AlertCircle className="h-4 w-4 text-white" />
                             </div>
                             Additional Information
                           </h4>
                           <div className="space-y-3 text-sm">
                               {payment.notes && (
-                              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                              <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                                 <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
-                                  <MessageSquare className="h-4 w-4" style={{ color: '#3E5F44' }} />
+                                  <MessageSquare className="h-4 w-4" style={{ color: '#5D5869' }} />
                                   Notes:
                                 </span>
                                 <p className="text-gray-700 leading-relaxed">{payment.notes}</p>
                                 </div>
                               )}
                               {payment.meetingLink && (
-                              <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                              <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
                                 <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
-                                  <Video className="h-4 w-4" style={{ color: '#3E5F44' }} />
+                                  <Video className="h-4 w-4" style={{ color: '#5D5869' }} />
                                   Meeting Link:
                                 </span>
-                                  <a 
-                                    href={payment.meetingLink} 
-                                    target="_blank" 
+                                  <a
+                                    href={payment.meetingLink}
+                                    target="_blank"
                                     rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white hover:shadow-lg transition-all text-sm"
-                                  style={{ backgroundColor: '#3E5F44' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                                  className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white hover:shadow-lg transition-all text-sm"
+                                  style={{ backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
                                   >
                                   <Video className="h-4 w-4" />
                                   Join Meeting
@@ -1091,7 +1098,7 @@ export default function PaymentsPage() {
                                 </div>
                               )}
                               {payment.cancellationReason && (
-                              <div className="bg-red-50 p-3 rounded-xl border-2 border-red-200 shadow-sm">
+                              <div className="bg-red-50 p-3 border-2 border-red-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
                                 <span className="text-red-700 font-semibold mb-2 flex items-center gap-2">
                                   <XCircle className="h-4 w-4" />
                                   Cancellation Reason:
@@ -1103,7 +1110,7 @@ export default function PaymentsPage() {
                                 </div>
                               )}
                               {payment.refundAmount && payment.refundAmount > 0 && (
-                              <div className="bg-blue-50 p-3 rounded-xl border-2 border-blue-200 shadow-sm">
+                              <div className="bg-blue-50 p-3 border-2 border-blue-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
                                 <span className="text-blue-700 font-semibold mb-2 flex items-center gap-2">
                                   <CreditCard className="h-4 w-4" />
                                   Refund Amount:
@@ -1130,53 +1137,84 @@ export default function PaymentsPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-0"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-all duration-200 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: currentPage === 1 ? '#f4acb7' : '#fadde1',
+                  borderColor: 'rgba(93, 88, 105, 0.1)',
+                  color: '#5D5869',
+                  borderRadius: '1.5rem'
+                }}
+                onMouseEnter={(e) => { if (currentPage !== 1) e.currentTarget.style.backgroundColor = '#f4acb7'; }}
+                onMouseLeave={(e) => { if (currentPage !== 1) e.currentTarget.style.backgroundColor = '#fadde1'; }}
               >
                 <span className="hidden sm:inline">Previous</span>
                 <span className="sm:hidden">Prev</span>
               </button>
-              
+
               {/* Show limited page numbers on mobile */}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                 // On mobile, only show current page and adjacent pages
-                const isVisible = totalPages <= 5 || 
-                  page === 1 || 
-                  page === totalPages || 
+                const isVisible = totalPages <= 5 ||
+                  page === 1 ||
+                  page === totalPages ||
                   Math.abs(page - currentPage) <= 1;
-                
+
                 if (!isVisible) {
                   // Show ellipsis for hidden pages
                   if (page === 2 && currentPage > 3) {
-                    return <span key={`ellipsis-${page}`} className="px-2 text-gray-500">...</span>;
+                    return <span key={`ellipsis-${page}`} className="px-2" style={{ color: '#5D5869', opacity: 0.6 }}>...</span>;
                   }
                   if (page === totalPages - 1 && currentPage < totalPages - 2) {
-                    return <span key={`ellipsis-${page}`} className="px-2 text-gray-500">...</span>;
+                    return <span key={`ellipsis-${page}`} className="px-2" style={{ color: '#5D5869', opacity: 0.6 }}>...</span>;
                   }
                   return null;
                 }
-                
+
                 return (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl transition-all duration-200 focus:outline-none focus:ring-0 ${
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-0 ${
                       currentPage === page
                         ? 'text-white shadow-lg'
-                        : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                        : 'border'
                     }`}
-                    style={currentPage === page ? { backgroundColor: '#3E5F44' } : {}}
-                    onMouseEnter={(e) => { if (currentPage === page) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
-                    onMouseLeave={(e) => { if (currentPage === page) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
+                    style={currentPage === page
+                      ? { backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }
+                      : { backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', color: '#5D5869', borderRadius: '1.5rem' }
+                    }
+                    onMouseEnter={(e) => {
+                      if (currentPage === page) {
+                        e.currentTarget.style.backgroundColor = '#2a2a2a';
+                      } else {
+                        e.currentTarget.style.backgroundColor = '#f4acb7';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentPage === page) {
+                        e.currentTarget.style.backgroundColor = '#3a3a3a';
+                      } else {
+                        e.currentTarget.style.backgroundColor = '#fadde1';
+                      }
+                    }}
                   >
                     {page}
                   </button>
                 );
               })}
-              
+
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-0"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border transition-all duration-200 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: currentPage === totalPages ? '#f4acb7' : '#fadde1',
+                  borderColor: 'rgba(93, 88, 105, 0.1)',
+                  color: '#5D5869',
+                  borderRadius: '1.5rem'
+                }}
+                onMouseEnter={(e) => { if (currentPage !== totalPages) e.currentTarget.style.backgroundColor = '#f4acb7'; }}
+                onMouseLeave={(e) => { if (currentPage !== totalPages) e.currentTarget.style.backgroundColor = '#fadde1'; }}
               >
                 <span className="hidden sm:inline">Next</span>
                 <span className="sm:hidden">Next</span>

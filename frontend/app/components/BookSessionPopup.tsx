@@ -451,22 +451,25 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
       <div className="relative w-full max-w-sm animate-popup-in" style={{ maxWidth: '35vw', width: '90%', minWidth: '320px' }}>
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200" style={{ maxHeight: '90vh' }}>
-          {/* Modern Header with Gradient */}
-          <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
+        <div className="shadow-2xl overflow-hidden border" style={{ maxHeight: '90vh', backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '2.5rem' }}>
+          {/* Modern Header with Dashboard Theme */}
+          <div className="relative px-6 py-5 border-b" style={{ backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl shadow-lg" style={{ background: '#3E5F44' }}>
+              <div className="p-2 rounded-xl shadow-lg" style={{ backgroundColor: '#3a3a3a' }}>
                 <Calendar className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                <h2 className="text-xl font-bold" style={{ fontFamily: "'Rubik', sans-serif", color: '#5D5869' }}>
                   Book a Session
                 </h2>
-                <p className="text-xs text-gray-500 mt-0.5">Schedule your personalized session</p>
+                <p className="text-xs mt-0.5" style={{ color: '#5D5869', opacity: 0.7 }}>Schedule your personalized session</p>
               </div>
             </div>
             <button
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-all duration-200"
+              className="absolute top-4 right-4 p-2 rounded-full transition-all duration-200"
+              style={{ color: '#5D5869' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(93, 88, 105, 0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               onClick={onClose}
               aria-label="Close"
             >
@@ -479,8 +482,8 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
             <div className="space-y-4">
               {/* Service Selection */}
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Briefcase className="h-4 w-4 text-gray-500" />
+                <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#5D5869' }}>
+                  <Briefcase className="h-4 w-4" />
                   Select the Service
                 </label>
                 <Select value={service} onValueChange={setService} placeholder="Select a service">
@@ -492,13 +495,13 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
 
               {/* Duration and Price Info */}
               {service && (
-                <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                    <span className="text-sm font-medium flex items-center gap-2" style={{ color: '#000000' }}>
                       <Clock className="h-4 w-4" />
                       Duration: {getSelectedServiceDuration()}
                     </span>
-                    <span className="text-sm font-bold text-indigo-800 bg-white px-3 py-1 rounded-lg shadow-sm">
+                    <span className="text-sm font-bold px-3 py-1 rounded-lg shadow-sm" style={{ color: '#000000', backgroundColor: 'white' }}>
                       {servicePrice !== null ? `₹${servicePrice}` : 'Price unavailable'}
                     </span>
                   </div>
@@ -510,8 +513,8 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
 
               {/* Mentor Selection */}
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <User className="h-4 w-4 text-gray-500" />
+                <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#5D5869' }}>
+                  <User className="h-4 w-4" />
                   Select Mentor
                 </label>
                 <Select value={mentor} onValueChange={setMentor} placeholder={mentorsLoading ? 'Loading mentors...' : 'Select a mentor'}>
@@ -532,56 +535,59 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
 
               {/* Date Selection */}
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Calendar className="h-4 w-4 text-gray-500" />
+                <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#5D5869' }}>
+                  <Calendar className="h-4 w-4" />
                   Select Date
                 </label>
-                <input 
-                  type="date" 
-                  value={date} 
-                  onChange={e => setDate(e.target.value)} 
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 hover:border-gray-400" 
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200 hover:border-gray-400"
                 />
               </div>
               
               {/* Show available slots info */}
               {mentor && date && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="text-sm font-semibold flex items-center gap-2" style={{ color: '#000000' }}>
                       <Sparkles className="h-4 w-4" />
                       Availability Status
                     </span>
                     <button
                       onClick={fetchAvailableSlots}
                       disabled={loading}
-                      className="flex items-center gap-1 text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ backgroundColor: '#3a3a3a', color: 'white' }}
+                      onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = '#2a2a2a')}
+                      onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = '#3a3a3a')}
                     >
                       <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
                       {loading ? 'Refreshing...' : 'Refresh'}
                     </button>
                   </div>
                   {loading ? (
-                    <span className="text-sm text-gray-600">Loading available slots...</span>
+                    <span className="text-sm" style={{ color: '#000000' }}>Loading available slots...</span>
                   ) : error ? (
                     <span className="text-sm text-red-600">{error}</span>
                   ) : availableSlots.length > 0 ? (
                     <span className="text-sm text-green-600">✓ Availability loaded</span>
                   ) : (
-                    <span className="text-sm text-orange-600">No availability found for this date</span>
+                    <span className="text-sm" style={{ color: '#000000', opacity: 0.8 }}>No availability found for this date</span>
                   )}
                 </div>
               )}
 
               {availableSlots.length > 0 && (
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Clock className="h-4 w-4 text-gray-500" />
+                  <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#5D5869' }}>
+                    <Clock className="h-4 w-4" />
                     Book a Slot
                   </label>
                   {service && (
-                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-xl">
-                      <span className="text-xs text-blue-700 flex items-center gap-1">
+                    <div className="p-2 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
+                      <span className="text-xs flex items-center gap-1" style={{ color: '#000000' }}>
                         ⏱️ Select a {getSelectedServiceDuration()} time slot
                       </span>
                     </div>
@@ -590,7 +596,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                   {/* Show consecutive slots if service is selected */}
                   {service && consecutiveSlots.length > 0 ? (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-2">Available {getSelectedServiceDuration()} Slots:</label>
+                      <label className="block text-xs font-medium mb-2" style={{ color: '#5D5869' }}>Available {getSelectedServiceDuration()} Slots:</label>
                       <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
                         {consecutiveSlots.map((slot, index) => (
                           <button
@@ -601,25 +607,40 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                             }}
                             className={`p-3 rounded-xl border text-left transition-all ${
                               fromTime === slot.startTime && toTime === slot.endTime
-                                ? 'bg-blue-100 border-blue-300 text-blue-800 shadow-sm'
-                                : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
+                                ? 'shadow-sm'
+                                : 'hover:shadow-sm'
                             }`}
+                            style={
+                              fromTime === slot.startTime && toTime === slot.endTime
+                                ? { backgroundColor: '#3a3a3a', borderColor: '#3a3a3a', color: 'white' }
+                                : { backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', color: '#000000' }
+                            }
+                            onMouseEnter={(e) => {
+                              if (!(fromTime === slot.startTime && toTime === slot.endTime)) {
+                                e.currentTarget.style.backgroundColor = '#f0a0ad';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!(fromTime === slot.startTime && toTime === slot.endTime)) {
+                                e.currentTarget.style.backgroundColor = '#f4acb7';
+                              }
+                            }}
                           >
                             <div className="font-medium text-sm">{slot.startDisplayTime} - {slot.endDisplayTime}</div>
-                            <div className="text-xs text-gray-500">{slot.duration} minutes</div>
+                            <div className="text-xs" style={{ opacity: 0.8 }}>{slot.duration} minutes</div>
                           </button>
                         ))}
                       </div>
                     </div>
                   ) : service && consecutiveSlots.length === 0 ? (
-                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl">
-                      <span className="text-sm text-orange-600">
+                    <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
+                      <span className="text-sm" style={{ color: '#000000' }}>
                         No {getSelectedServiceDuration()} slots available for this date
                       </span>
                     </div>
                   ) : (
-                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                      <span className="text-sm text-gray-600">
+                    <div className="p-3 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
+                      <span className="text-sm" style={{ color: '#000000' }}>
                         Please select a service to see available time slots
                       </span>
                     </div>
@@ -628,14 +649,14 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
                 </div>
               )}
             </div>
-            
+
             {/* Info Display */}
             {info && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                <span className="text-sm text-blue-600 font-medium">{info}</span>
+              <div className="mt-4 p-3 rounded-xl border" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)' }}>
+                <span className="text-sm font-medium" style={{ color: '#000000' }}>{info}</span>
               </div>
             )}
-            
+
             {/* Error Display */}
             {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
@@ -643,7 +664,7 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
               </div>
             )}
             
-            <button 
+            <button
               onClick={handleBookingSubmit}
               className={`mt-6 px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200 text-base flex items-center justify-center gap-2 ${
                 service && mentor && date && fromTime && toTime && !isSubmitting
@@ -652,17 +673,17 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
               }`}
               style={
                 service && mentor && date && fromTime && toTime && !isSubmitting
-                  ? { backgroundColor: '#3E5F44' }
+                  ? { backgroundColor: '#3a3a3a' }
                   : {}
               }
               onMouseEnter={(e) => {
                 if (service && mentor && date && fromTime && toTime && !isSubmitting) {
-                  e.currentTarget.style.backgroundColor = '#2F4A35';
+                  e.currentTarget.style.backgroundColor = '#2a2a2a';
                 }
               }}
               onMouseLeave={(e) => {
                 if (service && mentor && date && fromTime && toTime && !isSubmitting) {
-                  e.currentTarget.style.backgroundColor = '#3E5F44';
+                  e.currentTarget.style.backgroundColor = '#3a3a3a';
                 }
               }}
               disabled={!service || !mentor || !date || !fromTime || !toTime || isSubmitting}
@@ -674,13 +695,6 @@ const BookSessionPopup: React.FC<{ onClose: () => void; onGoToPayments?: (bookin
         </div>
       </div>
       <style jsx>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .animate-shimmer {
-          animation: shimmer 3s ease-in-out infinite;
-        }
         .animate-popup-in {
           animation: popup-in 0.5s cubic-bezier(.4,2,.3,1) both;
         }

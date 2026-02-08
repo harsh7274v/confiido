@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, Star, Users, Shield, Clock } from "lucide-react";
+import { Calendar, Star, Users, Shield, Clock, Bell, Search } from "lucide-react";
 import React, { useEffect, useMemo, useState, useLayoutEffect, useCallback } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
+import SessionsPage from '../components/SessionsPage';
 import EditProfilePopup from '../components/EditProfilePopup';
 import EditProfilePopupUser, { ProfileData } from '../components/EditProfilePopupUser';
 import BookSessionPopup from '../components/BookSessionPopup';
@@ -18,6 +19,7 @@ import {
   CheckCircle2,
   CheckCircle,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   ClipboardList,
   DollarSign,
@@ -270,6 +272,7 @@ export default function DashboardPage() {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
   const [sessions, setSessions] = useState<any[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]); // Always holds upcoming sessions
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -279,7 +282,7 @@ export default function DashboardPage() {
   const [showLogoutToast, setShowLogoutToast] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState<any>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'transactions' | 'contact' | 'rewards' | 'payments' | 'sessions'>('dashboard');
   const [rescheduleModal, setRescheduleModal] = useState<RescheduleModalState | null>(null);
   const [rescheduleSlots, setRescheduleSlots] = useState<RescheduleSlotOption[]>([]);
   const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false);
@@ -536,6 +539,9 @@ export default function DashboardPage() {
       
       console.log('Upcoming sessions:', upcoming.length);
       console.log('Completed sessions:', completed.length);
+      
+      // Always store upcoming sessions for the right column box
+      setUpcomingSessions(upcoming);
       
       const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
       console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
@@ -944,26 +950,11 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
     }
-  }  // Function to scroll to sessions section
+  }
+
+  // Function to navigate to sessions page
   const scrollToSessions = () => {
-    setCurrentView('dashboard');
-    
-    // Use setTimeout to ensure the dashboard view is rendered before scrolling
-    setTimeout(() => {
-      const sessionsSection = document.getElementById('sessions-section');
-      if (sessionsSection) {
-        sessionsSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-        
-        // Add highlight effect with custom color
-        sessionsSection.style.boxShadow = '0 0 0 4px rgba(94, 147, 108, 0.5)';
-        setTimeout(() => {
-          sessionsSection.style.boxShadow = '';
-        }, 2000);
-      }
-    }, 100); // Small delay to ensure view transition is complete
+    setCurrentView('sessions');
   };
 
   // Function to scroll to top of dashboard
@@ -1044,7 +1035,7 @@ export default function DashboardPage() {
         )}
       </>
     )}
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 overflow-hidden">
+    <div className="min-h-screen overflow-hidden" style={{ backgroundColor: '#fff0f3' }}>
       {/* Semi-transparent overlay for better content readability */}
       <div className="absolute inset-0 bg-white/10 pointer-events-none z-0"></div>
       <div className="flex h-screen relative z-20 overflow-hidden">
@@ -1052,7 +1043,7 @@ export default function DashboardPage() {
                 <Sidebar
           userName={userDisplayName}
           onProfileClick={handleProfileClick}
-          onSessionsClick={() => scrollToSessions()}
+          onSessionsClick={() => setCurrentView('sessions')}
           onHomeClick={() => scrollToTop()}
           onTransactionsClick={() => setCurrentView('transactions')}
           onContactClick={handleContactClick}
@@ -1079,162 +1070,348 @@ export default function DashboardPage() {
             <div className="w-full">
               <PaymentsPage />
             </div>
+          ) : currentView === 'sessions' ? (
+            <div className="w-full">
+              <SessionsPage />
+            </div>
           ) : (
             <>
               {/* Modern Header */}
-              <section className="relative overflow-hidden py-6 sm:py-8" style={{ background: 'linear-gradient(135deg, #e0e8ed 0%, #f0f4f7 100%)' }}>
-              <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-20">
-                <div className="max-w-7xl mx-auto flex flex-row items-center justify-between">
-                  {/* Left side - User avatar and Welcome text */}
-                  <div className="flex items-center gap-4">
-                    {/* User Avatar */}
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <User className="h-6 w-6 sm:h-7 sm:w-7 text-gray-600" />
-                    </div>
-                    
-                    {/* Welcome Text */}
-                    <div className="flex flex-col">
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                        Hello, {userDisplayName}!
-                      </h2>
-                      <span className="text-sm sm:text-base text-gray-600 font-normal" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                        Ready for your session?
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Right side - Settings icon */}
-                  <div className="flex-shrink-0">
+              <section className="relative overflow-hidden py-4 sm:py-6 border-0" style={{ backgroundColor: '#fff0f3' }}>
+              <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4 relative z-20">
+                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* Left side - Welcome text */}
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wide" style={{ color: '#4A4458', fontFamily: "'Rubik', sans-serif", letterSpacing: '0.05em' }}>
+                    WELCOME BACK, {userDisplayName.toUpperCase()}!
+                  </h2>
+
+                  {/* Right side - Book Session button, notification and profile */}
+                  <div className="flex items-center gap-2 sm:gap-4 justify-between lg:justify-end w-full lg:w-auto">
+                    {/* Book a Session Button */}
                     <button
                       type="button"
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-all duration-200 focus:outline-none"
-                      onClick={() => {
-                        setShowProfilePopup(true);
+                      onClick={() => setShowBookSessionPopup(true)}
+                      className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all duration-300 shadow-lg hover:shadow-xl flex-shrink-0"
+                      style={{
+                        background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
+                        color: '#ffffff',
+                        fontFamily: "'Rubik', sans-serif",
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)';
+                        e.currentTarget.style.transform = 'translateY(0)';
                       }}
                     >
-                      <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                      Book a Session
                     </button>
+
+                    {/* Notification and Profile Icons - grouped together on right in mobile */}
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      {/* Notification Icon */}
+                      <button
+                        type="button"
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
+                        onClick={() => {
+                          // Handle notification click
+                        }}
+                      >
+                        <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                      </button>
+
+                      {/* Profile Avatar */}
+                      <button
+                        type="button"
+                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center hover:opacity-90 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
+                        onClick={() => {
+                          setShowProfilePopup(true);
+                        }}
+                      >
+                        <User className="h-4 w-4 sm:h-6 sm:w-6 text-blue-700" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </section>
 
             {/* Stats and Quick Actions */}
-            <section className="py-4 sm:py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6 sm:gap-8 items-start">
-                {/* Mobile: Quick Actions First, Desktop: Career Journey First */}
-                <div className="flex-1 order-2 lg:order-1">
-                  <h2 className="text-2xl sm:text-3xl font-semibold mb-2" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Next in Your Career Journey</h2>
-                  <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8" style={{ fontFamily: "'Rubik', sans-serif" }}>Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
-                  <div className="flex flex-col gap-4 sm:gap-6 items-start">
-                    {/* Card 1 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-gentle">
-                      <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
-                          <span>Interested</span>
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <span className="text-2xl sm:text-3xl">💡</span>
-                      </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Not sure what direction to take?</div>
-                      <button 
-                        onClick={() => setShowBookSessionPopup(true)}
-                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
-                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                      >
-                        Book 1:1 Career guidance session
-                      </button>
-                    </div>
-                    {/* Card 2 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 sm:ml-10 animate-float-slow">
-                      <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
-                          <span>Interested</span>
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <span className="text-2xl sm:text-3xl">🚲</span>
-                      </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Need help creating a strong first resume?</div>
-                      <button 
-                        onClick={() => setShowBookSessionPopup(true)}
-                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
-                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                      >
-                        Resume Review
-                      </button>
-                    </div>
-                    {/* Card 3 */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 w-full max-w-none sm:max-w-[220px] flex flex-col gap-3 animate-float-fast">
-                      <div className="flex items-center justify-between">
-                        <div className="bg-gray-50 px-3 py-1 rounded-full text-xs sm:text-sm text-gray-700 border border-gray-200 flex items-center gap-2">
-                          <span>Interested</span>
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <span className="text-2xl sm:text-3xl">💡</span>
-                      </div>
-                      <div className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Applied to a few jobs but no response?</div>
-                      <button 
-                        onClick={() => setShowBookSessionPopup(true)}
-                        className="w-full text-white font-semibold py-2 rounded-lg mt-2 text-sm transition-colors" 
-                        style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3E5F44' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                      >
-                        Book mock interview session
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                {/* Mobile: Career Journey Second, Desktop: Quick Actions Second */}
-                <div className="flex flex-col gap-8 items-end w-full lg:w-auto order-1 lg:order-2">
-                  {/* Quick Actions box removed; buttons retained below */}
-                  <div className="w-full sm:min-w-[400px] sm:max-w-[500px]">
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                      <button 
-                        type="button"
-                        className="group relative rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 focus:outline-none w-4/5 mx-auto cursor-pointer text-white"
-                        onClick={() => setShowBookSessionPopup(true)}
-                        style={{ position: 'relative', zIndex: 2000, pointerEvents: 'auto', backgroundColor: '#3E5F44' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                      >
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: '#3E5F44' }} />
-                          </div>
-                          <div className="text-left flex-1 min-w-0">
-                            <p className="text-lg font-semibold mb-1">Book a session</p>
-                            <p className="text-xs opacity-90">Find a coach and schedule</p>
-                          </div>
-                          <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/80 group-hover:text-white transition-colors flex-shrink-0" />
-                        </div>
-                      </button>
-                    </div>
-                  </div>
+            <section className="py-6 sm:py-8 border-0" style={{ backgroundColor: '#fff0f3' }}>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Main Grid Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                   
-                  {/* BookSessionPopup modal */}
-                  <div className={`fixed inset-0 z-[9999] ${showBookSessionPopup ? 'block' : 'hidden'}`}>
-                    <BookSessionPopup 
-                      onClose={() => {
-                        console.log('Closing BookSessionPopup');
-                        setShowBookSessionPopup(false);
-                      }}
-                      onGoToPayments={(bookingId?: string) => {
-                        try {
-                          if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
-                          localStorage.setItem('dashboard_redirect_view', 'payments');
-                        } catch {}
-                        setCurrentView('payments');
-                      }}
-                    />
+                  {/* Left Column - 2 columns wide */}
+                  <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                    
+                    {/* Top Row - Career Journey Cards and Find Mentor */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      
+                      {/* Career Journey Section */}
+                      <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[658px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                        <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                          Next in Your Career Journey
+                        </h3>
+                        <div className="space-y-3">
+                          {/* Card 1 */}
+                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                <span>Interested</span>
+                                <ChevronDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                              <span className="text-xl">💡</span>
+                            </div>
+                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                              Not sure what direction to take?
+                            </div>
+                            <button
+                              onClick={() => setShowBookSessionPopup(true)}
+                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                            >
+                              Book Career guidance
+                            </button>
+                          </div>
+
+                          {/* Card 2 */}
+                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                <span>Interested</span>
+                                <ChevronDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                              <span className="text-xl">🚲</span>
+                            </div>
+                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                              Need help creating a strong first resume?
+                            </div>
+                            <button
+                              onClick={() => setShowBookSessionPopup(true)}
+                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                            >
+                              Resume Review
+                            </button>
+                          </div>
+                          
+                          {/* Card 3 - Public Speaking */}
+                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                <span>Interested</span>
+                                <ChevronDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                              <span className="text-xl">🎤</span>
+                            </div>
+                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                              Want to improve your public speaking skills?
+                            </div>
+                            <button
+                              onClick={() => setShowBookSessionPopup(true)}
+                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                            >
+                              Book Public Speaking
+                            </button>
+                          </div>
+
+                          {/* Card 4 - Mock Interview */}
+                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                <span>Interested</span>
+                                <ChevronDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                              <span className="text-xl">🎯</span>
+                            </div>
+                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                              Applied to a few jobs but no response?
+                            </div>
+                            <button
+                              onClick={() => setShowBookSessionPopup(true)}
+                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                            >
+                              Book Mock Interview
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Find Your Mentor Section */}
+                      <div className="space-y-8 sm:space-y-10">
+                        {/* Mentors Box - Half Height */}
+                        <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                          <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                            Find Your Mentor
+                          </h3>
+                          <div className="space-y-3">
+                            {mentors.slice(0, 3).map((mentor) => (
+                              <div
+                                key={mentor.id}
+                                className="flex items-center gap-3 rounded-3xl p-3 cursor-pointer hover:shadow-md transition-all duration-200"
+                                style={{ backgroundColor: '#f4acb7' }}
+                                onClick={() => {
+                                  setSelectedMentor(mentor);
+                                  setShowProfilePopup(true);
+                                  setCurrentView('dashboard');
+                                }}
+                              >
+                                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={mentor.image}
+                                    alt={mentor.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate" style={{ color: '#000000' }}>{mentor.name}</div>
+                                  <div className="text-xs truncate" style={{ color: '#000000' }}>{mentor.title}</div>
+                                </div>
+                                <button
+                                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                                  style={{ backgroundColor: '#5D5869' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowBookSessionPopup(true);
+                                  }}
+                                >
+                                  <Phone className="w-4 h-4 text-white" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Recent Activity Box */}
+                        <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                          <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                            Recent Activity
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="text-center py-8">
+                              <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                              <div className="text-gray-500 text-sm">No recent activity</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row - Removed, Sessions moved to right column */}
+
                   </div>
 
-                  {/* Reschedule Request Modal */}
-                  {rescheduleModal?.session && (
+                  {/* Right Column - Upcoming Sessions Section */}
+                  <div className="space-y-8 sm:space-y-10">
+
+                    {/* Upcoming Sessions Card */}
+                    <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                          Upcoming Sessions
+                        </h3>
+                        <button
+                          className="text-sm font-medium flex items-center gap-1"
+                          style={{ color: '#3a3a3a' }}
+                          onClick={() => scrollToSessions()}
+                        >
+                          See more <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {sessionsLoading ? (
+                          <div className="space-y-3">
+                            <SkeletonLoader />
+                          </div>
+                        ) : upcomingSessions.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                            <div className="text-gray-500 text-sm">No upcoming sessions</div>
+                          </div>
+                        ) : (
+                          upcomingSessions.slice(0, 10).map((session: any) => (
+                            <div key={session.id} className="rounded-3xl p-4 shadow-sm" style={{ backgroundColor: '#f4acb7' }}>
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm mb-1 truncate" style={{ color: '#000000' }}>
+                                    {session.title}
+                                  </h4>
+                                  <div className="flex flex-wrap items-center gap-2 text-xs mb-2" style={{ color: '#000000' }}>
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      {session.date}
+                                    </span>
+                                    <span>•</span>
+                                    <span>{session.time}</span>
+                                  </div>
+                                  <div className="text-xs" style={{ color: '#000000' }}>
+                                    {session.expertName}
+                                  </div>
+                                </div>
+                                <div className="flex-shrink-0">
+                                  <div className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: '#3a3a3a', color: 'white' }}>
+                                    {session.sessionType}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* My Schedule Box */}
+                    <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                      <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                        My Schedule
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="text-center py-8">
+                          <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                          <div className="text-gray-500 text-sm">No scheduled events</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* BookSessionPopup modal */}
+              <div className={`fixed inset-0 z-[9999] ${showBookSessionPopup ? 'block' : 'hidden'}`}>
+                <BookSessionPopup 
+                  onClose={() => {
+                    console.log('Closing BookSessionPopup');
+                    setShowBookSessionPopup(false);
+                  }}
+                  onGoToPayments={(bookingId?: string) => {
+                    try {
+                      if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
+                      localStorage.setItem('dashboard_redirect_view', 'payments');
+                    } catch {}
+                    setCurrentView('payments');
+                  }}
+                />
+              </div>
+
+              {/* Reschedule Request Modal */}
+              {rescheduleModal?.session && (
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
                         <button
@@ -1331,7 +1508,7 @@ export default function DashboardPage() {
                             onClick={handleRescheduleSubmit}
                             disabled={rescheduleSubmitting || !rescheduleModal.date || !rescheduleModal.selectedSlot}
                             className="w-full sm:w-auto px-4 py-2 rounded-xl text-white font-semibold disabled:opacity-60"
-                            style={{ backgroundColor: '#3E5F44' }}
+                            style={{ backgroundColor: '#3a3a3a' }}
                           >
                             {rescheduleSubmitting ? 'Sending...' : 'Send request'}
                           </button>
@@ -1342,7 +1519,7 @@ export default function DashboardPage() {
                   
                   {/* Modern Toast Notification */}
                   {showMessageToast && (
-                    <div className="fixed top-6 right-6 z-50 flex items-center gap-3 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20" style={{ backgroundColor: '#3E5F44' }}>
+                    <div className="fixed top-6 right-6 z-50 flex items-center gap-3 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20" style={{ backgroundColor: '#3a3a3a' }}>
                       <MessageSquare className="h-6 w-6 text-white" />
                       <span className="font-semibold">This feature is not available at this moment</span>
                       <button
@@ -1372,353 +1549,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   )}
-                  
-                  {/* Find Your Mentor Section (outer box/background removed, cards retained) */}
-                  <div className="mt-6 w-full sm:min-w-[400px] sm:max-w-[500px]">
-                    <div className="flex items-center gap-3 mb-6 sm:mb-8 w-4/5 mx-auto">
-                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Find Your Mentor</h2>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-4/5 mx-auto">
-                      {mentors.map((mentor) => (
-                        <div 
-                          key={mentor.id}
-                          className="flex flex-col items-center cursor-pointer group h-full"
-                          onClick={() => {
-                            setSelectedMentor(mentor);
-                            setShowProfilePopup(true);
-                            setCurrentView('dashboard');
-                          }}
-                        >
-                          <div className="relative mb-3 w-20 h-20 sm:w-24 sm:h-24">
-                            <img 
-                              src={mentor.image} 
-                              alt={mentor.name} 
-                              className="w-full h-full object-cover object-center rounded-xl sm:rounded-2xl border-2 border-gray-200 group-hover:border-gray-400 group-hover:shadow-xl transition-all duration-300" 
-                              style={{ objectPosition: 'center center' }}
-                            />
-                            <div className="absolute inset-0 bg-gray-600 bg-opacity-0 group-hover:bg-opacity-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div className="bg-white rounded-full p-2 shadow-lg">
-                                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                </div>
-                              </div>
-                            </div>
-                        </div>
-                        <div className="text-center flex flex-col items-center gap-2 w-full flex-grow">
-                          <div className="flex-grow">
-                            <span className="font-semibold text-gray-800 text-sm group-hover:text-gray-700 transition-colors duration-300 block">{mentor.name}</span>
-                            <span className="text-xs text-gray-600 mt-1 block">{mentor.title}</span>
-                          </div>
-                          <button
-                            type="button"
-                            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:text-white hover:bg-gray-800 transition-colors duration-200 mt-auto"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowBookSessionPopup(true);
-                            }}
-                          >
-                            Book a session
-                          </button>
-                        </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
 
-            {/* Main content */}
-            <section className="py-6 sm:py-8 pb-24 lg:pb-16">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                  {/* Sessions box */}
-                  <div id="sessions-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Sessions</h2>
-                    </div>
-                    <div className="flex flex-row gap-2 sm:gap-4 mb-4 sm:mb-6 w-full overflow-x-auto scrollbar-hide">
-                      <button
-                        className={`flex-1 min-w-[100px] px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-xs sm:text-base whitespace-nowrap ${sessionTab === 'upcoming' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
-                        style={sessionTab === 'upcoming' ? { backgroundColor: '#3E5F44' } : {}}
-                        onClick={() => setSessionTab('upcoming')}
-                      >
-                        Upcoming
-                      </button>
-                      <button
-                        className={`flex-1 min-w-[100px] px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 focus:outline-none text-xs sm:text-base whitespace-nowrap ${sessionTab === 'completed' ? 'text-white shadow-lg' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
-                        style={sessionTab === 'completed' ? { backgroundColor: '#3E5F44' } : {}}
-                        onClick={() => setSessionTab('completed')}
-                      >
-                        Completed
-                      </button>
-                    </div>
-                    <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
-                      {sessionActionMessage && (
-                        <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
-                          sessionActionMessage.type === 'success'
-                            ? 'bg-green-50 border-green-200 text-green-700'
-                            : 'bg-red-50 border-red-200 text-red-700'
-                        }`}>
-                          {sessionActionMessage.message}
-                        </div>
-                      )}
-                      {sessionsLoading ? (
-                        <div className="space-y-3">
-                          <SkeletonLoader />
-                          <SkeletonLoader />
-                          <SkeletonLoader />
-                        </div>
-                      ) : sessionsError ? (
-                        <div className="text-center py-12">
-                          <div className="text-gray-500 text-lg">{sessionsError}</div>
-                        </div>
-                      ) : sessions.length === 0 ? (
-                        <div className="text-center py-12">
-                          <div className="text-gray-500 text-lg">No sessions found</div>
-                          <p className="text-gray-400 mt-2">Book your first session to get started!</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {sessions.map((session: any) => (
-                            <div key={session.id} className="bg-white rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-base mb-1" style={{ color: '#3E5F44' }}>{session.title}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{session.date}</span>
-                                    <span className="text-gray-400">•</span>
-                                    <span>{session.time}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <span className="capitalize">{session.sessionType}</span>
-                                    <span className="text-gray-400">•</span>
-                                    <span className="font-medium">{session.expertName}</span>
-                                  </div>
-                                  {session.expertEmail && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                      </svg>
-                                      <span>{session.expertEmail}</span>
-                                    </div>
-                                  )}
-                                  {session.notes && (
-                                    <div className="mt-2 p-2 bg-gray-50 rounded-lg">
-                                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        <span className="font-medium">Notes:</span>
-                                      </div>
-                                      <p className="text-sm text-gray-700">{session.notes}</p>
-                                    </div>
-                                  )}
-                                  {session.rescheduleRequest && (() => {
-                                    const request = session.rescheduleRequest;
-                                    const status = request.status;
-                                    const requestedDateLabel = formatReadableDate(request.requestedDate);
-                                    const requestedTimeLabel = `${formatReadableTime(request.requestedStartTime)} - ${formatReadableTime(request.requestedEndTime)}`;
-                                    return (
-                                      <div className={`mt-3 p-3 rounded-xl border ${getRescheduleStatusStyles(status)}`}>
-                                        <div className="flex items-center justify-between text-sm font-semibold">
-                                          <span>Reschedule Status</span>
-                                          <span className="capitalize">{status}</span>
-                                        </div>
-                                        <p className="text-sm mt-2">
-                                          New slot requested for <span className="font-medium">{requestedDateLabel}</span> at <span className="font-medium">{requestedTimeLabel}</span>.
-                                        </p>
-                                        {request.reason && (
-                                          <p className="text-xs mt-2">
-                                            <span className="font-semibold">Your note:</span> {request.reason}
-                                          </p>
-                                        )}
-                                        {request.responseNote && request.status !== 'pending' && (
-                                          <p className="text-xs mt-2">
-                                            <span className="font-semibold">Mentor note:</span> {request.responseNote}
-                                          </p>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                                <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2 flex-shrink-0">
-                                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                    sessionTab === 'upcoming' 
-                                      ? 'bg-blue-100 text-blue-700' 
-                                      : 'bg-green-100 text-green-700'
-                                  }`}>
-                                    {sessionTab.charAt(0).toUpperCase() + sessionTab.slice(1)}
-                                  </div>
-                                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    session.paymentStatus === 'paid' 
-                                      ? 'bg-green-100 text-green-700' 
-                                      : 'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                    {session.paymentStatus.charAt(0).toUpperCase() + session.paymentStatus.slice(1)}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Meeting Link Section - Show for all sessions with meeting link */}
-                              {session.meetingLink && (
-                                <div className="mt-3 pt-3 border-t border-gray-100">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="p-1.5 bg-blue-100 rounded-lg">
-                                        <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                      </div>
-                                      <span className="text-sm font-medium text-gray-700">Meeting Link</span>
-                                    </div>
-                                    <a
-                                      href={session.meetingLink}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                                    >
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                      </svg>
-                                      Join Meeting
-                                    </a>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* Price Information */}
-                              <div className="mt-2 flex items-center justify-between text-sm">
-                                <span className="text-gray-500">Price: {session.currency} {session.price}</span>
-                                {session.paymentStatus !== 'paid' && (
-                                  <span className="text-orange-600 font-medium">Payment Pending</span>
-                                )}
-                              </div>
-                              {sessionTab === 'upcoming' && session.paymentStatus === 'paid' && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenRescheduleModal(session)}
-                                    disabled={session.rescheduleRequest?.status === 'pending'}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-xl border transition-colors ${
-                                      session.rescheduleRequest?.status === 'pending'
-                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                    }`}
-                                  >
-                                    {session.rescheduleRequest?.status === 'pending'
-                                      ? 'Awaiting mentor response'
-                                      : 'Request reschedule'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Goals box */}
-                  <div id="goals-section" className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl sm:shadow-2xl border border-gray-200/50 flex flex-col items-start justify-start h-[500px] sm:h-[600px] lg:h-[700px] transition-all duration-500 hover:shadow-2xl sm:hover:shadow-3xl">
-                    <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                      <div className="p-2 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
-                        <Target className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      </div>
-                      <h2 className="text-lg sm:text-xl font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>Goals</h2>
-                    </div>
-                    
-                    {/* Add Goal Input */}
-                    <div className="w-full mb-4 sm:mb-6">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newGoal}
-                          onChange={(e) => setNewGoal(e.target.value)}
-                          placeholder="Enter your goal..."
-                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-200 focus:border-gray-500 focus:outline-none transition-all duration-300 text-sm sm:text-base"
-                          onKeyPress={(e) => e.key === 'Enter' && addGoal()}
-                        />
-                        <button
-                          onClick={addGoal}
-                          disabled={saving || !newGoal.trim()}
-                          className="px-4 sm:px-6 py-2 sm:py-3 text-white rounded-xl sm:rounded-2xl font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 text-sm sm:text-base"
-                          style={{ backgroundColor: saving || !newGoal.trim() ? '' : '#3E5F44' }}
-                          onMouseEnter={(e) => { if (!saving && newGoal.trim()) e.currentTarget.style.backgroundColor = '#2F4A35'; }}
-                          onMouseLeave={(e) => { if (!saving && newGoal.trim()) e.currentTarget.style.backgroundColor = '#3E5F44'; }}
-                        >
-                          {saving ? 'Adding...' : 'Add'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Goals List */}
-                    <div className="w-full flex-1 overflow-y-auto scrollbar-hide">
-                      {goals.length === 0 ? (
-                        <div className="text-center py-12">
-                          <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <div className="text-gray-500 text-lg">No goals yet</div>
-                          <p className="text-gray-400 mt-2">Add your first goal to get started!</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 sm:space-y-4">
-                          {goals.map((goal) => (
-                            <div key={goal.id} className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <button
-                                    onClick={() => toggleGoal(goal)}
-                                    className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
-                                      goal.completed
-                                        ? 'bg-green-500 border-green-500 text-white'
-                                        : 'border-gray-300 hover:border-gray-500'
-                                    }`}
-                                  >
-                                    {goal.completed && (
-                                      <svg className="w-3 h-3 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    )}
-                                  </button>
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className={`font-medium text-gray-900 text-sm sm:text-base ${
-                                      goal.completed ? 'line-through text-gray-500' : ''
-                                    }`}>
-                                      {goal.text}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Added {goal.createdAt.toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => deleteGoal(goal)}
-                                  className="ml-2 p-1 sm:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
-                                  title="Delete goal"
-                                >
-                                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </section>
             </>
           )}
