@@ -307,7 +307,7 @@ const MentorBookings: React.FC = () => {
       console.log('Fetching bookings for mentor:', mentorId);
 
       const result = await bookingApi.getMentorBookings(mentorId, page, 10);
-      
+
       if (result.success) {
         console.log('📊 [MENTOR BOOKINGS] Raw API Response:', result.data);
         console.log('📊 [MENTOR BOOKINGS] Bookings Array:', result.data.bookings);
@@ -373,39 +373,39 @@ const MentorBookings: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
-      });
+    });
   };
 
   const formatTime = (timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: 'numeric',
-        minute: '2-digit',
+      minute: '2-digit',
       hour12: true,
     });
   };
 
-const formatDateInputValue = (value?: string) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toISOString().split('T')[0];
-};
+  const formatDateInputValue = (value?: string) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  };
 
-const getRescheduleStatusClasses = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return 'bg-green-50 border-green-200 text-green-700';
-    case 'rejected':
-      return 'bg-red-50 border-red-200 text-red-700';
-    case 'pending':
-      return 'bg-yellow-50 border-yellow-200 text-yellow-700';
-    default:
-      return 'bg-gray-50 border-gray-200 text-gray-600';
-  }
-};
+  const getRescheduleStatusClasses = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-50 border-green-200 text-green-700';
+      case 'rejected':
+        return 'bg-red-50 border-red-200 text-red-700';
+      case 'pending':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-600';
+    }
+  };
 
   const getSessionTypeIcon = (type: string) => {
     switch (type) {
@@ -525,7 +525,7 @@ const getRescheduleStatusClasses = (status: string) => {
 
   console.log('🎯 [MENTOR BOOKINGS] Component Render - Bookings:', bookings);
   console.log('🎯 [MENTOR BOOKINGS] Component Render - Bookings Length:', bookings.length);
-  
+
   // Debug: Log the first booking's clientId structure
   if (bookings.length > 0) {
     console.log('🎯 [MENTOR BOOKINGS] First booking clientId structure:', bookings[0].clientId);
@@ -538,40 +538,39 @@ const getRescheduleStatusClasses = (status: string) => {
   // Filter bookings based on session date/time
   const filteredBookings = paidBookings.filter((booking) => {
     if (filterStatus === 'all') return true;
-    
+
     const now = new Date();
     const hasUpcoming = booking.sessions.some(session => {
       const sessionDateTime = new Date(`${session.scheduledDate}T${session.endTime}`);
       return sessionDateTime > now;
     });
-    
+
     if (filterStatus === 'upcoming') {
       return hasUpcoming;
     } else if (filterStatus === 'completed') {
       return !hasUpcoming;
     }
-    
+
     return true;
   });
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200">
+      <div className="bg-[#fadde1] p-6 rounded-xl border border-white/50 shadow-sm">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">All Bookings</h2>
-            <p className="text-gray-600">View detailed information about all your bookings and sessions</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#4A4458] mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>All Bookings</h2>
+            <p className="text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>View detailed information about all your bookings and sessions</p>
           </div>
         </div>
       </div>
 
       {toastMessage && (
         <div
-          className={`rounded-xl border px-4 py-3 text-sm ${
-            toastMessage.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-700'
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}
+          className={`rounded-xl border px-4 py-3 text-sm ${toastMessage.type === 'success'
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+            }`}
         >
           {toastMessage.message}
         </div>
@@ -579,23 +578,24 @@ const getRescheduleStatusClasses = (status: string) => {
 
       {/* Bookings List */}
       {paidBookings.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-12 bg-white/50 rounded-2xl border border-gray-100">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Bookings Found</h3>
-          <p className="text-gray-600">You don&apos;t have any paid bookings yet.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>No Bookings Found</h3>
+          <p className="text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>You don&apos;t have any paid bookings yet.</p>
         </div>
       ) : (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>
               Showing {filteredBookings.length} bookings
             </h3>
-            
+
             {/* Filter Dropdown */}
             <div className="relative filter-dropdown-container">
               <button
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 shadow-sm"
+                style={{ fontFamily: "'Rubik', sans-serif" }}
               >
                 <span>
                   {filterStatus === 'all' && 'All Sessions'}
@@ -604,7 +604,7 @@ const getRescheduleStatusClasses = (status: string) => {
                 </span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showFilterDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                   <button
@@ -612,9 +612,8 @@ const getRescheduleStatusClasses = (status: string) => {
                       setFilterStatus('all');
                       setShowFilterDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg ${
-                      filterStatus === 'all' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg ${filterStatus === 'all' ? 'bg-[#fadde1] text-[#4A4458] font-semibold' : 'text-gray-700'
+                      }`}
                   >
                     All Sessions
                   </button>
@@ -623,9 +622,8 @@ const getRescheduleStatusClasses = (status: string) => {
                       setFilterStatus('upcoming');
                       setShowFilterDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 ${
-                      filterStatus === 'upcoming' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 ${filterStatus === 'upcoming' ? 'bg-[#fadde1] text-[#4A4458] font-semibold' : 'text-gray-700'
+                      }`}
                   >
                     Upcoming
                   </button>
@@ -634,9 +632,8 @@ const getRescheduleStatusClasses = (status: string) => {
                       setFilterStatus('completed');
                       setShowFilterDropdown(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 last:rounded-b-lg ${
-                      filterStatus === 'completed' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
-                    }`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 last:rounded-b-lg ${filterStatus === 'completed' ? 'bg-[#fadde1] text-[#4A4458] font-semibold' : 'text-gray-700'
+                      }`}
                   >
                     Completed
                   </button>
@@ -645,9 +642,9 @@ const getRescheduleStatusClasses = (status: string) => {
             </div>
           </div>
           {filteredBookings.map((booking) => (
-            <div key={booking._id} className="bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden">
+            <div key={booking._id} className="rounded-2xl border border-white/50 shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300" style={{ backgroundColor: '#fadde1' }}>
               {/* User Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-100">
+              <div className="bg-white/40 backdrop-blur-sm p-6 border-b border-white/20">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                   <div className="flex items-start space-x-4">
                     <div className="relative w-20 h-20">
@@ -665,171 +662,171 @@ const getRescheduleStatusClasses = (status: string) => {
                     <div className="flex-1">
                       <div className="mb-2">
                         <h3 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
-                        {booking.clientId.firstName && booking.clientId.lastName 
-                          ? `${booking.clientId.firstName} ${booking.clientId.lastName}`
-                          : `Client ${booking.clientId.user_id || booking.clientId.clientUserId || 'Unknown'}`
-                        }
-                      </h3>
+                          {booking.clientId.firstName && booking.clientId.lastName
+                            ? `${booking.clientId.firstName} ${booking.clientId.lastName}`
+                            : `Client ${booking.clientId.user_id || booking.clientId.clientUserId || 'Unknown'}`
+                          }
+                        </h3>
                       </div>
-                      
+
                       {/* Detailed User Information - Only show when expanded */}
                       {expandedBookings.has(booking._id) && (
                         <>
-                      {/* Basic Info */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Mail className="h-4 w-4 text-blue-500" />
-                          <span className="truncate">
-                            {booking.clientId.email || booking.clientId.clientEmail || 'Email not available'}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <User className="h-4 w-4 text-green-500" />
-                          <span>ID: {booking.clientId.user_id || booking.clientId.clientUserId || 'N/A'}</span>
-                        </div>
-                        {booking.clientId.phoneNumber && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <Phone className="h-4 w-4 text-purple-500" />
-                            <span>{booking.clientId.phoneNumber}</span>
+                          {/* Basic Info */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <Mail className="h-4 w-4 text-blue-500" />
+                              <span className="truncate">
+                                {booking.clientId.email || booking.clientId.clientEmail || 'Email not available'}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <User className="h-4 w-4 text-green-500" />
+                              <span>ID: {booking.clientId.user_id || booking.clientId.clientUserId || 'N/A'}</span>
+                            </div>
+                            {booking.clientId.phoneNumber && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <Phone className="h-4 w-4 text-purple-500" />
+                                <span>{booking.clientId.phoneNumber}</span>
+                              </div>
+                            )}
+                            {booking.clientId.whatsappNumber && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <MessageSquare className="h-4 w-4 text-green-500" />
+                                <span>WhatsApp: {booking.clientId.whatsappNumber}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {booking.clientId.whatsappNumber && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <MessageSquare className="h-4 w-4 text-green-500" />
-                            <span>WhatsApp: {booking.clientId.whatsappNumber}</span>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Professional Info */}
-                      {(booking.clientId.profession || booking.clientId.domain || booking.clientId.category) && (
-                        <div className="bg-white/50 rounded-lg p-3 mb-4">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                            <Briefcase className="h-4 w-4 mr-1" />
-                            Professional Information
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            {booking.clientId.profession && (
-                              <div className="flex items-center space-x-2 text-gray-600">
-                                <Briefcase className="h-3 w-3 text-blue-500" />
-                                <span>{booking.clientId.profession}</span>
+                          {/* Professional Info */}
+                          {(booking.clientId.profession || booking.clientId.domain || booking.clientId.category) && (
+                            <div className="bg-white/50 rounded-lg p-3 mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                <Briefcase className="h-4 w-4 mr-1" />
+                                Professional Information
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                {booking.clientId.profession && (
+                                  <div className="flex items-center space-x-2 text-gray-600">
+                                    <Briefcase className="h-3 w-3 text-blue-500" />
+                                    <span>{booking.clientId.profession}</span>
+                                  </div>
+                                )}
+                                {booking.clientId.domain && (
+                                  <div className="flex items-center space-x-2 text-gray-600">
+                                    <Globe className="h-3 w-3 text-green-500" />
+                                    <span>{booking.clientId.domain}</span>
+                                  </div>
+                                )}
+                                {booking.clientId.category && (
+                                  <div className="flex items-center space-x-2 text-gray-600">
+                                    <UserCheck className="h-3 w-3 text-purple-500" />
+                                    <span className="capitalize">{booking.clientId.category.replace('_', ' ')}</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            {booking.clientId.domain && (
-                              <div className="flex items-center space-x-2 text-gray-600">
-                                <Globe className="h-3 w-3 text-green-500" />
-                                <span>{booking.clientId.domain}</span>
-                              </div>
-                            )}
-                            {booking.clientId.category && (
-                              <div className="flex items-center space-x-2 text-gray-600">
-                                <UserCheck className="h-3 w-3 text-purple-500" />
-                                <span className="capitalize">{booking.clientId.category.replace('_', ' ')}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                            </div>
+                          )}
 
-                      {/* Location Info */}
-                      {booking.clientId.location && (booking.clientId.location.city || booking.clientId.location.country) && (
-                        <div className="bg-white/50 rounded-lg p-3 mb-4">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                            <LocationIcon className="h-4 w-4 mr-1" />
-                            Location
-                          </h4>
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <LocationIcon className="h-3 w-3 text-red-500" />
-                            <span>
-                              {booking.clientId.location.city && booking.clientId.location.country 
-                                ? `${booking.clientId.location.city}, ${booking.clientId.location.country}`
-                                : booking.clientId.location.city || booking.clientId.location.country
-                              }
+                          {/* Location Info */}
+                          {booking.clientId.location && (booking.clientId.location.city || booking.clientId.location.country) && (
+                            <div className="bg-white/50 rounded-lg p-3 mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                <LocationIcon className="h-4 w-4 mr-1" />
+                                Location
+                              </h4>
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                <LocationIcon className="h-3 w-3 text-red-500" />
+                                <span>
+                                  {booking.clientId.location.city && booking.clientId.location.country
+                                    ? `${booking.clientId.location.city}, ${booking.clientId.location.country}`
+                                    : booking.clientId.location.city || booking.clientId.location.country
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bio */}
+                          {booking.clientId.bio && (
+                            <div className="bg-white/50 rounded-lg p-3 mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">About</h4>
+                              <p className="text-sm text-gray-600 leading-relaxed">{booking.clientId.bio}</p>
+                            </div>
+                          )}
+
+                          {/* Social Links */}
+                          {booking.clientId.socialLinks && (booking.clientId.socialLinks.linkedin || booking.clientId.socialLinks.twitter || booking.clientId.socialLinks.website) && (
+                            <div className="bg-white/50 rounded-lg p-3 mb-4">
+                              <h4 className="text-sm font-semibold text-gray-700 mb-2">Social Links</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {booking.clientId.socialLinks.linkedin && (
+                                  <a
+                                    href={booking.clientId.socialLinks.linkedin}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span>LinkedIn</span>
+                                  </a>
+                                )}
+                                {booking.clientId.socialLinks.twitter && (
+                                  <a
+                                    href={booking.clientId.socialLinks.twitter}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center space-x-1 text-sm text-blue-400 hover:text-blue-600 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span>Twitter</span>
+                                  </a>
+                                )}
+                                {booking.clientId.socialLinks.website && (
+                                  <a
+                                    href={booking.clientId.socialLinks.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center space-x-1 text-sm text-green-600 hover:text-green-800 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span>Website</span>
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Status Badges */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Active Client
                             </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Bio */}
-                      {booking.clientId.bio && (
-                        <div className="bg-white/50 rounded-lg p-3 mb-4">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-2">About</h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">{booking.clientId.bio}</p>
-                        </div>
-                      )}
-
-                      {/* Social Links */}
-                      {booking.clientId.socialLinks && (booking.clientId.socialLinks.linkedin || booking.clientId.socialLinks.twitter || booking.clientId.socialLinks.website) && (
-                        <div className="bg-white/50 rounded-lg p-3 mb-4">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-2">Social Links</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {booking.clientId.socialLinks.linkedin && (
-                              <a 
-                                href={booking.clientId.socialLinks.linkedin} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                <span>LinkedIn</span>
-                              </a>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {booking.sessions.length} Session{booking.sessions.length !== 1 ? 's' : ''}
+                            </span>
+                            {booking.clientId.age && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Age: {booking.clientId.age}
+                              </span>
                             )}
-                            {booking.clientId.socialLinks.twitter && (
-                              <a 
-                                href={booking.clientId.socialLinks.twitter} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 text-sm text-blue-400 hover:text-blue-600 transition-colors"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                <span>Twitter</span>
-                              </a>
-                            )}
-                            {booking.clientId.socialLinks.website && (
-                              <a 
-                                href={booking.clientId.socialLinks.website} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 text-sm text-green-600 hover:text-green-800 transition-colors"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                <span>Website</span>
-                              </a>
+                            {booking.clientId.gender && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                {booking.clientId.gender.replace('-', ' ')}
+                              </span>
                             )}
                           </div>
-                        </div>
-                      )}
-
-                      {/* Status Badges */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Active Client
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {booking.sessions.length} Session{booking.sessions.length !== 1 ? 's' : ''}
-                        </span>
-                        {booking.clientId.age && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Age: {booking.clientId.age}
-                          </span>
-                        )}
-                        {booking.clientId.gender && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                            {booking.clientId.gender.replace('-', ' ')}
-                          </span>
-                        )}
-                      </div>
                         </>
                       )}
                     </div>
                   </div>
-                  
+
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+              <div className="px-6 py-4 bg-white/40 border-b border-white/20">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     onClick={() => toggleBookingDetails(booking._id)}
@@ -862,78 +859,200 @@ const getRescheduleStatusClasses = (status: string) => {
                   <Calendar className="h-5 w-5 mr-2 text-gray-600" />
                   Session Details
                 </h4>
-                
+
                 {/* Desktop Table View */}
                 {expandedSessionBookings.has(booking._id) && (
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Session Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date & Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Duration
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Meeting Link
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Reschedule
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {booking.sessions.map((session) => {
-                        const isApproving = respondingAction === `${session.sessionId}-approve`;
-                        const isRejecting = respondingAction === `${session.sessionId}-reject`;
-                        const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
-                        return (
-                        <tr key={session.sessionId} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-white/60">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Session Name
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date & Time
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Duration
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Amount
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Meeting Link
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Reschedule
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {booking.sessions.map((session) => {
+                          const isApproving = respondingAction === `${session.sessionId}-approve`;
+                          const isRejecting = respondingAction === `${session.sessionId}-reject`;
+                          const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
+                          return (
+                            <tr key={session.sessionId} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className={`p-2 rounded-lg border ${getSessionTypeColor(session.sessionType)} mr-3`}>
+                                    {getSessionTypeIcon(session.sessionType)}
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {session.notes || getSessionTypeLabel(session.sessionType)}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {getSessionTypeLabel(session.sessionType)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{formatDate(session.scheduledDate)}</div>
+                                <div className="text-sm text-gray-500">
+                                  {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">{session.duration} minutes</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">₹{session.price}</div>
+                                <div className="text-xs text-gray-500">{session.currency}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {session.meetingLink ? (
+                                  <a
+                                    href={session.meetingLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+                                    style={{ backgroundColor: '#3E5F44' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                                  >
+                                    <Video className="h-4 w-4" />
+                                    <span>Join Meeting</span>
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                ) : (
+                                  <span className="text-sm text-gray-500">Meeting link not available</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex flex-col space-y-1">
+                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(session.paymentStatus)} shadow-sm`}>
+                                    {getPaymentStatusIcon(session.paymentStatus)}
+                                    <span className="ml-1 capitalize">{session.paymentStatus}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {session.rescheduleRequest ? (
+                                  <div className={`text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)} mb-3`}>
+                                    <p className="font-semibold">Request from {session.rescheduleRequest.requestedBy}</p>
+                                    <p className="mt-1">
+                                      {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
+                                    </p>
+                                    {session.rescheduleRequest.reason && (
+                                      <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-gray-500 mb-3">No reschedule requests</p>
+                                )}
+                                {pendingClientRequest && (
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    <button
+                                      onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
+                                      disabled={isApproving}
+                                      className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
+                                    >
+                                      {isApproving ? 'Approving...' : 'Approve'}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
+                                      disabled={isRejecting}
+                                      className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
+                                    >
+                                      {isRejecting ? 'Rejecting...' : 'Decline'}
+                                    </button>
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => openMentorRescheduleModal(booking._id, session)}
+                                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 w-full"
+                                >
+                                  Reschedule session
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Mobile Card View */}
+                {expandedSessionBookings.has(booking._id) && (
+                  <div className="md:hidden space-y-4">
+                    {booking.sessions.map((session) => {
+                      const isApproving = respondingAction === `${session.sessionId}-approve`;
+                      const isRejecting = respondingAction === `${session.sessionId}-reject`;
+                      const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
+                      return (
+                        <div key={session.sessionId} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                          <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center">
                               <div className={`p-2 rounded-lg border ${getSessionTypeColor(session.sessionType)} mr-3`}>
                                 {getSessionTypeIcon(session.sessionType)}
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900">
+                                <h5 className="font-semibold text-gray-900">
                                   {session.notes || getSessionTypeLabel(session.sessionType)}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {getSessionTypeLabel(session.sessionType)}
-                                </div>
+                                </h5>
+                                <p className="text-sm text-gray-500">{getSessionTypeLabel(session.sessionType)}</p>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatDate(session.scheduledDate)}</div>
-                            <div className="text-sm text-gray-500">
-                              {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                            <div className="flex flex-col space-y-1">
+                              <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(session.paymentStatus)} shadow-sm`}>
+                                {getPaymentStatusIcon(session.paymentStatus)}
+                                <span className="ml-1 capitalize">{session.paymentStatus}</span>
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{session.duration} minutes</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">₹{session.price}</div>
-                            <div className="text-xs text-gray-500">{session.currency}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                            <div>
+                              <p className="text-gray-500 text-xs">Date & Time</p>
+                              <p className="font-medium text-gray-900">{formatDate(session.scheduledDate)}</p>
+                              <p className="text-gray-600">{formatTime(session.startTime)} - {formatTime(session.endTime)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">Duration</p>
+                              <p className="font-medium text-gray-900">{session.duration} minutes</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 text-xs">Amount</p>
+                              <p className="font-medium text-gray-900">₹{session.price}</p>
+                              <p className="text-gray-600 text-xs">{session.currency}</p>
+                            </div>
+                          </div>
+
+                          {/* Meeting Link Button - Full Width */}
+                          <div className="mb-4">
+                            <p className="text-gray-500 text-xs mb-2">Meeting Link</p>
                             {session.meetingLink ? (
                               <a
                                 href={session.meetingLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+                                className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
                                 style={{ backgroundColor: '#3E5F44' }}
                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
@@ -945,168 +1064,46 @@ const getRescheduleStatusClasses = (status: string) => {
                             ) : (
                               <span className="text-sm text-gray-500">Meeting link not available</span>
                             )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col space-y-1">
-                              <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(session.paymentStatus)} shadow-sm`}>
-                                {getPaymentStatusIcon(session.paymentStatus)}
-                                <span className="ml-1 capitalize">{session.paymentStatus}</span>
-                              </div>
+                          </div>
+                          {session.rescheduleRequest && (
+                            <div className={`mt-3 text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)}`}>
+                              <p className="font-semibold">Reschedule ({session.rescheduleRequest.requestedBy})</p>
+                              <p className="mt-1">
+                                {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
+                              </p>
+                              {session.rescheduleRequest.reason && (
+                                <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
+                              )}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {session.rescheduleRequest ? (
-                              <div className={`text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)} mb-3`}>
-                                <p className="font-semibold">Request from {session.rescheduleRequest.requestedBy}</p>
-                                <p className="mt-1">
-                                  {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
-                                </p>
-                                {session.rescheduleRequest.reason && (
-                                  <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-gray-500 mb-3">No reschedule requests</p>
-                            )}
-                            {pendingClientRequest && (
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                <button
-                                  onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
-                                  disabled={isApproving}
-                                  className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
-                                >
-                                  {isApproving ? 'Approving...' : 'Approve'}
-                                </button>
-                                <button
-                                  onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
-                                  disabled={isRejecting}
-                                  className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
-                                >
-                                  {isRejecting ? 'Rejecting...' : 'Decline'}
-                                </button>
-                              </div>
-                            )}
-                            <button
-                              onClick={() => openMentorRescheduleModal(booking._id, session)}
-                              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50 w-full"
-                            >
-                              Reschedule session
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                )}
-
-                {/* Mobile Card View */}
-                {expandedSessionBookings.has(booking._id) && (
-                <div className="md:hidden space-y-4">
-                  {booking.sessions.map((session) => {
-                    const isApproving = respondingAction === `${session.sessionId}-approve`;
-                    const isRejecting = respondingAction === `${session.sessionId}-reject`;
-                    const pendingClientRequest = session.rescheduleRequest?.status === 'pending' && session.rescheduleRequest?.requestedBy === 'client';
-                    return (
-                    <div key={session.sessionId} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center">
-                          <div className={`p-2 rounded-lg border ${getSessionTypeColor(session.sessionType)} mr-3`}>
-                            {getSessionTypeIcon(session.sessionType)}
-                          </div>
-                          <div>
-                            <h5 className="font-semibold text-gray-900">
-                              {session.notes || getSessionTypeLabel(session.sessionType)}
-                            </h5>
-                            <p className="text-sm text-gray-500">{getSessionTypeLabel(session.sessionType)}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col space-y-1">
-                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(session.paymentStatus)} shadow-sm`}>
-                            {getPaymentStatusIcon(session.paymentStatus)}
-                            <span className="ml-1 capitalize">{session.paymentStatus}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div>
-                          <p className="text-gray-500 text-xs">Date & Time</p>
-                          <p className="font-medium text-gray-900">{formatDate(session.scheduledDate)}</p>
-                          <p className="text-gray-600">{formatTime(session.startTime)} - {formatTime(session.endTime)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Duration</p>
-                          <p className="font-medium text-gray-900">{session.duration} minutes</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs">Amount</p>
-                          <p className="font-medium text-gray-900">₹{session.price}</p>
-                          <p className="text-gray-600 text-xs">{session.currency}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Meeting Link Button - Full Width */}
-                      <div className="mb-4">
-                        <p className="text-gray-500 text-xs mb-2">Meeting Link</p>
-                        {session.meetingLink ? (
-                          <a
-                            href={session.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
-                            style={{ backgroundColor: '#3E5F44' }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
-                          >
-                            <Video className="h-4 w-4" />
-                            <span>Join Meeting</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-gray-500">Meeting link not available</span>
-                        )}
-                      </div>
-                      {session.rescheduleRequest && (
-                        <div className={`mt-3 text-xs rounded-lg border px-3 py-2 ${getRescheduleStatusClasses(session.rescheduleRequest.status)}`}>
-                          <p className="font-semibold">Reschedule ({session.rescheduleRequest.requestedBy})</p>
-                          <p className="mt-1">
-                            {formatDate(session.rescheduleRequest.requestedDate)} • {formatTime(session.rescheduleRequest.requestedStartTime)} - {formatTime(session.rescheduleRequest.requestedEndTime)}
-                          </p>
-                          {session.rescheduleRequest.reason && (
-                            <p className="mt-1 italic">{session.rescheduleRequest.reason}</p>
                           )}
-                        </div>
-                      )}
-                      {pendingClientRequest && (
-                        <div className="mt-3 flex flex-wrap gap-2">
+                          {pendingClientRequest && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <button
+                                onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
+                                disabled={isApproving}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
+                              >
+                                {isApproving ? 'Approving...' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
+                                disabled={isRejecting}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
+                              >
+                                {isRejecting ? 'Declining...' : 'Decline'}
+                              </button>
+                            </div>
+                          )}
                           <button
-                            onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'approve')}
-                            disabled={isApproving}
-                            className="flex-1 px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold disabled:opacity-60"
+                            onClick={() => openMentorRescheduleModal(booking._id, session)}
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                           >
-                            {isApproving ? 'Approving...' : 'Approve'}
-                          </button>
-                          <button
-                            onClick={() => handleRescheduleResponse(booking._id, session.sessionId, 'reject')}
-                            disabled={isRejecting}
-                            className="flex-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold disabled:opacity-60"
-                          >
-                            {isRejecting ? 'Declining...' : 'Decline'}
+                            Reschedule session
                           </button>
                         </div>
-                      )}
-                      <button
-                        onClick={() => openMentorRescheduleModal(booking._id, session)}
-                        className="mt-3 w-full px-3 py-2 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                      >
-                        Reschedule session
-                      </button>
-                    </div>
-                  );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>
@@ -1114,29 +1111,29 @@ const getRescheduleStatusClasses = (status: string) => {
         </div>
       )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="flex justify-center items-center space-x-2">
-                <button
+          <button
             onClick={() => fetchBookings(currentPage - 1)}
-                  disabled={currentPage === 1}
+            disabled={currentPage === 1}
             className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-          
-                <span className="px-3 py-2 text-sm text-gray-700">
-                  Page {currentPage} of {totalPages}
-                </span>
-          
-                <button
+          >
+            Previous
+          </button>
+
+          <span className="px-3 py-2 text-sm text-gray-700">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
             onClick={() => fetchBookings(currentPage + 1)}
-                  disabled={currentPage === totalPages}
+            disabled={currentPage === totalPages}
             className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+          >
+            Next
+          </button>
+        </div>
       )}
       {rescheduleModal?.session && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -1186,11 +1183,10 @@ const getRescheduleStatusClasses = (status: string) => {
                       {mentorRescheduleSlots.map((slot) => (
                         <label
                           key={slot.startTime}
-                          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${
-                            rescheduleModal.selectedSlot?.startTime === slot.startTime
-                              ? 'border-blue-600 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-400'
-                          }`}
+                          className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${rescheduleModal.selectedSlot?.startTime === slot.startTime
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-400'
+                            }`}
                         >
                           <div>
                             <div className="font-semibold text-gray-900">

@@ -17,9 +17,10 @@ const run = async () => {
       return;
     }
 
-    user.password = 'megha@123'; // pre-save hook will hash it
+    user.password = 'megha@7274'; // pre-save hook will hash it
+    user.isExpert = true; // Ensure user is marked as expert
     await user.save();
-    console.log('✅ Password reset for:', email);
+    console.log('✅ Password updated to megha@7274 and expert status secured for:', email);
   } catch (err) {
     console.error('❌ Failed to reset password:', err);
   } finally {

@@ -16,7 +16,7 @@ const MentorDashboard = () => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showAllTabs, setShowAllTabs] = useState(false);
-  
+
   // Overview data state
   const [overviewData, setOverviewData] = useState({
     totalSessions: 0,
@@ -55,17 +55,17 @@ const MentorDashboard = () => {
     try {
       setMessagesLoading(true);
       const response = await bookingApi.getMentorBookings(user.user_id, 1, 100);
-      
+
       if (response.success) {
         const { bookings } = response.data;
         const messages: any[] = [];
-        
+
         bookings.forEach((booking: any) => {
           booking.sessions.forEach((session: any) => {
             // Only show pending reschedule requests from clients
-            if (session.rescheduleRequest && 
-                session.rescheduleRequest.status === 'pending' && 
-                session.rescheduleRequest.requestedBy === 'client') {
+            if (session.rescheduleRequest &&
+              session.rescheduleRequest.status === 'pending' &&
+              session.rescheduleRequest.requestedBy === 'client') {
               messages.push({
                 id: `${booking._id}_${session.sessionId}_reschedule`,
                 bookingId: booking._id,
@@ -86,7 +86,7 @@ const MentorDashboard = () => {
             }
           });
         });
-        
+
         // Sort by requestedAt (newest first)
         messages.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
         setRescheduleMessages(messages);
@@ -111,10 +111,10 @@ const MentorDashboard = () => {
 
       // Fetch mentor bookings data which includes stats
       const response = await bookingApi.getMentorBookings(user.user_id, 1, 10);
-      
+
       if (response.success) {
         const { stats, bookings } = response.data;
-        
+
         // Calculate unique active students from recent bookings
         const uniqueClients = new Set();
         bookings.forEach((booking: any) => {
@@ -127,9 +127,9 @@ const MentorDashboard = () => {
         let unreadRescheduleCount = 0;
         bookings.forEach((booking: any) => {
           booking.sessions.forEach((session: any) => {
-            if (session.rescheduleRequest && 
-                session.rescheduleRequest.status === 'pending' && 
-                session.rescheduleRequest.requestedBy === 'client') {
+            if (session.rescheduleRequest &&
+              session.rescheduleRequest.status === 'pending' &&
+              session.rescheduleRequest.requestedBy === 'client') {
               const messageId = `${booking._id}_${session.sessionId}_reschedule`;
               if (!readMessageIds.has(messageId)) {
                 unreadRescheduleCount++;
@@ -148,19 +148,19 @@ const MentorDashboard = () => {
 
         // Set recent activity from bookings - sorted by session creation time (latest first)
         const allRecentSessions: any[] = [];
-        
+
         bookings.forEach((booking: any) => {
           booking.sessions.forEach((session: any) => {
             const sessionDate = new Date(session.scheduledDate).toLocaleDateString();
             const sessionTime = session.startTime && session.endTime
               ? `${session.startTime} - ${session.endTime}`
               : '';
-            
+
             allRecentSessions.push({
               id: `${booking._id}_${session.sessionId}`,
               type: 'booking',
               title: `New booking from ${booking.clientId?.firstName || 'Student'} ${booking.clientId?.lastName || ''}`,
-              description: sessionTime 
+              description: sessionTime
                 ? `Session scheduled for ${sessionDate} at ${sessionTime}`
                 : `Session scheduled for ${sessionDate}`,
               time: new Date(session.createdTime || booking.createdAt).toLocaleDateString(),
@@ -171,12 +171,12 @@ const MentorDashboard = () => {
             });
           });
         });
-        
+
         // Sort by creation time and take the 5 most recent
         const recentBookings = allRecentSessions
           .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
-          
+
         setRecentActivity(recentBookings);
       } else {
         throw new Error('Failed to fetch overview data');
@@ -221,7 +221,7 @@ const MentorDashboard = () => {
   useEffect(() => {
     if (activeTab === 'messages' && user && !userLoading) {
       fetchRescheduleMessages();
-      
+
       // Auto-refresh messages every 2 minutes when tab is active
       const interval = setInterval(() => {
         fetchRescheduleMessages().catch((err) => {
@@ -284,17 +284,17 @@ const MentorDashboard = () => {
 
   const handleLogout = async () => {
     if (!confirm('Are you sure you want to logout?')) return;
-    
+
     try {
       setLogoutLoading(true);
-      
+
       // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
+
       // Show loading for a moment
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Redirect to home page
       router.push('/');
     } catch (error) {
@@ -325,7 +325,7 @@ const MentorDashboard = () => {
             ) : overviewError ? (
               <div className="bg-red-50 border border-red-200 rounded-xl p-6">
                 <p className="text-red-600 mb-4">{overviewError}</p>
-                <button 
+                <button
                   onClick={fetchOverviewData}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold"
                 >
@@ -336,47 +336,50 @@ const MentorDashboard = () => {
               <>
                 {/* Main Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+                  {/* Total Sessions Card - Melon Pink */}
+                  <div className="bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300" style={{ backgroundColor: '#f4acb7' }}>
                     <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
+                      <div className="p-3 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: '#3a3a3a' }}>
                         <Calendar className="h-5 md:h-6 w-5 md:w-6 text-white" />
                       </div>
                       <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Sessions</p>
+                        <p className="text-xs md:text-sm font-medium text-gray-800 tracking-wide" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Sessions</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.totalSessions}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+
+                  {/* Active Students Card - Lavender Blush Darker */}
+                  <div className="bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300" style={{ backgroundColor: '#fadde1' }}>
                     <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
+                      <div className="p-3 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: '#3a3a3a' }}>
                         <Users className="h-5 md:h-6 w-5 md:w-6 text-white" />
                       </div>
                       <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Active Students</p>
+                        <p className="text-xs md:text-sm font-medium text-gray-800 tracking-wide" style={{ fontFamily: "'Rubik', sans-serif" }}>Active Students</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{overviewData.activeStudents}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-white to-gray-50 p-4 md:p-6 rounded-xl sm:rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300">
+
+                  {/* Total Earnings Card - Melon Pink */}
+                  <div className="bg-white p-4 md:p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300" style={{ backgroundColor: '#f4acb7' }}>
                     <div className="flex items-center">
-                      <div className="p-2.5 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
+                      <div className="p-3 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: '#3a3a3a' }}>
                         <DollarSign className="h-5 md:h-6 w-5 md:w-6 text-white" />
                       </div>
                       <div className="ml-3 md:ml-4">
-                        <p className="text-xs md:text-sm font-medium text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Earnings</p>
+                        <p className="text-xs md:text-sm font-medium text-gray-800 tracking-wide" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Earnings</p>
                         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>₹{overviewData.totalEarnings}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Recent Activity Card */}
-                <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 rounded-xl sm:rounded-2xl p-4 md:p-6 shadow-lg border border-gray-200/50">
+                <div className="bg-white rounded-3xl p-4 md:p-6 shadow-lg border border-gray-100" style={{ backgroundColor: '#fadde1' }}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-xl shadow-lg flex-shrink-0" style={{ backgroundColor: '#3E5F44' }}>
+                    <div className="p-2 rounded-xl shadow-sm flex-shrink-0" style={{ backgroundColor: '#3a3a3a' }}>
                       <BarChart3 className="h-5 w-5 text-white" />
                     </div>
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>Recent Activity</h3>
@@ -384,33 +387,32 @@ const MentorDashboard = () => {
                   <div className="space-y-3">
                     {recentActivity.length > 0 ? (
                       recentActivity.map((activity, index) => (
-                        <div key={activity.id || index} className="bg-white rounded-lg p-3 md:p-4 border border-gray-200 hover:border-gray-300 transition-all duration-300">
+                        <div key={activity.id || index} className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 md:p-4 border border-white/50 hover:bg-white/80 transition-all duration-300">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <div className="flex items-center gap-3">
-                              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                                activity.type === 'booking' ? 'bg-green-500' : 
+                              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${activity.type === 'booking' ? 'bg-green-500' :
                                 activity.type === 'completed' ? 'bg-green-600' : 'bg-gray-500'
-                              }`}></div>
+                                }`}></div>
                               <div className="flex-1">
                                 <p className="text-sm md:text-base font-medium text-gray-900" style={{ fontFamily: "'Rubik', sans-serif" }}>{activity.title}</p>
-                                <p className="text-xs md:text-sm text-gray-500 mt-1">{activity.description}</p>
+                                <p className="text-xs md:text-sm text-gray-600 mt-1">{activity.description}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3 sm:ml-4">
                               {activity.amount > 0 && (
-                                <span className="text-sm md:text-base font-semibold" style={{ color: '#3E5F44', fontFamily: "'Rubik', sans-serif" }}>₹{activity.amount}</span>
+                                <span className="text-sm md:text-base font-semibold" style={{ color: '#3a3a3a', fontFamily: "'Rubik', sans-serif" }}>₹{activity.amount}</span>
                               )}
-                              <span className="text-xs text-gray-400">{activity.time}</span>
+                              <span className="text-xs text-gray-500">{activity.time}</span>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-4">
                           <BarChart3 className="h-8 w-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500" style={{ fontFamily: "'Rubik', sans-serif" }}>No recent activity</p>
+                        <p className="text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>No recent activity</p>
                       </div>
                     )}
                   </div>
@@ -434,10 +436,8 @@ const MentorDashboard = () => {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllMessagesAsRead}
-                  className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: '#3E5F44' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                  className="px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ backgroundColor: '#3a3a3a' }}
                 >
                   Mark all as read
                 </button>
@@ -452,10 +452,10 @@ const MentorDashboard = () => {
                 </div>
               </div>
             ) : rescheduleMessages.length === 0 ? (
-              <div className="text-center py-12">
-                <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <div className="text-center py-12 bg-white/50 rounded-3xl border border-gray-100 p-8 shadow-sm">
+                <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>No Messages</h3>
-                <p className="text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>You don't have any reschedule requests at the moment.</p>
+                <p className="text-gray-500" style={{ fontFamily: "'Rubik', sans-serif" }}>You don't have any reschedule requests at the moment.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -479,11 +479,11 @@ const MentorDashboard = () => {
                   return (
                     <div
                       key={message.id}
-                      className={`bg-white rounded-xl sm:rounded-2xl p-4 md:p-6 border-2 transition-all duration-300 ${
-                        isUnread 
-                          ? 'border-green-500 shadow-lg' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`rounded-3xl p-4 md:p-6 border transition-all duration-300 ${isUnread
+                        ? 'border-red-200/50 shadow-md ring-1 ring-red-100' // Slight red tint for unread
+                        : 'border-white/40 hover:border-white/60 hover:shadow-sm'
+                        }`}
+                      style={{ backgroundColor: '#fadde1' }}
                       onClick={() => markMessageAsRead(message.id)}
                     >
                       <div className="flex items-start gap-4">
@@ -494,7 +494,7 @@ const MentorDashboard = () => {
                         {!isUnread && (
                           <div className="w-3 h-3 flex-shrink-0 mt-1"></div>
                         )}
-                        
+
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-3">
                             <div>
@@ -505,7 +505,7 @@ const MentorDashboard = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               {isUnread && (
-                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                                <span className="px-2 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-full border border-red-100">
                                   New
                                 </span>
                               )}
@@ -515,7 +515,7 @@ const MentorDashboard = () => {
                             </div>
                           </div>
 
-                          <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-3 border border-white/50">
                             <p className="text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>
                               Reschedule Request
                             </p>
@@ -527,7 +527,7 @@ const MentorDashboard = () => {
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-green-500" />
+                                <Calendar className="h-4 w-4 text-gray-600" />
                                 <span>
                                   <strong>Requested:</strong> {formatDate(message.requestedDate)} at {formatTime(message.requestedTime.split(' - ')[0])} - {formatTime(message.requestedTime.split(' - ')[1])}
                                 </span>
@@ -540,7 +540,7 @@ const MentorDashboard = () => {
                               <p className="text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: "'Rubik', sans-serif" }}>
                                 Reason:
                               </p>
-                              <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 italic">
+                              <p className="text-sm text-gray-700 bg-white/40 rounded-xl p-3 italic border border-white/30" style={{ fontFamily: "'Rubik', sans-serif" }}>
                                 "{message.reason}"
                               </p>
                             </div>
@@ -552,15 +552,13 @@ const MentorDashboard = () => {
                                 e.stopPropagation();
                                 setActiveTab('bookings');
                               }}
-                              className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
-                              style={{ backgroundColor: '#3E5F44' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2F4A35'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3E5F44'}
+                              className="px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                              style={{ backgroundColor: '#3a3a3a' }}
                             >
                               View Booking
                             </button>
-                            <span className="text-xs text-gray-500 capitalize">
-                              Session Type: {message.sessionType}
+                            <span className="text-xs text-gray-500 capitalize px-3 py-1 bg-gray-100 rounded-full">
+                              {message.sessionType}
                             </span>
                           </div>
                         </div>
@@ -574,8 +572,8 @@ const MentorDashboard = () => {
         );
       default:
         return (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#3E5F44' }}>
+          <div className="text-center py-12 bg-white/50 rounded-3xl border border-gray-100 shadow-sm mx-auto max-w-lg mt-8">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#3a3a3a' }}>
               <Settings className="h-8 w-8 text-white" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>Coming Soon</h3>
@@ -585,19 +583,19 @@ const MentorDashboard = () => {
     }
   };
 
-  const userDisplayName = user?.firstName 
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` 
+  const userDisplayName = user?.firstName
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
     : 'Mentor';
 
   // Add version identifier to force refresh in case of caching issues
-  const dashboardVersion = 'v2.1.0';
+  const dashboardVersion = 'v2.3.1';
 
   // Aggressive cache-busting effect
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // Set version immediately
       const currentVersion = sessionStorage.getItem('mentor_dashboard_version');
-      
+
       // If version doesn't match or doesn't exist, force reload
       if (!currentVersion || currentVersion !== dashboardVersion) {
         sessionStorage.setItem('mentor_dashboard_version', dashboardVersion);
@@ -636,166 +634,204 @@ const MentorDashboard = () => {
 
   return (
     <ProtectedRoute>
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200" data-version={dashboardVersion}>
+      <div className="min-h-screen" style={{ backgroundColor: '#fff0f3', fontFamily: "'Rubik', sans-serif" }} data-version={dashboardVersion}>
         <div className="max-w-7xl mx-auto">
           {/* Modern Header */}
-          <section className="relative overflow-hidden py-6 sm:py-8" style={{ background: 'linear-gradient(135deg, #e0e8ed 0%, #f0f4f7 100%)' }}>
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-20">
-            <div className="flex flex-row items-center justify-between">
-              {/* Left side - User avatar and Welcome text */}
-              <div className="flex items-center gap-4">
-                {/* User Avatar */}
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                  <User className="h-6 w-6 sm:h-7 sm:w-7 text-gray-600" />
+          <section className="relative overflow-hidden py-6 sm:py-8" style={{ backgroundColor: '#fff0f3' }}>
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 relative z-20">
+              <div className="flex flex-row items-center justify-between">
+                {/* Left side - User avatar and Welcome text */}
+                <div className="flex items-center gap-4">
+                  {/* User Avatar */}
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0 border border-gray-100">
+                    <User className="h-6 w-6 sm:h-7 sm:w-7 text-gray-600" />
+                  </div>
+
+                  {/* Welcome Text */}
+                  <div className="flex flex-col">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-wide" style={{ color: '#4A4458', fontFamily: "'Rubik', sans-serif" }}>
+                      Hello, {userDisplayName}!
+                    </h2>
+                    <span className="text-sm sm:text-base text-gray-600 font-normal" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                      Manage your mentoring schedule
+                    </span>
+                  </div>
                 </div>
-                
-                {/* Welcome Text */}
-                <div className="flex flex-col">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                    Hello, {userDisplayName}!
-                  </h2>
-                  <span className="text-sm sm:text-base text-gray-600 font-normal" style={{ fontFamily: "'Rubik', sans-serif" }}>
-                    Manage your mentoring schedule
-                  </span>
+
+                {/* Right side - Logout button */}
+                <div className="flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={logoutLoading}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none border border-gray-100"
+                    title="Logout"
+                  >
+                    {logoutLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
+                    ) : (
+                      <LogOut className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+                    )}
+                  </button>
                 </div>
               </div>
-              
-              {/* Right side - Logout button */}
-              <div className="flex-shrink-0">
+            </div>
+          </section>
+
+          {/* Navigation Tabs - Hidden on mobile, shown on desktop */}
+          {/* Navigation Tabs - Hidden on mobile, shown on desktop */}
+          <div className="hidden md:block bg-gray-200/90 backdrop-blur-md shadow-lg sticky top-4 z-30 rounded-2xl mx-4 md:mx-6 border border-white/20 transition-all duration-300">
+            <div className="px-4 py-2">
+              <nav className="flex space-x-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as DashboardTab)}
+                      className={`py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 transition-all duration-200 relative ${isActive
+                        ? 'bg-black text-white shadow-md transform scale-105' // Active: Black bg, White text, Elevated
+                        : 'text-gray-600 hover:bg-white hover:text-black hover:shadow-sm' // Inactive: Grey text, turn white on hover
+                        }`}
+                      style={{ fontFamily: "'Rubik', sans-serif" }}
+                    >
+                      <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-current'}`} />
+                      {tab.label}
+                      {tab.id === 'messages' && unreadCount > 0 && (
+                        <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${isActive ? 'bg-red-500' : 'bg-red-500'}`}></span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-4 md:p-6 pb-24 md:pb-6">
+            {renderTabContent()}
+          </div>
+        </div>
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-200 z-50 shadow-lg safe-area-bottom" style={{ backgroundColor: '#E5E7EB', borderTopLeftRadius: '1.5rem', borderTopRightRadius: '1.5rem' }}>
+          {/* Main Navigation Tabs */}
+          <div className="flex justify-around items-center py-2">
+            {visibleTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
                 <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={logoutLoading}
-                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-all duration-200 focus:outline-none"
-                  title="Logout"
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as DashboardTab)}
+                  className="flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 min-w-[60px]"
                 >
-                  {logoutLoading ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
-                  ) : (
-                    <LogOut className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
-                  )}
+                  <div className="relative">
+                    <Icon
+                      className="h-5 w-5 mb-1 transition-colors duration-200"
+                      style={{ color: isActive ? '#5D5869' : '#9CA3AF' }}
+                    />
+                    {tab.id === 'messages' && unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#E5E7EB]"></span>
+                    )}
+                  </div>
+                  <span
+                    className="text-[10px] font-medium transition-colors duration-200"
+                    style={{
+                      fontFamily: "'Rubik', sans-serif",
+                      color: isActive ? '#5D5869' : '#9CA3AF'
+                    }}
+                  >
+                    {tab.label}
+                  </span>
                 </button>
+              );
+            })}
+
+            {/* Expand/Collapse Button */}
+            <button
+              onClick={() => setShowAllTabs(!showAllTabs)}
+              className="flex flex-col items-center justify-center px-3 py-2 transition-all duration-200 min-w-[60px]"
+            >
+              {showAllTabs ? (
+                <>
+                  <ChevronUp
+                    className="h-5 w-5 mb-1 transition-colors duration-200"
+                    style={{ color: showAllTabs ? '#5D5869' : '#9CA3AF' }}
+                  />
+                  <span
+                    className="text-[10px] font-medium transition-colors duration-200"
+                    style={{
+                      fontFamily: "'Rubik', sans-serif",
+                      color: showAllTabs ? '#5D5869' : '#9CA3AF'
+                    }}
+                  >
+                    Less
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown
+                    className="h-5 w-5 mb-1 transition-colors duration-200"
+                    style={{ color: showAllTabs ? '#5D5869' : '#9CA3AF' }}
+                  />
+                  <span
+                    className="text-[10px] font-medium transition-colors duration-200"
+                    style={{
+                      fontFamily: "'Rubik', sans-serif",
+                      color: showAllTabs ? '#5D5869' : '#9CA3AF'
+                    }}
+                  >
+                    More
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Hidden Tabs - Expandable */}
+          {showAllTabs && (
+            <div className="border-t border-gray-200 bg-[#E5E7EB] pb-4">
+              <div className="grid grid-cols-3 gap-2 p-3">
+                {hiddenTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as DashboardTab);
+                        setShowAllTabs(false);
+                      }}
+                      className="flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all duration-200 hover:bg-white/30"
+                    >
+                      <div className="relative">
+                        <Icon
+                          className="h-5 w-5 mb-1 transition-colors duration-200"
+                          style={{ color: isActive ? '#5D5869' : '#9CA3AF' }}
+                        />
+                        {tab.id === 'messages' && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-[#E5E7EB]"></span>
+                        )}
+                      </div>
+                      <span
+                        className="text-xs font-medium text-center transition-colors duration-200"
+                        style={{
+                          fontFamily: "'Rubik', sans-serif",
+                          color: isActive ? '#5D5869' : '#9CA3AF'
+                        }}
+                      >
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Navigation Tabs - Hidden on mobile, shown on desktop */}
-        <div className="hidden md:block bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-6">
-            <nav className="flex space-x-8">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as DashboardTab)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors relative ${
-                      activeTab === tab.id
-                        ? 'border-green-600 text-green-700'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                    style={activeTab === tab.id ? { borderColor: '#3E5F44', color: '#3E5F44', fontFamily: "'Rubik', sans-serif" } : { fontFamily: "'Rubik', sans-serif" }}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                    {tab.id === 'messages' && unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-4 md:p-6 pb-24 md:pb-6">
-          {renderTabContent()}
+          )}
         </div>
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
-        {/* Main Navigation Tabs */}
-        <div className="flex justify-around items-center py-2">
-          {visibleTabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as DashboardTab)}
-                className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors relative ${
-                  activeTab === tab.id
-                    ? 'text-white shadow-lg'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                style={activeTab === tab.id ? { backgroundColor: '#3E5F44' } : {}}
-              >
-                <Icon className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium" style={{ fontFamily: "'Rubik', sans-serif" }}>{tab.label}</span>
-                {tab.id === 'messages' && unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                )}
-              </button>
-            );
-          })}
-          
-          {/* Expand/Collapse Button */}
-          <button
-            onClick={() => setShowAllTabs(!showAllTabs)}
-            className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
-              showAllTabs ? 'text-white shadow-lg' : 'text-gray-500 hover:text-gray-700'
-            }`}
-            style={showAllTabs ? { backgroundColor: '#3E5F44' } : {}}
-          >
-            {showAllTabs ? (
-              <>
-                <ChevronUp className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium" style={{ fontFamily: "'Rubik', sans-serif" }}>Less</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-5 w-5 mb-1" />
-                <span className="text-xs font-medium" style={{ fontFamily: "'Rubik', sans-serif" }}>More</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Hidden Tabs - Expandable */}
-        {showAllTabs && (
-          <div className="border-t border-gray-100 bg-gray-50">
-            <div className="grid grid-cols-3 gap-2 p-3">
-              {hiddenTabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id as DashboardTab);
-                      setShowAllTabs(false);
-                    }}
-                    className={`flex flex-col items-center py-3 px-2 rounded-lg transition-colors relative ${
-                      activeTab === tab.id
-                        ? 'text-white shadow-lg'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                    }`}
-                    style={activeTab === tab.id ? { backgroundColor: '#3E5F44' } : {}}
-                  >
-                    <Icon className="h-4 w-4 mb-1" />
-                    <span className="text-xs font-medium text-center" style={{ fontFamily: "'Rubik', sans-serif" }}>{tab.label}</span>
-                    {tab.id === 'messages' && unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
     </ProtectedRoute>
   );
 };

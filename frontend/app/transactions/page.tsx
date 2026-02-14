@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { 
-  CreditCard, 
+import {
+  CreditCard,
   Calendar,
   CheckCircle,
   XCircle,
@@ -140,14 +140,14 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Check if we have authentication
       const token = localStorage.getItem('token');
       if (!token && !user) {
         setError('Please log in to view your transactions');
         return;
       }
-      
+
       const params: any = {
         page: currentPage,
         limit: 10
@@ -233,32 +233,16 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundImage: 'url("/grid.svg")', backgroundRepeat: 'repeat', backgroundPosition: 'center', backgroundSize: 'cover', backgroundColor: '#f5f5f5' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#fff0f3', fontFamily: "'Rubik', sans-serif" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8 pt-12">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-lg shadow-lg" style={{ background: '#5E936C' }}>
-              <CreditCard className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-600 to-gray-900 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+        <div className="mb-8 pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-wide" style={{ color: '#4A4458' }}>
               Transactions
             </h1>
           </div>
-          <style jsx>{`
-            @keyframes shimmer {
-              0% {
-                background-position: -200% 0;
-              }
-              100% {
-                background-position: 200% 0;
-              }
-            }
-            .animate-shimmer {
-              animation: shimmer 3s ease-in-out infinite;
-            }
-          `}</style>
-          <p className="text-base text-gray-600">Track all your financial activities and payment history</p>
+          <p className="text-base text-gray-600" style={{ fontFamily: "'Rubik', sans-serif" }}>Track all your financial activities and payment history</p>
           {(!localStorage.getItem('token') && !user) && (
             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
@@ -268,106 +252,104 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        {/* Stats removed */}
-
-  {/* Removed search/filter/export/refresh box */}
-
-        {/* Transactions Table */}
-  <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
+        {/* Transactions Table Container */}
+        <div className="rounded-4xl p-4 sm:p-6 shadow-lg overflow-hidden" style={{ backgroundColor: '#fadde1' }}>
           <div className="overflow-x-auto">
             <table className="w-full">
-                             <thead className="bg-gray-50 border-b border-gray-200">
-                 <tr>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Transaction ID
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Service
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Amount
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Status
-                   </th>
-                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                     Date
-                   </th>
-                 </tr>
-               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <thead className="border-b border-gray-200/50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#5D5869' }}>
+                    Transaction ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#5D5869' }}>
+                    Service
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#5D5869' }}>
+                    Amount
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#5D5869' }}>
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: '#5D5869' }}>
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200/30">
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                             {error ? (
-                         <div>
-                           <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-                           <p className="text-lg font-medium text-gray-900 mb-2">Error loading transactions</p>
-                           <p className="text-gray-600">{error}</p>
-                           <div className="mt-4 space-y-2">
-                             <button
-                               onClick={fetchTransactions}
-                               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                             >
-                               Try Again
-                             </button>
-                           </div>
-                         </div>
-                       ) : (
-                                                 <div>
-                           <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                           <p className="text-lg font-medium text-gray-900 mb-2">No transactions found</p>
-                           <p className="text-gray-600">Start by booking a session or purchasing a course</p>
-                           {(!localStorage.getItem('token') && !user) && (
-                             <p className="text-sm text-blue-600 mt-2">Demo mode: Sample data will appear here</p>
-                           )}
-                         </div>
+                      {error ? (
+                        <div>
+                          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                          <p className="text-lg font-medium text-gray-900 mb-2">Error loading transactions</p>
+                          <p className="text-gray-600">{error}</p>
+                          <div className="mt-4 space-y-2">
+                            <button
+                              onClick={fetchTransactions}
+                              className="px-4 py-2 text-white rounded-xl hover:shadow-lg transition-all"
+                              style={{ backgroundColor: '#3a3a3a' }}
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-lg font-medium text-gray-900 mb-2">No transactions found</p>
+                          <p className="text-gray-600">Start by booking a session or purchasing a course</p>
+                        </div>
                       )}
                     </td>
                   </tr>
                 ) : (
-                                     transactions.map((transaction) => (
-                     <tr key={transaction._id} className="hover:bg-gray-50">
-                       <td className="px-6 py-4">
-                         <div>
-                           <p className="text-sm font-medium text-gray-900">
-                            {(transaction as any).transactionId || (transaction as any).transaction_id || transaction._id}
-                           </p>
-                         </div>
-                       </td>
-                       <td className="px-6 py-4">
-                         <div>
-                           <p className="text-sm font-medium text-gray-900">
-                             {transaction.service}
-                           </p>
-                           <p className="text-xs text-gray-500">
-                             {transaction.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                           </p>
-                         </div>
-                       </td>
+                  transactions.map((transaction) => (
+                    <tr key={transaction._id} className="hover:bg-white/30 transition-colors duration-200 rounded-lg group">
                       <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-gray-900">
+                        <div className="bg-white/50 px-3 py-1.5 rounded-lg inline-block">
+                          <p className="text-sm font-medium" style={{ color: '#3E5F44' }}>
+                            {(transaction as any).transactionId || (transaction as any).transaction_id || transaction._id}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-bold" style={{ color: '#000000' }}>
+                            {transaction.service}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {transaction.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold" style={{ color: '#000000' }}>
                           {formatCurrency(transaction.amount, transaction.currency)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-600">
                           {transaction.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(transaction.status)}
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                            }`}>
+                            {getStatusIcon(transaction.status)}
                             {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-900">
-                              {formatDate(transaction.createdAt)}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm text-gray-700">
+                            {formatDate(transaction.createdAt)}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -378,7 +360,7 @@ export default function TransactionsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="bg-white px-6 py-3 border-t border-gray-200">
+            <div className="px-6 py-4 border-t border-gray-200/50 mt-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
                   Page {currentPage} of {totalPages}
@@ -387,14 +369,16 @@ export default function TransactionsPage() {
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm rounded-xl hover:bg-white/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    style={{ backgroundColor: '#fff', color: '#5D5869' }}
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm rounded-xl hover:bg-white/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    style={{ backgroundColor: '#fff', color: '#5D5869' }}
                   >
                     Next
                   </button>

@@ -270,6 +270,7 @@ export default function DashboardPage() {
   const mainContentRef = React.useRef<HTMLElement>(null);
   const [showBookSessionPopup, setShowBookSessionPopup] = useState(false);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [sessionTab, setSessionTab] = useState('upcoming');
   const [sessions, setSessions] = useState<any[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]); // Always holds upcoming sessions
@@ -1114,15 +1115,24 @@ export default function DashboardPage() {
                           {/* Notification and Profile Icons - grouped together on right in mobile */}
                           <div className="flex items-center gap-2 sm:gap-4">
                             {/* Notification Icon */}
-                            <button
-                              type="button"
-                              className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
-                              onClick={() => {
-                                // Handle notification click
-                              }}
-                            >
-                              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                            </button>
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                              >
+                                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                              </button>
+
+                              {/* Notification Popup */}
+                              {showNotifications && (
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-black rounded-xl p-3 shadow-xl z-50 border border-gray-800">
+                                  <div className="text-white text-xs sm:text-sm text-center font-medium">
+                                    No new notification
+                                  </div>
+                                </div>
+                              )}
+                            </div>
 
                             {/* Profile Avatar */}
                             <button
@@ -1460,8 +1470,8 @@ export default function DashboardPage() {
                                       <label
                                         key={slot.startTime}
                                         className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${rescheduleModal.selectedSlot?.startTime === slot.startTime
-                                            ? 'border-gray-800 bg-gray-50'
-                                            : 'border-gray-200 hover:border-gray-400'
+                                          ? 'border-gray-800 bg-gray-50'
+                                          : 'border-gray-200 hover:border-gray-400'
                                           }`}
                                       >
                                         <div>

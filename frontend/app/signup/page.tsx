@@ -392,7 +392,7 @@ export default function Signup() {
       `}</style>
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         {/* Left Side - Branding */}
-        <div className="bg-black text-white p-12 lg:p-16 flex flex-col justify-center min-h-screen rounded-r-[60px]">
+        <div className="bg-black text-white p-12 lg:p-16 hidden lg:flex flex-col justify-center min-h-screen rounded-r-[60px]">
           <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
             <img
               src="/icons/icon-96x96.png"

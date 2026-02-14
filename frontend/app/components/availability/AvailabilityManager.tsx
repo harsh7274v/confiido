@@ -32,7 +32,7 @@ const AvailabilityManager: React.FC = () => {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string; message?: string }; status?: number }; message?: string };
       console.error('❌ [FRONTEND] Error loading availabilities:', error);
-      
+
       // Don't show error for rate limiting, just log it
       if (err.response?.status === 429) {
         console.warn('⚠️ Rate limit reached, skipping this refresh');
@@ -114,7 +114,7 @@ const AvailabilityManager: React.FC = () => {
       // Reset form and reload data
       resetForm();
       await loadAvailabilities();
-      
+
       // Hide success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (error: unknown) {
@@ -193,25 +193,26 @@ const AvailabilityManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-             {/* Header */}
-       <div className="flex justify-between items-center">
-         <div>
-           <h2 className="text-2xl font-bold text-gray-900">Manage Availability</h2>
-           <p className="text-gray-600">Set your available dates and time slots for mentoring sessions</p>
-         </div>
-                   <button
-            onClick={() => setShowForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Availability
-          </button>
-       </div>
+      {/* Header */}
+      <div className="flex justify-between items-center bg-[#fadde1] p-6 rounded-xl border border-white/50 shadow-sm">
+        <div>
+          <h2 className="text-2xl font-bold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>Manage Availability</h2>
+          <p className="text-gray-700 mt-1" style={{ fontFamily: "'Rubik', sans-serif" }}>Set your available dates and time slots for mentoring sessions</p>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          style={{ backgroundColor: '#3a3a3a', fontFamily: "'Rubik', sans-serif" }}
+        >
+          <Plus className="h-4 w-4" />
+          Add Availability
+        </button>
+      </div>
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-green-600">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-green-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
             <CheckCircle className="h-4 w-4" />
             <span>{success}</span>
           </div>
@@ -219,8 +220,8 @@ const AvailabilityManager: React.FC = () => {
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-600">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-red-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
             <AlertCircle className="h-4 w-4" />
             <span>{error}</span>
           </div>
@@ -229,14 +230,14 @@ const AvailabilityManager: React.FC = () => {
 
       {/* Availability Form */}
       {showForm && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-md">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>
               {editingId ? 'Edit Availability' : 'Add New Availability'}
             </h3>
             <button
               onClick={resetForm}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 transistion-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -246,7 +247,7 @@ const AvailabilityManager: React.FC = () => {
             {/* Date Range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>
                   Start Date
                 </label>
                 <input
@@ -257,12 +258,12 @@ const AvailabilityManager: React.FC = () => {
                     dateRange: { ...prev.dateRange, startDate: e.target.value }
                   }))}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>
                   End Date
                 </label>
                 <input
@@ -273,7 +274,7 @@ const AvailabilityManager: React.FC = () => {
                     dateRange: { ...prev.dateRange, endDate: e.target.value }
                   }))}
                   min={formData.dateRange.startDate || new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
                   required
                 />
               </div>
@@ -281,24 +282,24 @@ const AvailabilityManager: React.FC = () => {
 
             {/* Time Slots */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Weekly Schedule
               </label>
               <div className="space-y-3">
                 {formData.timeSlots.map((slot) => (
-                  <div key={slot.dayOfWeek} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                  <div key={slot.dayOfWeek} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={slot.isAvailable}
                         onChange={() => toggleDayAvailability(slot.dayOfWeek)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-[#3a3a3a] focus:ring-gray-500 border-gray-300 rounded"
                       />
-                      <span className="w-20 text-sm font-medium text-gray-700">
+                      <span className="w-20 text-sm font-medium text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
                         {availabilityApi.getDayName(slot.dayOfWeek)}
                       </span>
                     </div>
-                    
+
                     {slot.isAvailable && (
                       <>
                         <div className="flex items-center gap-2">
@@ -306,7 +307,8 @@ const AvailabilityManager: React.FC = () => {
                           <select
                             value={slot.startTime}
                             onChange={(e) => updateTimeSlot(slot.dayOfWeek, 'startTime', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:border-purple-400 focus:outline-none"
+                            style={{ fontFamily: "'Rubik', sans-serif" }}
                           >
                             {availabilityApi.generateTimeOptions().map(time => (
                               <option key={time} value={time}>{availabilityApi.formatTime(time)}</option>
@@ -316,7 +318,8 @@ const AvailabilityManager: React.FC = () => {
                           <select
                             value={slot.endTime}
                             onChange={(e) => updateTimeSlot(slot.dayOfWeek, 'endTime', e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:border-purple-400 focus:outline-none"
+                            style={{ fontFamily: "'Rubik', sans-serif" }}
                           >
                             {availabilityApi.generateTimeOptions().map(time => (
                               <option key={time} value={time}>{availabilityApi.formatTime(time)}</option>
@@ -332,16 +335,17 @@ const AvailabilityManager: React.FC = () => {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 Notes (Optional)
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
                 placeholder="Any additional notes about your availability..."
                 maxLength={500}
+                style={{ fontFamily: "'Rubik', sans-serif" }}
               />
             </div>
 
@@ -351,13 +355,15 @@ const AvailabilityManager: React.FC = () => {
                 type="button"
                 onClick={resetForm}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                style={{ fontFamily: "'Rubik', sans-serif" }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all shadow-md flex items-center gap-2 hover:-translate-y-0.5 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                style={{ backgroundColor: '#3a3a3a', fontFamily: "'Rubik', sans-serif" }}
               >
                 {loading ? (
                   <>
@@ -378,33 +384,35 @@ const AvailabilityManager: React.FC = () => {
       {/* Existing Availabilities */}
       {availabilityPeriods.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Current Availability</h3>
+          <h3 className="text-lg font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>Current Availability</h3>
           {availabilityPeriods
             .filter((period: AvailabilityPeriod) => period.isActive)
             .map((period: AvailabilityPeriod) => (
-              <div key={period._id} className="bg-white rounded-lg border border-gray-200 p-6">
+              <div key={period._id} className="rounded-xl border border-white/50 p-6 shadow-sm hover:shadow-md transition-shadow" style={{ backgroundColor: '#fadde1' }}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                      <span className="font-medium text-gray-900">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Calendar className="h-5 w-5 text-[#3a3a3a]" />
+                      </div>
+                      <span className="font-medium text-[#4A4458] text-lg" style={{ fontFamily: "'Rubik', sans-serif" }}>
                         {new Date(period.dateRange.startDate).toLocaleDateString()} - {new Date(period.dateRange.endDate).toLocaleDateString()}
                       </span>
                     </div>
                     {period.notes && (
-                      <p className="text-sm text-gray-600">{period.notes}</p>
+                      <p className="text-sm text-gray-600 ml-1" style={{ fontFamily: "'Rubik', sans-serif" }}>{period.notes}</p>
                     )}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(period)}
-                      className="text-blue-600 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="text-gray-600 hover:text-gray-900 p-2 hover:bg-white/50 rounded-lg transition-colors border border-transparent hover:border-gray-200"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(period._id)}
-                      className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -413,13 +421,13 @@ const AvailabilityManager: React.FC = () => {
 
                 {/* Time Slots Display */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                     {period.timeSlots
-                     .filter((slot: TimeSlot) => slot.isAvailable)
-                     .map((slot: TimeSlot) => (
-                      <div key={slot.dayOfWeek} className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock className="h-3 w-3" />
-                        <span className="font-medium">{availabilityApi.getShortDayName(slot.dayOfWeek)}:</span>
-                        <span>{availabilityApi.formatTime(slot.startTime)} - {availabilityApi.formatTime(slot.endTime)}</span>
+                  {period.timeSlots
+                    .filter((slot: TimeSlot) => slot.isAvailable)
+                    .map((slot: TimeSlot) => (
+                      <div key={slot.dayOfWeek} className="flex items-center gap-2 text-sm text-gray-700 bg-white/60 p-2 rounded-lg border border-white/40">
+                        <Clock className="h-3 w-3 text-gray-500" />
+                        <span className="font-medium" style={{ fontFamily: "'Rubik', sans-serif" }}>{availabilityApi.getShortDayName(slot.dayOfWeek)}:</span>
+                        <span style={{ fontFamily: "'Rubik', sans-serif" }}>{availabilityApi.formatTime(slot.startTime)} - {availabilityApi.formatTime(slot.endTime)}</span>
                       </div>
                     ))}
                 </div>
@@ -430,13 +438,16 @@ const AvailabilityManager: React.FC = () => {
 
       {/* Empty State */}
       {availabilityPeriods.length === 0 && !showForm && (
-        <div className="text-center py-12">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No availability set</h3>
-          <p className="text-gray-600 mb-4">Set your availability to start receiving booking requests from students.</p>
+        <div className="text-center py-12 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/50 shadow-sm">
+          <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="h-8 w-8 text-[#3a3a3a]" />
+          </div>
+          <h3 className="text-lg font-medium text-[#4A4458] mb-2" style={{ fontFamily: "'Rubik', sans-serif" }}>No availability set</h3>
+          <p className="text-gray-600 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Set your availability to start receiving booking requests from students.</p>
           <button
             onClick={() => setShowForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all shadow-md hover:-translate-y-0.5"
+            style={{ backgroundColor: '#3a3a3a', fontFamily: "'Rubik', sans-serif" }}
           >
             Set Availability
           </button>

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Calendar, 
-  Clock, 
-  CreditCard, 
-  Coins, 
+import {
+  X,
+  Calendar,
+  Clock,
+  CreditCard,
+  Coins,
   AlertCircle,
   Sparkles,
   Video
@@ -54,7 +54,7 @@ export default function CompleteTransactionPopup({
   } | null>(null);
   const [orderCreatedAt, setOrderCreatedAt] = useState<number | null>(null);
   const { user: authUser } = useAuth();
-  
+
   // Use prop user if available, otherwise fall back to auth context
   const user = propUser || authUser;
 
@@ -126,17 +126,17 @@ export default function CompleteTransactionPopup({
     console.log('  - user (final):', user);
     console.log('  - localStorage user:', localStorage.getItem('user'));
     console.log('  - localStorage token:', localStorage.getItem('token'));
-    
+
     // Check if we have a valid payment
     if (!payment) {
       console.error('❌ [POPUP] No payment data available');
       setError('Payment information is missing. Please try again.');
       return;
     }
-    
+
     // Try to get user from multiple sources
     let currentUser = user;
-    
+
     // If no user from props or auth context, try localStorage
     if (!currentUser) {
       try {
@@ -149,13 +149,13 @@ export default function CompleteTransactionPopup({
         console.error('❌ [POPUP] Error parsing user from localStorage:', error);
       }
     }
-    
+
     // If still no user, try to get from auth context
     if (!currentUser && authUser) {
       currentUser = authUser;
       console.log('🔄 [POPUP] Using user from auth context:', currentUser);
     }
-    
+
     // If still no user, create a fallback user for testing
     if (!currentUser) {
       console.log('🧪 [POPUP] No user found, creating fallback user for testing...');
@@ -168,7 +168,7 @@ export default function CompleteTransactionPopup({
       };
       console.log('🧪 [POPUP] Fallback user created:', currentUser);
     }
-    
+
     console.log('✅ [POPUP] Final user object:', currentUser);
 
     try {
@@ -178,7 +178,7 @@ export default function CompleteTransactionPopup({
       console.log('🚀 Starting payment process...');
       console.log('💰 Payment details:', payment);
       console.log('👤 User details:', currentUser);
-      
+
       // Ensure we have a valid token for the API call
       const token = localStorage.getItem('token');
       if (!token) {
@@ -188,7 +188,7 @@ export default function CompleteTransactionPopup({
 
       const finalPrice = calculateFinalPrice();
       console.log('💵 Final price:', finalPrice);
-      
+
       // If final price is 0 (fully paid with loyalty points), process directly
       if (finalPrice === 0) {
         console.log('🎁 Processing payment with loyalty points only');
@@ -196,7 +196,7 @@ export default function CompleteTransactionPopup({
         if (useLoyaltyPoints && loyaltyPointsToUse > 0) {
           try {
             await rewardsApi.deductForPayment(
-              loyaltyPointsToUse, 
+              loyaltyPointsToUse,
               `Payment discount for session with ${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`,
               payment._id,
               `${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`
@@ -210,7 +210,7 @@ export default function CompleteTransactionPopup({
         // Clear cached order on successful payment
         setCachedOrder(null);
         setOrderCreatedAt(null);
-        
+
         // Call success callback
         onPaymentSuccess(payment._id, useLoyaltyPoints ? loyaltyPointsToUse : 0);
         onClose();
@@ -220,17 +220,17 @@ export default function CompleteTransactionPopup({
       console.log('💳 Creating Razorpay order for amount:', finalPrice);
       console.log('💳 Amount type:', typeof finalPrice);
       console.log('💳 Amount value:', finalPrice);
-      
+
       // Ensure amount is a number
       const numericAmount = Number(finalPrice);
       if (isNaN(numericAmount) || numericAmount <= 0) {
         throw new Error('Invalid payment amount');
       }
-      
+
       let order = cachedOrder;
       const now = Date.now();
       const ORDER_CACHE_DURATION = 4 * 60 * 1000; // 4 minutes cache (less than 5 min timeout)
-      
+
       // Check if we have a valid cached order
       if (cachedOrder && orderCreatedAt && (now - orderCreatedAt) < ORDER_CACHE_DURATION) {
         console.log('🔄 Reusing cached Razorpay order:', cachedOrder.id);
@@ -239,9 +239,9 @@ export default function CompleteTransactionPopup({
         // Create new Razorpay order with shorter receipt ID (max 40 chars for Razorpay)
         const shortPaymentId = payment._id.slice(-8); // Use last 8 chars of payment ID
         const receiptId = `rcpt_${shortPaymentId}_${Date.now().toString().slice(-6)}`; // Max 40 chars
-        
+
         console.log('📝 Receipt ID:', receiptId, 'Length:', receiptId.length);
-        
+
         order = await razorpayApi.createOrder(
           numericAmount,
           'INR',
@@ -255,7 +255,7 @@ export default function CompleteTransactionPopup({
         );
 
         console.log('✅ Razorpay order created:', order);
-        
+
         // Cache the order and timestamp
         setCachedOrder(order);
         setOrderCreatedAt(now);
@@ -276,7 +276,7 @@ export default function CompleteTransactionPopup({
             if (useLoyaltyPoints && loyaltyPointsToUse > 0) {
               try {
                 await rewardsApi.deductForPayment(
-                  loyaltyPointsToUse, 
+                  loyaltyPointsToUse,
                   `Payment discount for session with ${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`,
                   payment._id,
                   `${payment.expertId?.userId?.firstName} ${payment.expertId?.userId?.lastName}`
@@ -290,7 +290,7 @@ export default function CompleteTransactionPopup({
             // Clear cached order on successful payment
             setCachedOrder(null);
             setOrderCreatedAt(null);
-            
+
             // Call success callback
             onPaymentSuccess(payment._id, useLoyaltyPoints ? loyaltyPointsToUse : 0);
             onClose();
@@ -304,7 +304,7 @@ export default function CompleteTransactionPopup({
           setError(error.message || 'Payment failed. Please try again.');
         }
       );
-      
+
     } catch (err: unknown) {
       const error = err as { message?: string };
       console.error('❌ Payment error:', error);
@@ -321,32 +321,32 @@ export default function CompleteTransactionPopup({
 
   return (
     <div className="fixed inset-0 bg-transparent flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide">
+      <div className="rounded-3xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide border border-white/50" style={{ backgroundColor: '#fff0f3' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-3 sm:p-6 border-b border-white/20" style={{ backgroundColor: '#fadde1' }}>
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="p-1.5 sm:p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg">
-              <CreditCard className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+            <div className="p-1.5 sm:p-2 bg-white rounded-lg shadow-sm">
+              <CreditCard className="h-4 w-4 sm:h-6 sm:w-6 text-[#3a3a3a]" />
             </div>
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Complete Transaction</h2>
+            <h2 className="text-lg sm:text-2xl font-bold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>Complete Transaction</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-red-100 rounded-lg transition-colors group"
+            className="p-1.5 sm:p-2 hover:bg-white/50 rounded-lg transition-colors group"
           >
-            <X className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500 group-hover:text-red-600 transition-colors" />
+            <X className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500 group-hover:text-[#3a3a3a] transition-colors" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
           {/* Session Details */}
-          <div className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-3 sm:p-6 border border-white/50">
+            <h3 className="text-base sm:text-lg font-semibold text-[#4A4458] mb-3 sm:mb-4 flex items-center gap-2" style={{ fontFamily: "'Rubik', sans-serif" }}>
               <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
               Session Details
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {/* Mentor Info */}
               <div className="flex items-center gap-2 sm:gap-3">
@@ -364,7 +364,7 @@ export default function CompleteTransactionPopup({
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
                 </div>
                 <div>
-                  <p className="text-sm sm:text-base font-semibold text-gray-900">
+                  <p className="text-sm sm:text-base font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>
                     {payment.expertId?.userId?.firstName} {payment.expertId?.userId?.lastName}
                   </p>
                   <p className="text-xs sm:text-sm text-gray-600">
@@ -400,15 +400,15 @@ export default function CompleteTransactionPopup({
           </div>
 
           {/* Pricing */}
-          <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Pricing</h3>
-            
+          <div className="bg-white/60 backdrop-blur-sm border border-white/50 rounded-2xl p-3 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-[#4A4458] mb-3 sm:mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Pricing</h3>
+
             <div className="space-y-2 sm:space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm sm:text-base text-gray-600">Session Price</span>
-                <span className="text-sm sm:text-base font-semibold">₹{payment.price}</span>
+                <span className="text-sm sm:text-base text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>Session Price</span>
+                <span className="text-sm sm:text-base font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>₹{payment.price}</span>
               </div>
-              
+
               {/* Loyalty Points Section */}
               {loyaltyPoints > 0 && (
                 <div className="border-t border-gray-200 pt-2 sm:pt-3">
@@ -428,7 +428,7 @@ export default function CompleteTransactionPopup({
                       <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
-                  
+
                   {useLoyaltyPoints && (
                     <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -452,7 +452,7 @@ export default function CompleteTransactionPopup({
                           <span className="text-xs sm:text-sm text-gray-500">pts</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center text-xs sm:text-sm">
                         <span className="text-gray-600">Discount (Max 100%)</span>
                         <span className="font-semibold text-green-600">-₹{discount}</span>
@@ -461,11 +461,11 @@ export default function CompleteTransactionPopup({
                   )}
                 </div>
               )}
-              
+
               <div className="border-t border-gray-200 pt-2 sm:pt-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-semibold text-gray-900">Total Amount</span>
-                  <span className="text-lg sm:text-xl font-bold text-gray-900">₹{finalPrice}</span>
+                  <span className="text-base sm:text-lg font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>Total Amount</span>
+                  <span className="text-lg sm:text-xl font-bold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>₹{finalPrice}</span>
                 </div>
               </div>
             </div>
@@ -484,14 +484,16 @@ export default function CompleteTransactionPopup({
             <button
               onClick={onClose}
               disabled={processing}
-              className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg sm:rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors text-sm sm:text-base"
+              className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-white/50 disabled:opacity-50 transition-colors text-sm sm:text-base"
+              style={{ fontFamily: "'Rubik', sans-serif" }}
             >
               Cancel
             </button>
             <button
               onClick={handlePayment}
               disabled={processing || loading}
-              className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base"
+              className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-semibold rounded-xl disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base hover:shadow-lg hover:-translate-y-0.5"
+              style={{ backgroundColor: '#3a3a3a', fontFamily: "'Rubik', sans-serif" }}
             >
               {processing ? (
                 <span>Processing Payment...</span>
@@ -507,12 +509,12 @@ export default function CompleteTransactionPopup({
 
           {/* Loyalty Points Info */}
           {loyaltyPoints > 0 && (
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-3 sm:p-4">
+            <div className="bg-white/40 border border-white/50 rounded-xl p-3 sm:p-4">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-                <span className="text-sm sm:text-base font-semibold text-purple-900">Loyalty Points</span>
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-[#3a3a3a]" />
+                <span className="text-sm sm:text-base font-semibold text-[#4A4458]" style={{ fontFamily: "'Rubik', sans-serif" }}>Loyalty Points</span>
               </div>
-              <p className="text-xs sm:text-sm text-purple-700">
+              <p className="text-xs sm:text-sm text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
                 You have {loyaltyPoints} loyalty points available. Use them to get up to 100% discount on your session!
               </p>
             </div>

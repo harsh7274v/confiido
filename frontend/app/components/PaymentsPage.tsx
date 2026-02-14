@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { 
-  CreditCard, 
-  Download, 
-  Eye, 
+import {
+  CreditCard,
+  Download,
+  Eye,
   Calendar,
   CheckCircle,
   XCircle,
@@ -138,7 +138,7 @@ const SkeletonLoader = () => {
 export default function PaymentsPage() {
   // Generate unique instance ID for debugging
   const instanceId = React.useMemo(() => Math.random().toString(36).substr(2, 9), []);
-  
+
   // Log component mount
   React.useEffect(() => {
     console.log(`🚀 [PAYMENTS-${instanceId}] Component mounted`);
@@ -146,7 +146,7 @@ export default function PaymentsPage() {
       console.log(`🛑 [PAYMENTS-${instanceId}] Component unmounted`);
     };
   }, [instanceId]);
-  
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [stats, setStats] = useState<PaymentStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -159,17 +159,17 @@ export default function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { user } = useAuth();
-  
+
   // Use the timeout context
-  const { 
-    timeouts, 
-    addTimeout, 
-    updateTimeoutStatus, 
-    removeTimeout, 
-    getTimeout, 
-    formatCountdown, 
+  const {
+    timeouts,
+    addTimeout,
+    updateTimeoutStatus,
+    removeTimeout,
+    getTimeout,
+    formatCountdown,
     isExpired,
-    isInitialized 
+    isInitialized
   } = useTimeout();
 
   // Track sessions we've already handled expiry for (prevent duplicate backend calls)
@@ -254,7 +254,7 @@ export default function PaymentsPage() {
       let targetBookingId = '';
       try {
         targetBookingId = localStorage.getItem('dashboard_target_bookingId') || '';
-      } catch {}
+      } catch { }
       if (!targetBookingId) return;
       const match = payments.find(p => p.bookingId === targetBookingId && p.paymentStatus === 'pending');
       if (match) {
@@ -269,23 +269,23 @@ export default function PaymentsPage() {
           }
         }, 300);
         // Clear stored bookingId after use
-        try { localStorage.removeItem('dashboard_target_bookingId'); } catch {}
+        try { localStorage.removeItem('dashboard_target_bookingId'); } catch { }
       }
-    } catch {}
+    } catch { }
   }, [payments]);
 
   // Initialize timeouts for pending bookings without resetting existing ones
   useEffect(() => {
     if (!isInitialized) return;
-    
+
     payments.forEach(payment => {
       // Only start timers for pending payments that are not completed/paid
-      if (payment.paymentStatus === 'pending' && 
-          payment.status === 'pending' && 
-          payment.timeoutAt && 
-          payment.timeoutStatus === 'active') {
+      if (payment.paymentStatus === 'pending' &&
+        payment.status === 'pending' &&
+        payment.timeoutAt &&
+        payment.timeoutStatus === 'active') {
         const key = `${payment.bookingId}_${payment._id}`;
-        
+
         // Check if already expired by server time
         if (isExpiredByServerTime(payment)) {
           console.log(`⏰ [PAYMENTS] Session ${payment._id} is already expired by server time, marking as handled`);
@@ -300,13 +300,13 @@ export default function PaymentsPage() {
           } : p));
           return;
         }
-        
+
         // Check if already handled
         if (handledExpiry.has(key)) {
           console.log(`⏰ [PAYMENTS] Session ${payment._id} already handled, skipping timer`);
           return;
         }
-        
+
         const existing = getTimeout(payment.bookingId, payment._id);
         if (!existing) {
           console.log(`⏰ [PAYMENTS] Starting timer for session ${payment._id}`);
@@ -340,7 +340,7 @@ export default function PaymentsPage() {
       if (payment.paymentStatus === 'pending' && payment.status === 'pending') {
         const expired = isExpired(payment.bookingId, payment._id) || isExpiredByServerTime(payment) || payment.timeoutStatus === 'expired';
         const key = `${payment.bookingId}_${payment._id}`;
-        
+
         console.log(`🔍 [PAYMENTS] Checking expiry for ${payment._id}:`, {
           isExpiredByTimer: isExpired(payment.bookingId, payment._id),
           isExpiredByServer: isExpiredByServerTime(payment),
@@ -348,11 +348,11 @@ export default function PaymentsPage() {
           overallExpired: expired,
           alreadyHandled: handledExpiry.has(key)
         });
-        
+
         if (expired && !handledExpiry.has(key)) {
           console.log(`⏰ [PAYMENTS] Session ${payment._id} has expired, processing...`);
           newlyExpired.push(key);
-          
+
           // Optimistically update UI: mark as expired/failed and timeoutStatus
           setPayments(prev => prev.map(p => p._id === payment._id ? {
             ...p,
@@ -461,14 +461,14 @@ export default function PaymentsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Check if we have authentication
       const token = localStorage.getItem('token');
       if (!token && !user) {
         setError('Please log in to view your payments');
         return;
       }
-      
+
       const params: any = {
         page: currentPage,
         limit: 10
@@ -574,7 +574,7 @@ export default function PaymentsPage() {
   const formatCurrency = (amount: number, currency?: string) => {
     // Default to INR if currency is not provided
     const currencyCode = currency?.toUpperCase() || 'INR';
-    
+
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: currencyCode,
@@ -586,12 +586,12 @@ export default function PaymentsPage() {
     try {
       // Handle both string and Date inputs
       const dateObj = typeof date === 'string' ? new Date(date) : date;
-      
+
       // Check if the date is valid
       if (isNaN(dateObj.getTime())) {
         return 'Invalid Date';
       }
-      
+
       return new Intl.DateTimeFormat('en-IN', {
         year: 'numeric',
         month: 'short',
@@ -676,12 +676,12 @@ export default function PaymentsPage() {
     }
 
     // Optimistically update the frontend state
-    setPayments(prev => prev.map(p => 
-      p._id === paymentId 
+    setPayments(prev => prev.map(p =>
+      p._id === paymentId
         ? { ...p, status: 'completed', paymentStatus: 'paid' }
         : p
     ));
-    
+
     // Update stats
     if (stats) {
       const finalAmount = payment.price - loyaltyPointsUsed;
@@ -696,7 +696,7 @@ export default function PaymentsPage() {
     // Remove the timeout from the timeout context since payment is completed
     console.log(`⏰ [PAYMENTS-${instanceId}] Removing timeout for completed payment ${paymentId}`);
     removeTimeout(payment.bookingId, paymentId);
-    
+
     // Mark this session as handled to prevent timer restart
     const key = `${payment.bookingId}_${paymentId}`;
     setHandledExpiry(prev => new Set([...prev, key]));
@@ -705,28 +705,28 @@ export default function PaymentsPage() {
     try {
       console.log(`📡 [PAYMENTS-${instanceId}] Calling backend to complete payment for session ${paymentId}`);
       const response = await bookingApi.completePayment(
-        payment.bookingId, 
-        paymentId, 
-        paymentMethod || 'online', 
+        payment.bookingId,
+        paymentId,
+        paymentMethod || 'online',
         loyaltyPointsUsed
       );
-      
+
       console.log('✅ [PAYMENTS] Backend payment completion successful:', response);
-      
+
       // Refetch payments to ensure data consistency
       setTimeout(() => fetchPayments(), 1000);
-      
+
     } catch (error: any) {
       console.error('❌ [PAYMENTS] Backend payment completion failed:', error);
       console.error('Error details:', error.response?.data || error.message);
-      
+
       // Revert frontend state on backend failure
-      setPayments(prev => prev.map(p => 
-        p._id === paymentId 
+      setPayments(prev => prev.map(p =>
+        p._id === paymentId
           ? { ...p, status: 'pending', paymentStatus: 'pending' }
           : p
       ));
-      
+
       // Revert stats
       if (stats) {
         setStats(prev => prev ? {
@@ -736,25 +736,25 @@ export default function PaymentsPage() {
           totalSpent: prev.totalSpent - (payment.price - loyaltyPointsUsed)
         } : null);
       }
-      
+
       // Re-add the timeout since payment failed
       console.log(`⏰ [PAYMENTS-${instanceId}] Re-adding timeout for failed payment ${paymentId}`);
       if (payment.timeoutAt) {
         addTimeout(payment.bookingId, paymentId, payment.timeoutAt.toISOString());
       }
-      
+
       // Remove from handled expiry since payment failed
       setHandledExpiry(prev => {
         const next = new Set(prev);
         next.delete(key);
         return next;
       });
-      
+
       // Show error message
       alert('Payment completion failed. Please try again or contact support.');
       return;
     }
-    
+
     // Show success message
     alert(`Payment successful! ${loyaltyPointsUsed > 0 ? `Used ${loyaltyPointsUsed} loyalty points. ` : ''}Session completed.`);
   };
@@ -842,280 +842,280 @@ export default function PaymentsPage() {
             </div>
             <div className="text-xl font-medium mb-2" style={{ color: '#5D5869' }}>No bookings found</div>
             <p style={{ color: '#5D5869', opacity: 0.7 }}>Book your first session to see booking status</p>
-            </div>
-          ) : (
+          </div>
+        ) : (
           <div className="shadow-lg overflow-hidden" style={{ backgroundColor: '#fadde1', borderRadius: '2.5rem' }}>
             <div className="space-y-3 sm:space-y-4 p-4">
-            {filteredPayments.map((payment, index) => {
+              {filteredPayments.map((payment, index) => {
                 const isExpanded = expandedPayments.has(payment._id);
-              const isCompleting = completingTransactions.has(payment._id);
-              const isPending = payment.paymentStatus === 'pending';
-              const timeout = getTimeout(payment.bookingId, payment._id);
-              const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
+                const isCompleting = completingTransactions.has(payment._id);
+                const isPending = payment.paymentStatus === 'pending';
+                const timeout = getTimeout(payment.bookingId, payment._id);
+                const hasActiveCountdown = timeout?.status === 'active' && timeout?.countdown > 0;
 
                 return (
-                <div
-                  key={payment._id}
-                  data-payment-id={payment._id}
-                  className="no-focus shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border group"
-                  tabIndex={-1}
-                  style={{
-                    backgroundColor: 'white',
-                    borderColor: 'rgba(93, 88, 105, 0.1)',
-                    borderRadius: '2rem',
-                    transition: 'all 0.3s ease-in-out',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f4acb7';
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'white';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  {/* Modern Header Bar */}
-                  <div className="h-2" style={{ background: isPending ? 'linear-gradient(90deg, #f4acb7 0%, #fadde1 100%)' : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
-                  
-                  {/* Main Payment Card */}
-                  <div className="p-4 sm:p-5">
-                    {/* Mobile-first layout */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      {/* Expert Info Section */}
-                      <div className="flex items-start space-x-3 flex-1 min-w-0">
-                        <div className="relative flex-shrink-0">
-                          {/* Modern Avatar with Icon */}
-                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl shadow-lg flex items-center justify-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f4acb7 0%, #fadde1 100%)' }}>
-                            {/* Background Pattern */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
-                            {/* User Icon */}
-                            <div className="relative z-10 flex items-center justify-center">
-                              <User className="h-6 w-6 sm:h-7 sm:w-7" style={{ color: '#5D5869' }} />
+                  <div
+                    key={payment._id}
+                    data-payment-id={payment._id}
+                    className="no-focus shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border group"
+                    tabIndex={-1}
+                    style={{
+                      backgroundColor: '#f4acb7',
+                      borderColor: 'rgba(93, 88, 105, 0.1)',
+                      borderRadius: '2rem',
+                      transition: 'all 0.3s ease-in-out',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    {/* Modern Header Bar */}
+                    <div className="h-2" style={{ background: isPending ? 'linear-gradient(90deg, #f4acb7 0%, #fadde1 100%)' : 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%)' }}></div>
+
+                    {/* Compact Payment Card */}
+                    <div className="p-3 sm:p-4">
+                      {/* Compact Stacked Layout */}
+                      <div className="space-y-2 sm:space-y-3">
+                        {/* Row 1: Service Type & Mentor Name */}
+                        <div className="flex items-start justify-between gap-2 sm:gap-3">
+                          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              {getSessionTypeIcon(payment.sessionType)}
+                              <span className="font-bold text-sm leading-tight text-gray-700 break-words whitespace-normal">
+                                {payment.sessionType.charAt(0).toUpperCase() + payment.sessionType.slice(1)} • {formatDuration(payment.duration)}
+                              </span>
                             </div>
-                            {/* Shine Effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-pulse"></div>
+                            <span className="text-gray-600 text-xs sm:text-sm font-medium break-words whitespace-normal pl-5 sm:pl-6 leading-tight">
+                              with {payment.expertId?.userId?.firstName || 'Expert'} {payment.expertId?.userId?.lastName || ''}
+                            </span>
                           </div>
-                          {isPending && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#3a3a3a' }}>
-                              <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold" style={{ color: '#5D5869' }}>
+                              {formatCurrency(payment.price, payment.currency)}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(payment.paymentStatus)}`}>
+                              {getPaymentStatusIcon(payment.paymentStatus)}
+                              <span className="capitalize">{payment.paymentStatus}</span>
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-base sm:text-lg font-bold truncate" style={{ color: '#5D5869' }}>
-                            {payment.expertId?.userId?.firstName || 'Expert'} {payment.expertId?.userId?.lastName || ''}
-                          </h3>
-                          </div>
-                          
-                          <p className="text-gray-600 font-medium mb-2 text-sm">
-                            {payment.expertId?.title || 'Expert'} at {payment.expertId?.company || 'Company'}
-                          </p>
-                          
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                            <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                              {getSessionTypeIcon(payment.sessionType)}
-                              <span className="font-medium">{payment.sessionType} • {formatDuration(payment.duration)}</span>
-                            </span>
-                            <span className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                              <Calendar className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline font-medium">{formatDate(getPaymentEffectiveDate(payment))}</span>
-                              <span className="sm:hidden font-medium">{getPaymentEffectiveDate(payment).toLocaleDateString()}</span>
-                            </span>
-                            {payment.expertUserId && (
-                              <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200 font-mono">
-                                <Hash className="h-3 w-3" />
-                                {payment.expertUserId}
+                        {/* Row 2: Slot Time & Date (Left) + Actions (Right) */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                          {/* Left: Slot Time & Date */}
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 text-sm" style={{ color: '#5D5869' }}>
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              <span className="font-medium">
+                                {payment.startTime} - {payment.endTime}, {new Date(payment.scheduledDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
                               </span>
-                            )}
-                          </div>
-                          
-                          {/* Countdown Timer for Pending Payments */}
-                          {hasActiveCountdown && (
-                            <div className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
-                              <Clock className="h-3.5 w-3.5" />
-                              <span className="font-semibold">{formatCountdown(timeout?.countdown || 0)}</span>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Price and Actions Section */}
-                      <div className="flex flex-col items-start sm:items-end space-y-2.5">
-                        <div className="flex items-center justify-between w-full sm:w-auto sm:flex-col sm:items-end gap-2">
-                          <p className="text-xl sm:text-2xl font-bold" style={{ color: '#5D5869' }}>
-                            {formatCurrency(payment.price, payment.currency)}
-                          </p>
-                          {isExpired(payment.bookingId, payment._id) ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                              <XCircle className="w-4 h-4" />
-                              <span>Expired</span>
-                            </span>
-                          ) : (
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${getPaymentStatusColor(payment.paymentStatus)}`}>
-                            {getPaymentStatusIcon(payment.paymentStatus)}
-                            <span className="capitalize">{payment.paymentStatus}</span>
-                          </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                          {/* Complete Transaction Button - Only show for pending payments */}
-                          {isPending && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                              <span className="font-medium">Booked on:</span>
+                              <span>{formatDate(getPaymentEffectiveDate(payment))}</span>
+                            </div>
+                          </div>
+
+                          {/* Right: Actions */}
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            {/* Join Meeting Button - Only show for paid sessions with meeting link */}
+                            {payment.paymentStatus === 'paid' && payment.meetingLink && (
+                              <a
+                                href={payment.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-white font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-xs hover:scale-105"
+                                style={{ backgroundColor: '#22c55e', borderRadius: '1.5rem' }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#22c55e'}
+                              >
+                                <Video className="h-3 w-3" />
+                                <span>Join</span>
+                              </a>
+                            )}
+
+                            {/* Complete Payment Button - Only show for pending payments */}
+                            {isPending && (
+                              <button
+                                onClick={() => handleCompleteTransaction(payment._id)}
+                                disabled={isCompleting}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg text-xs hover:scale-105"
+                                style={{ backgroundColor: isCompleting ? '#9CA3AF' : '#3a3a3a', borderRadius: '1.5rem' }}
+                                onMouseEnter={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#2a2a2a'; }}
+                                onMouseLeave={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#3a3a3a'; }}
+                              >
+                                {isCompleting ? (
+                                  <>
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                    <span>...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    <span>Pay</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+
+                            {/* See More Button */}
                             <button
-                              onClick={() => handleCompleteTransaction(payment._id)}
-                              disabled={isCompleting}
-                              className="no-focus flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl text-sm hover:scale-105"
-                              style={{ backgroundColor: isCompleting ? '#9CA3AF' : '#3a3a3a', borderRadius: '1.5rem' }}
-                              onMouseEnter={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#2a2a2a'; }}
-                              onMouseLeave={(e) => { if (!isCompleting) e.currentTarget.style.backgroundColor = '#3a3a3a'; }}
+                              onClick={() => toggleExpanded(payment._id)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 font-semibold transition-all duration-200 text-xs"
+                              style={{
+                                backgroundColor: isExpanded ? '#3a3a3a' : '#fadde1',
+                                color: isExpanded ? 'white' : '#5D5869',
+                                borderRadius: '1.5rem'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isExpanded) e.currentTarget.style.backgroundColor = '#f4acb7';
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isExpanded) e.currentTarget.style.backgroundColor = '#fadde1';
+                              }}
                             >
-                              {isCompleting ? (
+                              {isExpanded ? (
                                 <>
-                                  <RefreshCw className="h-4 w-4 animate-spin" />
-                                  <span className="hidden sm:inline">Processing...</span>
-                                  <span className="sm:hidden">...</span>
+                                  <ChevronUp className="h-3 w-3" />
+                                  <span>Less</span>
                                 </>
                               ) : (
                                 <>
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Complete Payment</span>
-                                  <span className="sm:hidden">Pay Now</span>
+                                  <Eye className="h-3 w-3" />
+                                  <span>More</span>
                                 </>
                               )}
                             </button>
-                          )}
-                          
-                          <button
-                            onClick={() => toggleExpanded(payment._id)}
-                            className="no-focus p-2 transition-all duration-200 flex-shrink-0"
-                            style={{
-                              backgroundColor: isExpanded ? '#3a3a3a' : '',
-                              color: isExpanded ? 'white' : '#5D5869',
-                              borderRadius: '1.5rem'
-                            }}
-                            onMouseEnter={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = '#fadde1'; } }}
-                            onMouseLeave={(e) => { if (!isExpanded) { e.currentTarget.style.backgroundColor = ''; } }}
-                            title="View Details"
-                          >
-                            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                          </button>
+                          </div>
                         </div>
                       </div>
-                      </div>
-                    </div>
-                    
-                    {/* Expanded Details */}
-                    {isExpanded && (
-                    <div className="p-4 sm:p-5 mt-4 border-t-2" style={{ backgroundColor: '#fadde1', borderColor: '#3a3a3a', borderRadius: '1.5rem' }}>
-                      {/* Countdown Timer Section */}
+
+                      {/* Countdown Timer for Pending Payments */}
                       {hasActiveCountdown && (
-                        <div className="mb-4 p-4 border-2" style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderRadius: '1.5rem' }}>
-                          <div className="flex items-center justify-center gap-3 mb-3">
-                            <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
-                            <span className="text-lg font-bold" style={{ color: '#92400E' }}>Payment Timeout</span>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-4xl font-bold mb-2" style={{ color: '#B45309' }}>
-                              {formatCountdown(timeout?.countdown || 0)}
-                            </div>
-                            <p className="text-sm font-medium" style={{ color: '#92400E' }}>
-                              Complete payment within this time or booking will be automatically cancelled
-                            </p>
-                          </div>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
+                          <Clock className="h-4 w-4" />
+                          <span className="font-semibold">Payment expires in: {formatCountdown(timeout?.countdown || 0)}</span>
                         </div>
                       )}
+                    </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
-                            <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
-                              <Hash className="h-4 w-4 text-white" />
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="p-4 sm:p-5 mt-4 border-t-2" style={{ backgroundColor: '#fadde1', borderColor: '#3a3a3a', borderRadius: '1.5rem' }}>
+                        {/* Countdown Timer Section */}
+                        {hasActiveCountdown && (
+                          <div className="mb-4 p-4 border-2" style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderRadius: '1.5rem' }}>
+                            <div className="flex items-center justify-center gap-3 mb-3">
+                              <div className="w-4 h-4 rounded-full animate-pulse" style={{ backgroundColor: '#F59E0B' }}></div>
+                              <span className="text-lg font-bold" style={{ color: '#92400E' }}>Payment Timeout</span>
                             </div>
-                            Session Details
-                          </h4>
-                          <div className="space-y-2 text-sm p-4 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
-                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Session ID:</span>
-                              <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment._id}</span>
+                            <div className="text-center">
+                              <div className="text-4xl font-bold mb-2" style={{ color: '#B45309' }}>
+                                {formatCountdown(timeout?.countdown || 0)}
                               </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
-                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Booking ID:</span>
-                              <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment.bookingId}</span>
-                              </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
-                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert User ID:</span>
-                              <span className="font-mono text-sm" style={{ color: '#3E5F44' }}>{payment.expertUserId}</span>
-                              </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
-                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert Email:</span>
-                              <span className="text-sm break-all" style={{ color: '#3E5F44' }}>{payment.expertEmail}</span>
-                              </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2">
-                              <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Time:</span>
-                              <span className="text-sm font-bold" style={{ color: '#3E5F44' }}>{payment.startTime} - {payment.endTime}</span>
-                            </div>
+                              <p className="text-sm font-medium" style={{ color: '#92400E' }}>
+                                Complete payment within this time or booking will be automatically cancelled
+                              </p>
                             </div>
                           </div>
-                          
-                        <div className="space-y-3">
-                          <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
-                            <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
-                              <AlertCircle className="h-4 w-4 text-white" />
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
+                              <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
+                                <Hash className="h-4 w-4 text-white" />
+                              </div>
+                              Session Details
+                            </h4>
+                            <div className="space-y-2 text-sm p-4 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Session ID:</span>
+                                <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment._id}</span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Booking ID:</span>
+                                <span className="font-mono text-xs bg-gray-50 px-3 py-1.5 rounded-lg break-all" style={{ color: '#3E5F44' }}>{payment.bookingId}</span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert User ID:</span>
+                                <span className="font-mono text-sm" style={{ color: '#3E5F44' }}>{payment.expertUserId}</span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 border-b border-gray-100">
+                                <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Expert Email:</span>
+                                <span className="text-sm break-all" style={{ color: '#3E5F44' }}>{payment.expertEmail}</span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2">
+                                <span className="text-gray-600 font-semibold mb-1 sm:mb-0">Time:</span>
+                                <span className="text-sm font-bold" style={{ color: '#3E5F44' }}>{payment.startTime} - {payment.endTime}</span>
+                              </div>
                             </div>
-                            Additional Information
-                          </h4>
-                          <div className="space-y-3 text-sm">
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#5D5869' }}>
+                              <div className="p-2" style={{ backgroundColor: '#3a3a3a', borderRadius: '1rem' }}>
+                                <AlertCircle className="h-4 w-4 text-white" />
+                              </div>
+                              Additional Information
+                            </h4>
+                            <div className="space-y-3 text-sm">
                               {payment.notes && (
-                              <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
-                                <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
-                                  <MessageSquare className="h-4 w-4" style={{ color: '#5D5869' }} />
-                                  Notes:
-                                </span>
-                                <p className="text-gray-700 leading-relaxed">{payment.notes}</p>
+                                <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
+                                  <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
+                                    <MessageSquare className="h-4 w-4" style={{ color: '#5D5869' }} />
+                                    Notes:
+                                  </span>
+                                  <p className="text-gray-700 leading-relaxed">{payment.notes}</p>
                                 </div>
                               )}
                               {payment.meetingLink && (
-                              <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
-                                <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
-                                  <Video className="h-4 w-4" style={{ color: '#5D5869' }} />
-                                  Meeting Link:
-                                </span>
+                                <div className="p-3 border shadow-sm" style={{ backgroundColor: '#f4acb7', borderColor: 'rgba(93, 88, 105, 0.1)', borderRadius: '1.5rem' }}>
+                                  <span className="text-gray-600 font-semibold mb-2 flex items-center gap-2">
+                                    <Video className="h-4 w-4" style={{ color: '#5D5869' }} />
+                                    Meeting Link:
+                                  </span>
                                   <a
                                     href={payment.meetingLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white hover:shadow-lg transition-all text-sm"
-                                  style={{ backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
-                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                    className="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white hover:shadow-lg transition-all text-sm"
+                                    style={{ backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
                                   >
-                                  <Video className="h-4 w-4" />
-                                  Join Meeting
+                                    <Video className="h-4 w-4" />
+                                    Join Meeting
                                   </a>
                                 </div>
                               )}
                               {payment.cancellationReason && (
-                              <div className="bg-red-50 p-3 border-2 border-red-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
-                                <span className="text-red-700 font-semibold mb-2 flex items-center gap-2">
-                                  <XCircle className="h-4 w-4" />
-                                  Cancellation Reason:
-                                </span>
-                                <p className="text-red-600 leading-relaxed">{payment.cancellationReason}</p>
+                                <div className="bg-red-50 p-3 border-2 border-red-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
+                                  <span className="text-red-700 font-semibold mb-2 flex items-center gap-2">
+                                    <XCircle className="h-4 w-4" />
+                                    Cancellation Reason:
+                                  </span>
+                                  <p className="text-red-600 leading-relaxed">{payment.cancellationReason}</p>
                                   {payment.cancelledBy && (
-                                  <p className="text-xs text-red-500 mt-2 font-medium">Cancelled by: <span className="font-bold">{payment.cancelledBy}</span></p>
+                                    <p className="text-xs text-red-500 mt-2 font-medium">Cancelled by: <span className="font-bold">{payment.cancelledBy}</span></p>
                                   )}
                                 </div>
                               )}
-                              {payment.refundAmount && payment.refundAmount > 0 && (
-                              <div className="bg-blue-50 p-3 border-2 border-blue-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
-                                <span className="text-blue-700 font-semibold mb-2 flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4" />
-                                  Refund Amount:
-                                </span>
-                                <span className="text-xl font-bold text-blue-700">{formatCurrency(payment.refundAmount, payment.currency)}</span>
+                              {payment.refundAmount && (payment.refundAmount ?? 0) > 0 && (
+                                <div className="bg-blue-50 p-3 border-2 border-blue-200 shadow-sm" style={{ borderRadius: '1.5rem' }}>
+                                  <span className="text-blue-700 font-semibold mb-2 flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4" />
+                                    Refund Amount:
+                                  </span>
+                                  <span className="text-xl font-bold text-blue-700">{formatCurrency(payment.refundAmount || 0, payment.currency)}</span>
                                 </div>
                               )}
                             </div>
@@ -1127,8 +1127,8 @@ export default function PaymentsPage() {
                 );
               })}
             </div>
-            </div>
-          )}
+          </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -1174,11 +1174,10 @@ export default function PaymentsPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-0 ${
-                      currentPage === page
-                        ? 'text-white shadow-lg'
-                        : 'border'
-                    }`}
+                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-0 ${currentPage === page
+                      ? 'text-white shadow-lg'
+                      : 'border'
+                      }`}
                     style={currentPage === page
                       ? { backgroundColor: '#3a3a3a', borderRadius: '1.5rem' }
                       : { backgroundColor: '#fadde1', borderColor: 'rgba(93, 88, 105, 0.1)', color: '#5D5869', borderRadius: '1.5rem' }
@@ -1236,6 +1235,6 @@ export default function PaymentsPage() {
           user={user ? user as any : undefined}
         />
       </div>
-    </div>
+    </div >
   );
 }
