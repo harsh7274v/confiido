@@ -59,7 +59,7 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
-      
+
       // If user is already authenticated, redirect to dashboard
       if (user || token) {
         console.log('User already logged in, redirecting to dashboard from home page');
@@ -188,7 +188,7 @@ export default function Home() {
       } else {
         throw new Error('Failed to send support request');
       }
-      
+
     } catch (error) {
       console.error('Error submitting support request:', error);
       // Optionally show inline error UI in future
@@ -214,7 +214,7 @@ export default function Home() {
       videoDuration: "2 min video",
       quote: "I started on Confiido to help students/professional find their authentic voice and speak with confidence.",
       skills: [
-        "Overcoming speaking anxiety", 
+        "Overcoming speaking anxiety",
         "Confident on-camera communication",
         "Voice modulation and tone control",
         "Structuring impactful speeches",
@@ -238,11 +238,11 @@ export default function Home() {
       quote: "Leadership is about inspiring others through clear, confident communication. Let me show you how.",
       skills: [
         "Leadership communication",
-          "Impromptu speaking and Q&A mastery",
-          "Crafting memorable introductions",
-          "Non-verbal communication and body language",
-          "Persuasive storytelling for impact",
-          "Structuring complex ideas simply"
+        "Impromptu speaking and Q&A mastery",
+        "Crafting memorable introductions",
+        "Non-verbal communication and body language",
+        "Persuasive storytelling for impact",
+        "Structuring complex ideas simply"
       ],
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=400&fit=crop&crop=face"
     }
@@ -265,15 +265,15 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden relative safe-area-main" style={{ backgroundColor: '#F3E8DF', scrollbarWidth: 'none', msOverflowStyle: 'none' }} suppressHydrationWarning>
+    <div className="min-h-screen overflow-x-hidden relative safe-area-main font-satoshi" style={{ backgroundColor: '#F3E8DF', scrollbarWidth: 'none', msOverflowStyle: 'none' }} suppressHydrationWarning>
       {/* Simple, performant background pattern - removed for clean look */}
-      
+
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
         }
       `}</style>
-      
+
       {/* Navigation */}
       <Navbar>
         {/* Desktop Navigation */}
@@ -312,7 +312,7 @@ export default function Home() {
                   setIsMobileMenuOpen(false);
                 }}
                 className="w-full text-left text-white/90 hover:text-white py-3 px-4 rounded-lg hover:bg-white/10 transition-colors duration-200"
-                style={{ fontFamily: "'Rubik', sans-serif" }}
+                style={{ fontFamily: "'Satoshi', sans-serif" }}
               >
                 {item.name}
               </button>
@@ -346,13 +346,13 @@ export default function Home() {
       </Navbar>
 
       {/* Hero Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 60 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="pt-24"
       >
-        <HeroGeometric 
+        <HeroGeometric
           title1="Speak with Confidence"
           title2="Lead with Clarity"
           description="Master the art of speaking with 1-on-1 coaching and self-paced learning. Build your confidence. Become unforgettable."
@@ -367,12 +367,12 @@ export default function Home() {
       </motion.div>
 
       {/* Meet Your Mentors Section */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 60 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        id="mentors-section" 
+        id="mentors-section"
         className="py-8 bg-white/60 relative z-10"
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -392,8 +392,8 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-4xl font-bold text-gray-900 mb-6" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-4xl font-bold text-gray-900 mb-6"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Learn From <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">Real Experts</span>
             </motion.h2>
@@ -407,7 +407,7 @@ export default function Home() {
               Get to know our speaking coaches through their personal stories and see how they can help you
             </motion.p>
           </div>
-          
+
           {/* Mentor Carousel */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -432,7 +432,7 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="relative w-full h-80 lg:h-[500px] rounded-3xl overflow-hidden shadow-xl">
-                    <img 
+                    <img
                       src={mentors[currentMentorIndex].image}
                       alt={mentors[currentMentorIndex].name}
                       className="w-full h-full object-cover"
@@ -514,11 +514,11 @@ export default function Home() {
                 >
                   <ChevronLeft className="w-6 h-6 text-gray-600" />
                 </button>
-                
+
                 <div className="text-gray-900 font-medium text-lg">
                   {currentMentorIndex + 1}/{mentors.length} Mentors
                 </div>
-                
+
                 <button
                   onClick={nextMentor}
                   className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -529,7 +529,7 @@ export default function Home() {
 
               {/* Right Side Progress Bar */}
               <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gray-600 transition-all duration-500 ease-out"
                   style={{ width: `${((currentMentorIndex + 1) / mentors.length) * 100}%` }}
                 />
@@ -540,12 +540,12 @@ export default function Home() {
       </motion.section>
 
       {/* Get Started in 3 Easy Steps Section */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 60 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        id="mentors" 
+        id="mentors"
         className="py-8 md:py-16 bg-white/50 relative z-10"
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -555,8 +555,8 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Get Started in 3 Easy Steps
             </motion.h2>
@@ -565,13 +565,13 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-base md:text-xl text-gray-600 px-4" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-base md:text-xl text-gray-600 px-4"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Follow these three simple steps to begin your speaking transformation journey
             </motion.p>
           </div>
-          
+
           {/* Image and Steps Container */}
           <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
             {/* Left Side - Image */}
@@ -582,9 +582,9 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="w-full lg:w-1/2"
             >
-              <img 
-                src="/home.webp" 
-                alt="Get Started" 
+              <img
+                src="/home.webp"
+                alt="Get Started"
                 className="w-full h-auto"
               />
             </motion.div>
@@ -606,7 +606,7 @@ export default function Home() {
                 className="rounded-full p-6 md:p-8 shadow-xl"
                 style={{ backgroundColor: '#948979' }}
               >
-                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Satoshi', sans-serif" }}>
                   Book Your Session with Your Preferred Coach
                 </p>
               </motion.div>
@@ -620,7 +620,7 @@ export default function Home() {
                 className="rounded-full p-6 md:p-8 shadow-xl"
                 style={{ backgroundColor: '#948979' }}
               >
-                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Satoshi', sans-serif" }}>
                   Secure Your Session with Easy Payment
                 </p>
               </motion.div>
@@ -634,7 +634,7 @@ export default function Home() {
                 className="rounded-full p-6 md:p-8 shadow-xl"
                 style={{ backgroundColor: '#948979' }}
               >
-                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>
+                <p className="text-base md:text-lg font-semibold text-white" style={{ fontFamily: "'Satoshi', sans-serif" }}>
                   Join via Google Meet for Your Coaching
                 </p>
               </motion.div>
@@ -656,7 +656,7 @@ export default function Home() {
 
 
       {/* Who This is For Section */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 60 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
@@ -680,8 +680,8 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-3" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-3"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Who This is <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-600 to-gray-800">For</span>
             </motion.h2>
@@ -690,13 +690,13 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto mb-4 md:mb-6" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto mb-4 md:mb-6"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Help yourself identify if our coaching is the perfect fit for your journey
             </motion.p>
-            
-            <p className="text-sm md:text-base text-gray-600 font-semibold mb-6 md:mb-10" style={{ fontFamily: "'Rubik', sans-serif" }}>
+
+            <p className="text-sm md:text-base text-gray-600 font-semibold mb-6 md:mb-10" style={{ fontFamily: "'Satoshi', sans-serif" }}>
               Confido is designed for those who want their voice to inspire, influence and impact.
             </p>
           </div>
@@ -732,11 +732,11 @@ export default function Home() {
                 >
                   <ChevronLeft className="w-6 h-6 text-gray-600" />
                 </button>
-                
+
                 <div className="text-gray-900 font-medium text-lg">
                   {selectedCategory === 'student' ? 'Student' : 'Professional'}
                 </div>
-                
+
                 <button
                   onClick={() => setSelectedCategory('professional')}
                   className="w-12 h-12 rounded-full border-2 border-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors"
@@ -747,7 +747,7 @@ export default function Home() {
 
               {/* Right Side Progress Bar */}
               <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gray-600 transition-all duration-500 ease-out"
                   style={{ width: selectedCategory === 'student' ? '50%' : '100%' }}
                 />
@@ -758,12 +758,12 @@ export default function Home() {
       </motion.section>
 
       {/* FAQ Section */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 60 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="py-16" 
+        className="py-16"
         style={{ backgroundColor: '#F3E8DF' }}
       >
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
@@ -773,8 +773,8 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl md:text-4xl font-bold text-black mb-3" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-3xl md:text-4xl font-bold text-black mb-3"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Frequently asked questions
             </motion.h2>
@@ -783,8 +783,8 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-base text-gray-700" 
-              style={{ fontFamily: "'Rubik', sans-serif" }}
+              className="text-base text-gray-700"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
             >
               Hopefully we can answer all your questions here.
             </motion.p>
@@ -799,7 +799,7 @@ export default function Home() {
           >
             {/* FAQ 1 - How do I get started? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
-              <button 
+              <button
                 onClick={() => toggleFaq(0)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
@@ -817,7 +817,7 @@ export default function Home() {
               </button>
               <AnimatePresence initial={false}>
                 {openFaq === 0 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
@@ -835,7 +835,7 @@ export default function Home() {
 
             {/* FAQ 2 - What payment methods do you accept? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
-              <button 
+              <button
                 onClick={() => toggleFaq(1)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
@@ -853,7 +853,7 @@ export default function Home() {
               </button>
               <AnimatePresence initial={false}>
                 {openFaq === 1 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
@@ -871,7 +871,7 @@ export default function Home() {
 
             {/* FAQ 3 - What is the refund policy? */}
             <div className="rounded-full overflow-hidden transition-all duration-300" style={{ backgroundColor: '#948979' }}>
-              <button 
+              <button
                 onClick={() => toggleFaq(2)}
                 className="w-full p-5 text-left transition-colors duration-200 focus:outline-none"
               >
@@ -889,7 +889,7 @@ export default function Home() {
               </button>
               <AnimatePresence initial={false}>
                 {openFaq === 2 && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0 }}
@@ -909,7 +909,7 @@ export default function Home() {
       </motion.section>
 
       {/* Footer */}
-      <motion.footer 
+      <motion.footer
         initial={{ opacity: 0, y: 60 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
@@ -920,10 +920,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
             {/* Brand Section */}
             <div className="max-w-md">
-              <h3 className="text-xl font-bold text-black mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>Confiido</h3>
-              <p className="text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
+              <h3 className="text-xl font-bold text-black mb-4" style={{ fontFamily: "'Satoshi', sans-serif" }}>Confiido</h3>
+              <p className="text-gray-700" style={{ fontFamily: "'Satoshi', sans-serif" }}>Connecting ambitious professionals with industry experts for career acceleration.</p>
             </div>
-            
+
             {/* Company Links */}
             <div>
               <h4 className="text-black font-semibold mb-4">Company</h4>
@@ -935,7 +935,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          
+
           {/* Copyright */}
           <div className="border-t border-gray-300 pt-8 text-center">
             <p className="text-gray-700">©2025 Confiido. All rights reserved.</p>
@@ -962,7 +962,7 @@ export default function Home() {
 
       {/* Chatbot */}
       {isChatbotOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 100, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 100, scale: 0.8 }}
@@ -971,14 +971,14 @@ export default function Home() {
         >
           <div className="bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-3xl shadow-2xl border border-gray-800 overflow-hidden h-full flex flex-col backdrop-blur-xl">
             {/* Chatbot Header */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               className="bg-gradient-to-r from-gray-800 via-gray-900 to-black text-white p-5 flex items-center justify-between border-b border-gray-800"
             >
               <div className="flex items-center space-x-3">
-                <motion.div 
+                <motion.div
                   animate={{ rotate: [0, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                   className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center shadow-lg"
@@ -986,7 +986,7 @@ export default function Home() {
                   <MessageCircle className="w-5 h-5" />
                 </motion.div>
                 <div>
-                  <h3 className="font-bold text-lg" style={{ fontFamily: "'Rubik', sans-serif" }}>Support Chat</h3>
+                  <h3 className="font-bold text-lg" style={{ fontFamily: "'Satoshi', sans-serif" }}>Support Chat</h3>
                   <p className="text-xs text-gray-400">We're here to help</p>
                 </div>
               </div>
@@ -1001,20 +1001,20 @@ export default function Home() {
             </motion.div>
 
             {/* Welcome Message */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
               className="p-5 text-center border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black"
             >
-              <h4 className="text-xl font-bold text-white" style={{ fontFamily: "'Rubik', sans-serif" }}>Welcome to Confiido</h4>
+              <h4 className="text-xl font-bold text-white" style={{ fontFamily: "'Satoshi', sans-serif" }}>Welcome to Confiido</h4>
               <p className="text-sm text-gray-400 mt-2">How can we assist you today?</p>
             </motion.div>
 
             {/* Chatbot Content */}
             <div className="flex-1 p-5 space-y-4 overflow-y-auto bg-black/40 backdrop-blur-sm">
               {/* Progress Indicator */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
@@ -1026,72 +1026,71 @@ export default function Home() {
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
                     transition={{ delay: 0.4 + index * 0.1 }}
-                    className={`h-2 rounded-full transition-all duration-500 ${
-                      index <= ['email', 'subject', 'query'].indexOf(chatbotStep)
-                        ? 'bg-gradient-to-r from-gray-600 to-gray-800 shadow-lg shadow-gray-800/50'
-                        : 'bg-gray-800'
-                    }`}
+                    className={`h-2 rounded-full transition-all duration-500 ${index <= ['email', 'subject', 'query'].indexOf(chatbotStep)
+                      ? 'bg-gradient-to-r from-gray-600 to-gray-800 shadow-lg shadow-gray-800/50'
+                      : 'bg-gray-800'
+                      }`}
                   />
                 ))}
               </motion.div>
 
               {/* Chat Messages / Success */}
               {!isSubmitted ? (
-              <div className="space-y-4">
-                {/* Bot Message */}
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-start space-x-3"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-lg border border-gray-700 flex-shrink-0">
-                    <MessageCircle className="w-5 h-5 text-gray-300" />
-                  </div>
-                  <motion.div 
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl rounded-tl-none p-4 max-w-xs shadow-xl border border-gray-700"
-                  >
-                    <p className="text-sm text-gray-200">
-                      {chatbotStep === 'email' && "Hi! 👋 I'm here to help. What's your email address?"}
-                      {chatbotStep === 'subject' && "Great! 📧 What's the subject of your inquiry?"}
-                      {chatbotStep === 'query' && "Perfect! ✍️ Please describe your query in detail."}
-                    </p>
-                  </motion.div>
-                </motion.div>
-
-                {/* User Input Preview */}
-                {(chatbotData as any)[chatbotStep] && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
+                <div className="space-y-4">
+                  {/* Bot Message */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start space-x-3 justify-end"
+                    transition={{ delay: 0.5 }}
+                    className="flex items-start space-x-3"
                   >
-                    <motion.div 
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-lg border border-gray-700 flex-shrink-0">
+                      <MessageCircle className="w-5 h-5 text-gray-300" />
+                    </div>
+                    <motion.div
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
-                      className="bg-gradient-to-br from-gray-600 to-gray-800 text-white rounded-2xl rounded-tr-none p-4 max-w-xs shadow-xl"
+                      transition={{ delay: 0.6 }}
+                      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl rounded-tl-none p-4 max-w-xs shadow-xl border border-gray-700"
                     >
-                      <p className="text-sm break-words">
-                        {(chatbotData as any)[chatbotStep]}
+                      <p className="text-sm text-gray-200">
+                        {chatbotStep === 'email' && "Hi! 👋 I'm here to help. What's your email address?"}
+                        {chatbotStep === 'subject' && "Great! 📧 What's the subject of your inquiry?"}
+                        {chatbotStep === 'query' && "Perfect! ✍️ Please describe your query in detail."}
                       </p>
                     </motion.div>
-                    <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-lg border border-gray-700 flex-shrink-0">
-                      <span className="text-sm font-bold text-gray-300">You</span>
-                    </div>
                   </motion.div>
-                )}
-              </div>
+
+                  {/* User Input Preview */}
+                  {(chatbotData as any)[chatbotStep] && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-start space-x-3 justify-end"
+                    >
+                      <motion.div
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        className="bg-gradient-to-br from-gray-600 to-gray-800 text-white rounded-2xl rounded-tr-none p-4 max-w-xs shadow-xl"
+                      >
+                        <p className="text-sm break-words">
+                          {(chatbotData as any)[chatbotStep]}
+                        </p>
+                      </motion.div>
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-lg border border-gray-700 flex-shrink-0">
+                        <span className="text-sm font-bold text-gray-300">You</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               ) : (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200 }}
                   className="flex flex-col items-center justify-center h-full py-10"
                 >
-                  <motion.div 
+                  <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
@@ -1103,22 +1102,22 @@ export default function Home() {
                     >
                       <CheckCircle className="w-20 h-20 text-green-500" />
                     </motion.div>
-                    <motion.div 
+                    <motion.div
                       animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                       transition={{ duration: 2, repeat: Infinity }}
                       className="absolute inset-0 rounded-full border-4 border-green-500"
                     />
                   </motion.div>
-                  <motion.h5 
+                  <motion.h5
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                     className="mt-6 text-xl font-bold text-white"
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
+                    style={{ fontFamily: "'Satoshi', sans-serif" }}
                   >
                     Successfully Submitted! ✨
                   </motion.h5>
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
@@ -1141,99 +1140,98 @@ export default function Home() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full bg-gradient-to-r from-gray-700 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-600 hover:to-gray-800 transition-all duration-300 font-semibold shadow-lg"
-                  style={{ fontFamily: "'Rubik', sans-serif" }}
+                  style={{ fontFamily: "'Satoshi', sans-serif" }}
                 >
                   Close Chat
                 </motion.button>
               ) : (<>
-              {chatbotStep === 'email' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <input
-                    type="email"
-                    value={chatbotData.email}
-                    onChange={(e) => handleChatbotInput(e.target.value)}
-                    placeholder="Enter your email address"
-                    className={`w-full p-4 bg-gray-800/50 border rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300 ${
-                      chatbotData.email && !isValidEmailForSupport(chatbotData.email)
+                {chatbotStep === 'email' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <input
+                      type="email"
+                      value={chatbotData.email}
+                      onChange={(e) => handleChatbotInput(e.target.value)}
+                      placeholder="Enter your email address"
+                      className={`w-full p-4 bg-gray-800/50 border rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300 ${chatbotData.email && !isValidEmailForSupport(chatbotData.email)
                         ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-700'
-                    }`}
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    autoFocus
-                  />
-                </motion.div>
-              )}
-              
-              {chatbotStep === 'subject' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <input
-                    type="text"
-                    value={chatbotData.subject}
-                    onChange={(e) => handleChatbotInput(e.target.value)}
-                    placeholder="Enter the subject of your inquiry"
-                    className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300"
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    autoFocus
-                  />
-                </motion.div>
-              )}
-              
-              {chatbotStep === 'query' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <textarea
-                    value={chatbotData.query}
-                    onChange={(e) => handleChatbotInput(e.target.value)}
-                    placeholder="Describe your query in detail..."
-                    rows={3}
-                    className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent resize-none text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300"
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                    autoFocus
-                  />
-                </motion.div>
-              )}
-
-              {/* Action Buttons */}
-               <div className="flex space-x-2">
-                 {chatbotStep !== 'query' ? (
-                  <motion.button
-                    onClick={nextChatbotStep}
-                    disabled={! (chatbotData as any)[chatbotStep] || (chatbotStep === 'email' && !isValidEmailForSupport(chatbotData.email))}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-4 rounded-xl hover:from-gray-500 hover:to-gray-700 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 font-semibold shadow-lg"
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                  >
-                    Next →
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    onClick={submitSupportRequest}
-                    disabled={!chatbotData.query || isSubmitting}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 bg-gradient-to-r from-gray-700 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-600 hover:to-gray-800 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold shadow-lg"
-                    style={{ fontFamily: "'Rubik', sans-serif" }}
-                  >
-                    {isSubmitting ? (
-                      <span>Submitting...</span>
-                    ) : (
-                      <>
-                        <Send className="w-5 h-5" />
-                        <span>Submit Request</span>
-                      </>
-                    )}
-                  </motion.button>
+                        }`}
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                      autoFocus
+                    />
+                  </motion.div>
                 )}
-              </div>
+
+                {chatbotStep === 'subject' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <input
+                      type="text"
+                      value={chatbotData.subject}
+                      onChange={(e) => handleChatbotInput(e.target.value)}
+                      placeholder="Enter the subject of your inquiry"
+                      className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300"
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                      autoFocus
+                    />
+                  </motion.div>
+                )}
+
+                {chatbotStep === 'query' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <textarea
+                      value={chatbotData.query}
+                      onChange={(e) => handleChatbotInput(e.target.value)}
+                      placeholder="Describe your query in detail..."
+                      rows={3}
+                      className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded-xl focus:ring-2 focus:ring-gray-600 focus:border-transparent resize-none text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-300"
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                      autoFocus
+                    />
+                  </motion.div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  {chatbotStep !== 'query' ? (
+                    <motion.button
+                      onClick={nextChatbotStep}
+                      disabled={!(chatbotData as any)[chatbotStep] || (chatbotStep === 'email' && !isValidEmailForSupport(chatbotData.email))}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex-1 bg-gradient-to-r from-gray-600 to-gray-800 text-white py-3 px-4 rounded-xl hover:from-gray-500 hover:to-gray-700 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 font-semibold shadow-lg"
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                    >
+                      Next →
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={submitSupportRequest}
+                      disabled={!chatbotData.query || isSubmitting}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex-1 bg-gradient-to-r from-gray-700 to-gray-900 text-white py-3 px-4 rounded-xl hover:from-gray-600 hover:to-gray-800 disabled:from-gray-800 disabled:to-gray-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold shadow-lg"
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                    >
+                      {isSubmitting ? (
+                        <span>Submitting...</span>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          <span>Submit Request</span>
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+                </div>
               </>)}
             </div>
           </div>
@@ -1267,7 +1265,7 @@ export default function Home() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="px-8 py-6 text-gray-700 space-y-6">
                 <section>
                   <h3 className="text-2xl font-semibold text-gray-900 mb-4">Our Mission</h3>
@@ -1333,7 +1331,7 @@ export default function Home() {
                   <p className="mb-4">
                     Ready to take your career to the next level? Browse our mentors, book a session, and start your journey toward professional excellence.
                   </p>
-                  <button 
+                  <button
                     onClick={() => {
                       setIsAboutOpen(false);
                       window.location.href = '/search';
@@ -1376,22 +1374,22 @@ export default function Home() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="px-8 py-8 text-center space-y-6">
                 <div className="flex justify-center mb-6">
                   <div className="bg-black rounded-full p-4">
                     <MessageCircle className="w-12 h-12 text-white" />
                   </div>
                 </div>
-                
+
                 <h3 className="text-2xl font-semibold text-gray-900">Get in Touch</h3>
                 <p className="text-gray-600 text-lg">
                   Have questions or need support? We're here to help!
                 </p>
-                
+
                 <div className="bg-gray-50 p-6 rounded-xl">
                   <p className="text-sm text-gray-600 mb-2">Email us at:</p>
-                  <a 
+                  <a
                     href="mailto:confiido.io+support@gmail.com"
                     className="text-2xl font-semibold text-black hover:text-gray-700 transition-colors break-all"
                   >
@@ -1445,10 +1443,10 @@ export default function Home() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="px-8 py-6 text-gray-700 space-y-6">
                 <p className="text-sm text-gray-500">Last updated: November 11, 2025</p>
-                
+
                 <section>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h3>
                   <p>By accessing and using Confiido's services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
@@ -1541,10 +1539,10 @@ export default function Home() {
                   <X className="w-6 h-6" />
                 </button>
               </div>
-              
+
               <div className="px-8 py-6 text-gray-700 space-y-6">
                 <p className="text-sm text-gray-500">Last updated: November 11, 2025</p>
-                
+
                 <section>
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Introduction</h3>
                   <p>Confiido ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.</p>
@@ -1559,7 +1557,7 @@ export default function Home() {
                     <li>Payment information (processed securely through Razorpay)</li>
                     <li>Session booking details and preferences</li>
                   </ul>
-                  
+
                   <h4 className="font-semibold mt-4 mb-2">Automatically Collected Information:</h4>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>IP address and browser information</li>

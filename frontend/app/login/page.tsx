@@ -36,13 +36,13 @@ export default function Login() {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const sessionTimestamp = localStorage.getItem('sessionTimestamp');
-      
+
       // Check if session is expired
       if (token && sessionTimestamp) {
         const sessionTime = parseInt(sessionTimestamp);
         const currentTime = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000;
-        
+
         // If session expired, clear it
         if ((currentTime - sessionTime) > twentyFourHours) {
           console.log('❌ Session expired on login page, clearing...');
@@ -52,7 +52,7 @@ export default function Login() {
           return;
         }
       }
-      
+
       // If user is already authenticated with valid session, redirect to dashboard
       if ((user || token) && sessionTimestamp) {
         console.log('✅ User already logged in with valid session, redirecting to dashboard');
@@ -96,14 +96,14 @@ export default function Login() {
       setError('Please enter your email address');
       return;
     }
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     // Move to password step
     setLoginStep('password');
     setError('');
@@ -190,19 +190,19 @@ export default function Login() {
       if (!res.ok || !data?.success || !data?.data?.token) {
         throw new Error(data?.error || 'Invalid code');
       }
-      
+
       // Store token and session timestamp for 24-hour validity
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('sessionTimestamp', Date.now().toString());
-      
+
       // Store user role
       if (data.data.user?.role) {
         localStorage.setItem('userRole', data.data.user.role);
       }
-      
+
       console.log('✅ OTP verified, session set for 24 hours');
       setRedirecting(true);
-      
+
       const userRole = data.data.user?.role;
       if (userRole === 'expert') {
         router.push('/mentor/dashboard');
@@ -304,7 +304,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/auth/login`, {
         method: 'POST',
@@ -329,7 +329,7 @@ export default function Login() {
         localStorage.setItem('sessionTimestamp', Date.now().toString());
         console.log('✅ Login successful, session set for 24 hours');
       }
-      
+
       // Store user role
       if (data.data.user?.role) {
         localStorage.setItem('userRole', data.data.user.role);
@@ -353,7 +353,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#F3E8DF' }}>
+    <div className="min-h-screen font-satoshi" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', backgroundColor: '#F3E8DF' }}>
       <style jsx global>{`
         ::-webkit-scrollbar {
           display: none;
@@ -364,282 +364,281 @@ export default function Login() {
           <MoonLoader color="#000000" size={60} />
         </div>
       )}
-      <div className="max-w-7xl w-full">
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-          {/* Left Side - Branding */}
-          <div className="text-left space-y-4">
-            <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
-              <img 
-                src="/icons/icon-96x96.png" 
-                alt="Confiido Logo" 
-                className="h-12 w-12 object-contain"
-              />
-              <span className="text-3xl font-bold text-black italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
-            </Link>
-            <h2 className="text-4xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
-              Welcome back
-            </h2>
-            <p className="text-lg text-gray-700" style={{ fontFamily: "'Rubik', sans-serif" }}>
-              Sign in to your account to continue your learning journey
-            </p>
-          </div>
-
-          {/* Right Side - Login Form */}
-          <div className="space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
-              </div>
-            )}
-          
-            <div className="bg-transparent rounded-xl p-8">
-          {!redirecting && (
-            <>
-              {loginStep === 'email' ? (
-                <form onSubmit={handleEmailSubmit} className="space-y-6">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      suppressHydrationWarning
-                      className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                      placeholder="Enter your email address"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{ backgroundColor: '#948979' }}
-                  >
-                    {isLoading ? (
-                      'Checking...'
-                    ) : (
-                      'Continue'
-                    )}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={isForgotMode ? handleResetPasswordSubmit : (isOtpMode ? handleVerifyOtpSubmit : handleSubmit)} className="space-y-6">
-                  {/* Back button */}
-                  <div className="flex items-center mb-4">
-                    <button
-                      type="button"
-                      onClick={handleBackToEmail}
-                      className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-1" />
-                      <span className="text-sm">Change email</span>
-                    </button>
-                  </div>
-
-                  {/* Display email */}
-                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-gray-600">Signing in as:</p>
-                    <p className="font-medium text-gray-900">{formData.email}</p>
-                  </div>
-
-                  {isForgotMode ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Enter reset code</label>
-                        <input
-                          type="text"
-                          value={resetCode}
-                          onChange={(e) => setResetCode(e.target.value)}
-                          placeholder="Paste the code from your email"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Create new password</label>
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="At least 8 characters, include a special character"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Must be 8+ characters and include at least one special character.</p>
-                      </div>
-                    </div>
-                  ) : isOtpMode ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Enter 6-digit code
-                      </label>
-                      <div className="grid grid-cols-6 gap-2">
-                        {[0,1,2,3,4,5].map(i => (
-                          <input
-                            key={i}
-                            id={`otp-${i}`}
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={1}
-                            value={otpDigits[i]}
-                            onChange={(e) => handleOtpInputChange(i, e.target.value)}
-                            className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                        Password *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          id="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          required
-                          suppressHydrationWarning
-                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10"
-                          placeholder="Enter your password"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
-                          ) : (
-                            <Eye className="h-5 w-5" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <input
-                        id="rememberMe"
-                        name="rememberMe"
-                        type="checkbox"
-                        checked={formData.rememberMe}
-                        onChange={handleInputChange}
-                        suppressHydrationWarning
-                        className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                        Remember me
-                      </label>
-                    </div>
-                    <div className="text-sm">
-                      {!isForgotMode ? (
-                        <button
-                          type="button"
-                          onClick={handleForgotClick}
-                          className="text-gray-600 hover:text-gray-800 font-medium"
-                          disabled={forgotLoading}
-                        >
-                          {forgotLoading ? 'Sending code...' : 'Forgot password?'}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setIsForgotMode(false)}
-                          className="text-gray-600 hover:text-gray-800 font-medium"
-                        >
-                          Back to password
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    style={{ backgroundColor: '#948979' }}
-                  >
-                    {isLoading ? (
-                      isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'
-                    ) : (
-                      isForgotMode ? 'Change Password' : isOtpMode ? 'Verify and Sign In' : 'Sign In'
-                    )}
-                  </button>
-
-                  {/* Email Sign-in Code Option */}
-                  <div className="text-center mt-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-300" />
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white text-gray-500">or</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 space-y-4">
-                      {(!isOtpMode && !isForgotMode) && (
-                        <button 
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); sendOtp(); }}
-                          disabled={otpLoading}
-                          className="w-full inline-flex items-center justify-center px-4 py-3 text-white font-semibold text-sm rounded-full hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
-                          style={{ backgroundColor: '#948979' }}
-                        >
-                          {otpLoading ? (
-                            'Sending code...'
-                          ) : (
-                            'Email Sign-in code'
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </form>
-              )}
-            </>
-          )}
-
-          {/* Google Sign In - Only show on email step */}
-          {loginStep === 'email' && (
-            <>
-              {/* Divider */}
-              <div className="mt-6 mb-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Google Sign In Button */}
-              <GoogleSignInButton />
-            </>
-          )}
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-gray-600 hover:text-gray-800 font-medium">
-                Sign up
-              </Link>
-            </p>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
+        {/* Left Side - Branding */}
+        <div className="bg-black text-white p-12 lg:p-16 flex flex-col justify-center min-h-screen rounded-r-[60px]">
+          <Link href="/" className="inline-flex items-center gap-3 mb-6 transition-colors">
+            <img
+              src="/icons/icon-96x96.png"
+              alt="Confiido Logo"
+              className="h-12 w-12 object-contain"
+            />
+            <span className="text-3xl font-bold text-white italic uppercase" style={{ fontFamily: "'BespokeStencil-BoldItalic', sans-serif" }}>Confiido</span>
+          </Link>
+          <h2 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Rubik', sans-serif" }}>
+            Welcome back
+          </h2>
+          <p className="text-lg text-gray-300" style={{ fontFamily: "'Rubik', sans-serif" }}>
+            Sign in to your account to continue your learning journey
+          </p>
         </div>
+
+        {/* Right Side - Login Form */}
+        <div className="p-12 lg:p-16 flex flex-col justify-center min-h-screen space-y-6" style={{ backgroundColor: '#F3E8DF' }}>
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-transparent rounded-xl p-8">
+            {!redirecting && (
+              <>
+                {loginStep === 'email' ? (
+                  <form onSubmit={handleEmailSubmit} className="space-y-6">
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        suppressHydrationWarning
+                        autoComplete="email"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                        placeholder="Enter your email address"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      style={{ backgroundColor: '#948979' }}
+                    >
+                      {isLoading ? (
+                        'Checking...'
+                      ) : (
+                        'Continue'
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={isForgotMode ? handleResetPasswordSubmit : (isOtpMode ? handleVerifyOtpSubmit : handleSubmit)} className="space-y-6">
+                    {/* Back button */}
+                    <div className="flex items-center mb-4">
+                      <button
+                        type="button"
+                        onClick={handleBackToEmail}
+                        className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-1" />
+                        <span className="text-sm">Change email</span>
+                      </button>
+                    </div>
+
+                    {/* Display email */}
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-gray-600">Signing in as:</p>
+                      <p className="font-medium text-gray-900">{formData.email}</p>
+                    </div>
+
+                    {isForgotMode ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Enter reset code</label>
+                          <input
+                            type="text"
+                            value={resetCode}
+                            onChange={(e) => setResetCode(e.target.value)}
+                            placeholder="Paste the code from your email"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Create new password</label>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="At least 8 characters, include a special character"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Must be 8+ characters and include at least one special character.</p>
+                        </div>
+                      </div>
+                    ) : isOtpMode ? (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Enter 6-digit code
+                        </label>
+                        <div className="grid grid-cols-6 gap-2">
+                          {[0, 1, 2, 3, 4, 5].map(i => (
+                            <input
+                              key={i}
+                              id={`otp-${i}`}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={otpDigits[i]}
+                              onChange={(e) => handleOtpInputChange(i, e.target.value)}
+                              className="text-center text-lg font-semibold border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                          Password *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            required
+                            suppressHydrationWarning
+                            autoComplete="current-password"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent pr-10"
+                            placeholder="Enter your password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <input
+                          id="rememberMe"
+                          name="rememberMe"
+                          type="checkbox"
+                          checked={formData.rememberMe}
+                          onChange={handleInputChange}
+                          suppressHydrationWarning
+                          className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                          Remember me
+                        </label>
+                      </div>
+                      <div className="text-sm">
+                        {!isForgotMode ? (
+                          <button
+                            type="button"
+                            onClick={handleForgotClick}
+                            className="text-gray-600 hover:text-gray-800 font-medium"
+                            disabled={forgotLoading}
+                          >
+                            {forgotLoading ? 'Sending code...' : 'Forgot password?'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsForgotMode(false)}
+                            className="text-gray-600 hover:text-gray-800 font-medium"
+                          >
+                            Back to password
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full text-white py-3 px-6 rounded-full hover:opacity-90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      style={{ backgroundColor: '#948979' }}
+                    >
+                      {isLoading ? (
+                        isForgotMode ? 'Changing...' : isOtpMode ? 'Verifying...' : 'Signing in...'
+                      ) : (
+                        isForgotMode ? 'Change Password' : isOtpMode ? 'Verify and Sign In' : 'Sign In'
+                      )}
+                    </button>
+
+                    {/* Email Sign-in Code Option */}
+                    <div className="text-center mt-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-2 bg-white text-gray-500">or</span>
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-4">
+                        {(!isOtpMode && !isForgotMode) && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); sendOtp(); }}
+                            disabled={otpLoading}
+                            className="w-full inline-flex items-center justify-center px-4 py-3 text-white font-semibold text-sm rounded-full hover:opacity-90 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60"
+                            style={{ backgroundColor: '#948979' }}
+                          >
+                            {otpLoading ? (
+                              'Sending code...'
+                            ) : (
+                              'Email Sign-in code'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
+
+            {/* Google Sign In - Only show on email step */}
+            {loginStep === 'email' && (
+              <>
+                {/* Divider */}
+                <div className="mt-6 mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">or</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Google Sign In Button */}
+                <GoogleSignInButton />
+              </>
+            )}
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don&apos;t have an account?{' '}
+                <Link href="/signup" className="text-gray-600 hover:text-gray-800 font-medium">
+                  Sign up
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

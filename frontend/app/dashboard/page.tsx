@@ -199,22 +199,22 @@ interface RescheduleModalState {
 const createSessionDateTime = (scheduledDate: string, time: string): Date => {
   try {
     console.log('Creating session datetime:', { scheduledDate, time });
-    
+
     const sessionDate = new Date(scheduledDate);
     console.log('Parsed session date:', sessionDate.toISOString());
-    
+
     const timeParts = time.split(' - ')[0].split(':');
     const hours = parseInt(timeParts[0]) || 0;
     const minutes = parseInt(timeParts[1]) || 0;
-    
+
     console.log('Time parts:', { timeParts, hours, minutes });
-    
+
     // Create datetime in local timezone
     const sessionDateTime = new Date(sessionDate);
     sessionDateTime.setHours(hours, minutes, 0, 0);
-    
+
     console.log('Final session datetime:', sessionDateTime.toISOString());
-    
+
     return sessionDateTime;
   } catch (error) {
     console.error('Error parsing session datetime:', error);
@@ -311,12 +311,12 @@ export default function DashboardPage() {
         // Clear the redirect flag so it doesn't persist
         try {
           localStorage.removeItem('dashboard_redirect_view');
-        } catch {}
+        } catch { }
         // Clean the URL (remove any query params like view/bookingId)
         try {
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, '', cleanUrl);
-        } catch {}
+        } catch { }
       }
     } catch (e) {
       // ignore
@@ -380,7 +380,7 @@ export default function DashboardPage() {
         'Content-Type': 'application/json'
       };
     }
-    
+
     // If no stored token, try Firebase authentication
     if (user) {
       try {
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         };
       }
     }
-    
+
     // If no authentication available, return basic headers
     return {
       'Content-Type': 'application/json'
@@ -409,14 +409,14 @@ export default function DashboardPage() {
     // Check if we have authentication - be more lenient during initial load
     let storedToken = localStorage.getItem('token');
     const sessionTimestamp = localStorage.getItem('sessionTimestamp');
-    
+
     // If no token, wait a bit and check again (in case it's being stored)
     if (!storedToken && !user) {
       console.log('⏳ No token found, waiting for authentication to load...');
       // Wait a bit and check again
       await new Promise(resolve => setTimeout(resolve, 500));
       storedToken = localStorage.getItem('token');
-      
+
       if (!storedToken && !user) {
         console.log('⏳ Still no token after wait, skipping fetch');
         setSessionsLoading(false);
@@ -425,14 +425,14 @@ export default function DashboardPage() {
         console.log('✅ Token found after wait, proceeding with fetch');
       }
     }
-    
+
     // Final check - if still no token and no user, return
     if (!user && !storedToken) {
       console.log('❌ No authentication available, cannot fetch sessions');
       setSessionsLoading(false);
       return;
     }
-    
+
     // If we have token but it's expired, show error
     if (storedToken && sessionTimestamp) {
       const sessionTime = parseInt(sessionTimestamp);
@@ -445,25 +445,25 @@ export default function DashboardPage() {
         return;
       }
     }
-    
+
     setSessionsLoading(true);
     setSessionsError(null);
     setApiStatus('loading');
     try {
       const headers = await getAuthHeaders();
       console.log('Making API call to bookings/user with headers:', headers);
-      
+
       // Use the same API endpoint that works for the payment page
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/bookings/user?page=1&limit=100`, { headers });
       console.log('Bookings API response:', res.data);
-      
+
       // Transform the bookings data to sessions format
       const bookings = res.data?.data?.bookings || [];
       console.log('Bookings found:', bookings.length);
-      
+
       // Extract all sessions from all bookings
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const allSessions = bookings.flatMap((booking: any) => 
+      const allSessions = bookings.flatMap((booking: any) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         booking.sessions.map((session: any) => ({
           id: session.sessionId || session._id,
@@ -492,11 +492,11 @@ export default function DashboardPage() {
           rescheduleHistory: session.rescheduleHistory || []
         }))
       );
-      
+
       console.log('=== FRONTEND DASHBOARD DEBUG ===');
       console.log('All sessions extracted:', allSessions.length);
       console.log('All sessions:', allSessions);
-      
+
       // Debug: Show the first few sessions in detail
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       allSessions.slice(0, 3).forEach((session: any, index: number) => {
@@ -508,7 +508,7 @@ export default function DashboardPage() {
           paymentStatus: session.paymentStatus
         });
       });
-      
+
       // Filter for paid sessions only
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const paidSessions = allSessions.filter((session: any) => {
@@ -520,33 +520,33 @@ export default function DashboardPage() {
       });
       console.log('Paid sessions:', paidSessions.length);
       console.log('Total sessions before filtering:', allSessions.length);
-      
+
       // Separate upcoming and completed sessions with proper date/time comparison
       const now = new Date();
       console.log('Current date/time:', now.toISOString());
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const upcoming = paidSessions.filter((session: any) => {
         const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
         return sessionDateTime > now;
       });
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const completed = paidSessions.filter((session: any) => {
         const sessionDateTime = createSessionDateTime(session.scheduledDate, session.time);
         return sessionDateTime <= now;
       });
-      
+
       console.log('Upcoming sessions:', upcoming.length);
       console.log('Completed sessions:', completed.length);
-      
+
       // Always store upcoming sessions for the right column box
       setUpcomingSessions(upcoming);
-      
+
       const selectedSessions = sessionTab === 'upcoming' ? upcoming : completed;
       console.log(`Selected ${sessionTab} sessions:`, selectedSessions);
       setSessions(selectedSessions);
-      
+
       setApiStatus('success');
     } catch (err: any) {
       console.error('Error fetching sessions:', err);
@@ -568,7 +568,7 @@ export default function DashboardPage() {
       // Check if we have any form of authentication
       const storedToken = localStorage.getItem('token');
       if (!user && !storedToken) return;
-      
+
       try {
         const headers = await getAuthHeaders();
         console.log('Making API call to userdata with headers:', headers);
@@ -712,33 +712,33 @@ export default function DashboardPage() {
       console.error('No authentication available');
       return;
     }
-    
+
     try {
       console.log('=== FRONTEND SAVE PROFILE DEBUG ===');
       console.log('Profile data to save:', JSON.stringify(profile, null, 2));
-      
+
       const headers = await getAuthHeaders();
       console.log('Auth headers:', headers);
-      
+
       const requestData = { userdata: profile };
       console.log('Request data being sent:', JSON.stringify(requestData, null, 2));
-      
+
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/users/profile`;
       console.log('API URL:', apiUrl);
-      
+
       const response = await axios.put(apiUrl, requestData, { headers });
       console.log('Profile save response:', JSON.stringify(response.data, null, 2));
-      
+
       // Refresh profile data after save
       console.log('Refreshing profile data...');
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003'}/api/users/userdata`, { headers });
       console.log('Refresh response:', JSON.stringify(res.data, null, 2));
-      
+
       if (res.data && res.data.data && res.data.data.userdata) {
         console.log('Setting refreshed profile data:', JSON.stringify(res.data.data.userdata, null, 2));
         setProfileData(res.data.data.userdata);
       }
-      
+
       console.log('=== FRONTEND SAVE PROFILE SUCCESS ===');
     } catch (error: any) {
       console.error('=== FRONTEND SAVE PROFILE ERROR ===');
@@ -799,7 +799,7 @@ export default function DashboardPage() {
               icon: 'user'
             },
             {
-              id: '2', 
+              id: '2',
               title: 'Set your goals',
               description: 'Tell us what you want to achieve',
               completed: false,
@@ -823,7 +823,7 @@ export default function DashboardPage() {
               createdAt: new Date()
             },
             {
-              id: '2', 
+              id: '2',
               text: 'Learn leadership techniques',
               completed: true,
               createdAt: new Date(Date.now() - 86400000)
@@ -852,7 +852,7 @@ export default function DashboardPage() {
         if (!isMounted) return;
         setData(mockData);
         setSetupSteps(mockData.setupSteps);
-        
+
         // Load goals from localStorage
         const savedGoals = localStorage.getItem('userGoals');
         if (savedGoals) {
@@ -869,7 +869,7 @@ export default function DashboardPage() {
         } else {
           setGoals(mockData.goals);
         }
-        
+
         setError(null);
       } catch (e: any) {
         if (!isMounted) return;
@@ -898,7 +898,7 @@ export default function DashboardPage() {
       // revert on error
       setSetupSteps(prev => prev.map(s => s.id === step.id ? { ...s, completed: step.completed } : s));
     }
-  }  async function addGoal() {
+  } async function addGoal() {
     if (!newGoal.trim()) return;
     try {
       setSaving(true);
@@ -908,27 +908,27 @@ export default function DashboardPage() {
         completed: false,
         createdAt: new Date()
       };
-      
+
       const updatedGoals = [newGoalObj, ...goals];
       setGoals(updatedGoals);
-      
+
       // Save to localStorage
       localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
         ...goal,
         createdAt: goal.createdAt.toISOString()
       }))));
-      
+
       setNewGoal('');
     } catch (e) {
       console.error(e);
     } finally {
       setSaving(false);
     }
-  }  async function toggleGoal(goal: Goal) {
+  } async function toggleGoal(goal: Goal) {
     try {
       const updatedGoals = goals.map(g => g.id === goal.id ? { ...g, completed: !g.completed } : g);
       setGoals(updatedGoals);
-      
+
       // Save to localStorage
       localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
         ...goal,
@@ -937,11 +937,11 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
     }
-  }  async function deleteGoal(goal: Goal) {
+  } async function deleteGoal(goal: Goal) {
     try {
       const updatedGoals = goals.filter(g => g.id !== goal.id);
       setGoals(updatedGoals);
-      
+
       // Save to localStorage
       localStorage.setItem('userGoals', JSON.stringify(updatedGoals.map(goal => ({
         ...goal,
@@ -960,21 +960,21 @@ export default function DashboardPage() {
   // Function to scroll to top of dashboard
   const scrollToTop = () => {
     setCurrentView('dashboard');
-    
+
     // Use setTimeout to ensure the dashboard view is rendered before scrolling
     setTimeout(() => {
       // Use ref if available, otherwise find the main scrollable container
       const mainContent = mainContentRef.current || document.querySelector('main.overflow-y-auto');
       if (mainContent) {
-        mainContent.scrollTo({ 
-          top: 0, 
-          behavior: 'smooth' 
+        mainContent.scrollTo({
+          top: 0,
+          behavior: 'smooth'
         });
       } else {
         // Fallback to window scroll if main element not found
-        window.scrollTo({ 
-          top: 0, 
-          behavior: 'smooth' 
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
         });
       }
     }, 100); // Small delay to ensure view transition is complete
@@ -987,15 +987,15 @@ export default function DashboardPage() {
   const stats = data?.stats || {};
 
   // Check if profile is incomplete (missing username, phone number, or whatsapp number)
-  const isProfileIncomplete = !profileData || 
+  const isProfileIncomplete = !profileData ||
     !profileData.username || profileData.username.trim() === '' ||
     !profileData.phoneNumber || profileData.phoneNumber.trim() === '' ||
     !profileData.whatsappNumber || profileData.whatsappNumber.trim() === '';
 
   return (
-  <ProtectedRoute>
-  <div>
-    <style jsx global>{`
+    <ProtectedRoute>
+      <div>
+        <style jsx global>{`
       .scrollbar-hide {
         -ms-overflow-style: none;  /* Internet Explorer 10+ */
         scrollbar-width: none;  /* Firefox */
@@ -1015,549 +1015,548 @@ export default function DashboardPage() {
         scrollbar-width: none;
       }
     `}</style>
-    {/* Popup logic fixed with fragment */}
-    {showProfilePopup && (
-      <>
-        {selectedMentor ? (
-          <EditProfilePopup
-            onClose={() => {
-              setShowProfilePopup(false);
-              setSelectedMentor(null);
-            }}
-            mentor={selectedMentor}
-          />
-        ) : (
-          <EditProfilePopupUser
-            onClose={() => setShowProfilePopup(false)}
-            onSave={handleSaveProfile}
-            initialProfile={profileData}
-          />
+        {/* Popup logic fixed with fragment */}
+        {showProfilePopup && (
+          <>
+            {selectedMentor ? (
+              <EditProfilePopup
+                onClose={() => {
+                  setShowProfilePopup(false);
+                  setSelectedMentor(null);
+                }}
+                mentor={selectedMentor}
+              />
+            ) : (
+              <EditProfilePopupUser
+                onClose={() => setShowProfilePopup(false)}
+                onSave={handleSaveProfile}
+                initialProfile={profileData}
+              />
+            )}
+          </>
         )}
-      </>
-    )}
-    <div className="min-h-screen overflow-hidden" style={{ backgroundColor: '#fff0f3' }}>
-      {/* Semi-transparent overlay for better content readability */}
-      <div className="absolute inset-0 bg-white/10 pointer-events-none z-0"></div>
-      <div className="flex h-screen relative z-20 overflow-hidden">
-        {/* Sidebar */}
-                <Sidebar
-          userName={userDisplayName}
-          onProfileClick={handleProfileClick}
-          onSessionsClick={() => setCurrentView('sessions')}
-          onHomeClick={() => scrollToTop()}
-          onTransactionsClick={() => setCurrentView('transactions')}
-          onContactClick={handleContactClick}
-          onRewardsClick={() => setCurrentView('rewards')}
-          onPaymentsClick={() => setCurrentView('payments')}
-          isProfileIncomplete={isProfileIncomplete}
-        />
-        
-        {/* Main content */}
-        <main ref={mainContentRef} className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen safe-area-main">
-          {currentView === 'transactions' ? (
-            <div className="w-full">
-              <TransactionsPage />
-            </div>
-          ) : currentView === 'contact' ? (
-            <div className="w-full">
-              <ContactPage />
-            </div>
-          ) : currentView === 'rewards' ? (
-            <div className="w-full">
-              <RewardsPage />
-            </div>
-          ) : currentView === 'payments' ? (
-            <div className="w-full">
-              <PaymentsPage />
-            </div>
-          ) : currentView === 'sessions' ? (
-            <div className="w-full">
-              <SessionsPage />
-            </div>
-          ) : (
-            <>
-              {/* Modern Header */}
-              <section className="relative overflow-hidden py-4 sm:py-6 border-0" style={{ backgroundColor: '#fff0f3' }}>
-              <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4 relative z-20">
-                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  {/* Left side - Welcome text */}
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wide" style={{ color: '#4A4458', fontFamily: "'Rubik', sans-serif", letterSpacing: '0.05em' }}>
-                    WELCOME BACK, {userDisplayName.toUpperCase()}!
-                  </h2>
+        <div className="min-h-screen overflow-hidden font-satoshi" style={{ backgroundColor: '#fff0f3' }}>
+          {/* Semi-transparent overlay for better content readability */}
+          <div className="absolute inset-0 bg-white/10 pointer-events-none z-0"></div>
+          <div className="flex h-screen relative z-20 overflow-hidden">
+            {/* Sidebar */}
+            <Sidebar
+              userName={userDisplayName}
+              onProfileClick={handleProfileClick}
+              onSessionsClick={() => setCurrentView('sessions')}
+              onHomeClick={() => scrollToTop()}
+              onTransactionsClick={() => setCurrentView('transactions')}
+              onContactClick={handleContactClick}
+              onRewardsClick={() => setCurrentView('rewards')}
+              onPaymentsClick={() => setCurrentView('payments')}
+              isProfileIncomplete={isProfileIncomplete}
+            />
 
-                  {/* Right side - Book Session button, notification and profile */}
-                  <div className="flex items-center gap-2 sm:gap-4 justify-between lg:justify-end w-full lg:w-auto">
-                    {/* Book a Session Button */}
-                    <button
-                      type="button"
-                      onClick={() => setShowBookSessionPopup(true)}
-                      className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all duration-300 shadow-lg hover:shadow-xl flex-shrink-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
-                        color: '#ffffff',
-                        fontFamily: "'Rubik', sans-serif",
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(10px)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      Book a Session
-                    </button>
-
-                    {/* Notification and Profile Icons - grouped together on right in mobile */}
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      {/* Notification Icon */}
-                      <button
-                        type="button"
-                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
-                        onClick={() => {
-                          // Handle notification click
-                        }}
-                      >
-                        <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                      </button>
-
-                      {/* Profile Avatar */}
-                      <button
-                        type="button"
-                        className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center hover:opacity-90 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
-                        onClick={() => {
-                          setShowProfilePopup(true);
-                        }}
-                      >
-                        <User className="h-4 w-4 sm:h-6 sm:w-6 text-blue-700" />
-                      </button>
-                    </div>
-                  </div>
+            {/* Main content */}
+            <main ref={mainContentRef} className="flex-1 lg:ml-0 overflow-y-auto scrollbar-hide h-screen safe-area-main">
+              {currentView === 'transactions' ? (
+                <div className="w-full">
+                  <TransactionsPage />
                 </div>
-              </div>
-            </section>
-
-            {/* Stats and Quick Actions */}
-            <section className="py-6 sm:py-8 border-0" style={{ backgroundColor: '#fff0f3' }}>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Main Grid Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                  
-                  {/* Left Column - 2 columns wide */}
-                  <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                    
-                    {/* Top Row - Career Journey Cards and Find Mentor */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      
-                      {/* Career Journey Section */}
-                      <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[658px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
-                        <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                          Next in Your Career Journey
-                        </h3>
-                        <div className="space-y-3">
-                          {/* Card 1 */}
-                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
-                                <span>Interested</span>
-                                <ChevronDown className="w-3 h-3 text-gray-400" />
-                              </div>
-                              <span className="text-xl">💡</span>
-                            </div>
-                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                              Not sure what direction to take?
-                            </div>
-                            <button
-                              onClick={() => setShowBookSessionPopup(true)}
-                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
-                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
-                            >
-                              Book Career guidance
-                            </button>
-                          </div>
-
-                          {/* Card 2 */}
-                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
-                                <span>Interested</span>
-                                <ChevronDown className="w-3 h-3 text-gray-400" />
-                              </div>
-                              <span className="text-xl">🚲</span>
-                            </div>
-                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                              Need help creating a strong first resume?
-                            </div>
-                            <button
-                              onClick={() => setShowBookSessionPopup(true)}
-                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
-                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
-                            >
-                              Resume Review
-                            </button>
-                          </div>
-                          
-                          {/* Card 3 - Public Speaking */}
-                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
-                                <span>Interested</span>
-                                <ChevronDown className="w-3 h-3 text-gray-400" />
-                              </div>
-                              <span className="text-xl">🎤</span>
-                            </div>
-                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                              Want to improve your public speaking skills?
-                            </div>
-                            <button
-                              onClick={() => setShowBookSessionPopup(true)}
-                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
-                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
-                            >
-                              Book Public Speaking
-                            </button>
-                          </div>
-
-                          {/* Card 4 - Mock Interview */}
-                          <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
-                                <span>Interested</span>
-                                <ChevronDown className="w-3 h-3 text-gray-400" />
-                              </div>
-                              <span className="text-xl">🎯</span>
-                            </div>
-                            <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                              Applied to a few jobs but no response?
-                            </div>
-                            <button
-                              onClick={() => setShowBookSessionPopup(true)}
-                              className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
-                              style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
-                            >
-                              Book Mock Interview
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Find Your Mentor Section */}
-                      <div className="space-y-8 sm:space-y-10">
-                        {/* Mentors Box - Half Height */}
-                        <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
-                          <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                            Find Your Mentor
-                          </h3>
-                          <div className="space-y-3">
-                            {mentors.slice(0, 3).map((mentor) => (
-                              <div
-                                key={mentor.id}
-                                className="flex items-center gap-3 rounded-3xl p-3 cursor-pointer hover:shadow-md transition-all duration-200"
-                                style={{ backgroundColor: '#f4acb7' }}
-                                onClick={() => {
-                                  setSelectedMentor(mentor);
-                                  setShowProfilePopup(true);
-                                  setCurrentView('dashboard');
-                                }}
-                              >
-                                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={mentor.image}
-                                    alt={mentor.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm truncate" style={{ color: '#000000' }}>{mentor.name}</div>
-                                  <div className="text-xs truncate" style={{ color: '#000000' }}>{mentor.title}</div>
-                                </div>
-                                <button
-                                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ backgroundColor: '#5D5869' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowBookSessionPopup(true);
-                                  }}
-                                >
-                                  <Phone className="w-4 h-4 text-white" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Recent Activity Box */}
-                        <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
-                          <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                            Recent Activity
-                          </h3>
-                          <div className="space-y-3">
-                            <div className="text-center py-8">
-                              <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                              <div className="text-gray-500 text-sm">No recent activity</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Row - Removed, Sessions moved to right column */}
-
-                  </div>
-
-                  {/* Right Column - Upcoming Sessions Section */}
-                  <div className="space-y-8 sm:space-y-10">
-
-                    {/* Upcoming Sessions Card */}
-                    <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                          Upcoming Sessions
-                        </h3>
-                        <button
-                          className="text-sm font-medium flex items-center gap-1"
-                          style={{ color: '#3a3a3a' }}
-                          onClick={() => scrollToSessions()}
-                        >
-                          See more <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {sessionsLoading ? (
-                          <div className="space-y-3">
-                            <SkeletonLoader />
-                          </div>
-                        ) : upcomingSessions.length === 0 ? (
-                          <div className="text-center py-8">
-                            <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                            <div className="text-gray-500 text-sm">No upcoming sessions</div>
-                          </div>
-                        ) : (
-                          upcomingSessions.slice(0, 10).map((session: any) => (
-                            <div key={session.id} className="rounded-3xl p-4 shadow-sm" style={{ backgroundColor: '#f4acb7' }}>
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm mb-1 truncate" style={{ color: '#000000' }}>
-                                    {session.title}
-                                  </h4>
-                                  <div className="flex flex-wrap items-center gap-2 text-xs mb-2" style={{ color: '#000000' }}>
-                                    <span className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3" />
-                                      {session.date}
-                                    </span>
-                                    <span>•</span>
-                                    <span>{session.time}</span>
-                                  </div>
-                                  <div className="text-xs" style={{ color: '#000000' }}>
-                                    {session.expertName}
-                                  </div>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <div className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: '#3a3a3a', color: 'white' }}>
-                                    {session.sessionType}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    {/* My Schedule Box */}
-                    <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
-                      <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
-                        My Schedule
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="text-center py-8">
-                          <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                          <div className="text-gray-500 text-sm">No scheduled events</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
+              ) : currentView === 'contact' ? (
+                <div className="w-full">
+                  <ContactPage />
                 </div>
-              </div>
+              ) : currentView === 'rewards' ? (
+                <div className="w-full">
+                  <RewardsPage />
+                </div>
+              ) : currentView === 'payments' ? (
+                <div className="w-full">
+                  <PaymentsPage />
+                </div>
+              ) : currentView === 'sessions' ? (
+                <div className="w-full">
+                  <SessionsPage />
+                </div>
+              ) : (
+                <>
+                  {/* Modern Header */}
+                  <section className="relative overflow-hidden py-4 sm:py-6 border-0" style={{ backgroundColor: '#fff0f3' }}>
+                    <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4 relative z-20">
+                      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        {/* Left side - Welcome text */}
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wide" style={{ color: '#4A4458', fontFamily: "'Rubik', sans-serif", letterSpacing: '0.05em' }}>
+                          WELCOME BACK, {userDisplayName.toUpperCase()}!
+                        </h2>
 
-              {/* BookSessionPopup modal */}
-              <div className={`fixed inset-0 z-[9999] ${showBookSessionPopup ? 'block' : 'hidden'}`}>
-                <BookSessionPopup 
-                  onClose={() => {
-                    console.log('Closing BookSessionPopup');
-                    setShowBookSessionPopup(false);
-                  }}
-                  onGoToPayments={(bookingId?: string) => {
-                    try {
-                      if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
-                      localStorage.setItem('dashboard_redirect_view', 'payments');
-                    } catch {}
-                    setCurrentView('payments');
-                  }}
-                />
-              </div>
+                        {/* Right side - Book Session button, notification and profile */}
+                        <div className="flex items-center gap-2 sm:gap-4 justify-between lg:justify-end w-full lg:w-auto">
+                          {/* Book a Session Button */}
+                          <button
+                            type="button"
+                            onClick={() => setShowBookSessionPopup(true)}
+                            className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-full font-semibold text-xs sm:text-base transition-all duration-300 shadow-lg hover:shadow-xl flex-shrink-0"
+                            style={{
+                              background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
+                              color: '#ffffff',
+                              fontFamily: "'Rubik', sans-serif",
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              backdropFilter: 'blur(10px)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                          >
+                            Book a Session
+                          </button>
 
-              {/* Reschedule Request Modal */}
-              {rescheduleModal?.session && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-                      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
-                        <button
-                          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                          onClick={handleCloseRescheduleModal}
-                          disabled={rescheduleSubmitting}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Request a reschedule</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Pick a new slot that works for you. Your mentor will review and confirm.
-                        </p>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
-                            <input
-                              type="date"
-                              value={rescheduleModal.date}
-                              min={formatDateInputValue(new Date().toISOString())}
-                              onChange={(e) => handleRescheduleDateChange(e.target.value)}
-                              className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                            />
+                          {/* Notification and Profile Icons - grouped together on right in mobile */}
+                          <div className="flex items-center gap-2 sm:gap-4">
+                            {/* Notification Icon */}
+                            <button
+                              type="button"
+                              className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
+                              onClick={() => {
+                                // Handle notification click
+                              }}
+                            >
+                              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                            </button>
+
+                            {/* Profile Avatar */}
+                            <button
+                              type="button"
+                              className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center hover:opacity-90 transition-all duration-200 focus:outline-none shadow-sm flex-shrink-0"
+                              onClick={() => {
+                                setShowProfilePopup(true);
+                              }}
+                            >
+                              <User className="h-4 w-4 sm:h-6 sm:w-6 text-blue-700" />
+                            </button>
                           </div>
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="block text-sm font-medium text-gray-700">Available slots</label>
-                              <button
-                                type="button"
-                                className="text-xs text-gray-500 hover:text-gray-700"
-                                onClick={() => rescheduleModal.session && fetchRescheduleSlots(rescheduleModal.session, rescheduleModal.date, rescheduleModal.selectedSlot?.startTime || null)}
-                              >
-                                Refresh
-                              </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Stats and Quick Actions */}
+                  <section className="py-6 sm:py-8 border-0" style={{ backgroundColor: '#fff0f3' }}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                      {/* Main Grid Layout */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+
+                        {/* Left Column - 2 columns wide */}
+                        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+
+                          {/* Top Row - Career Journey Cards and Find Mentor */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+
+                            {/* Career Journey Section */}
+                            <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[658px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                              <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                Next in Your Career Journey
+                              </h3>
+                              <div className="space-y-3">
+                                {/* Card 1 */}
+                                <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                      <span>Interested</span>
+                                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                                    </div>
+                                    <span className="text-xl">💡</span>
+                                  </div>
+                                  <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                    Not sure what direction to take?
+                                  </div>
+                                  <button
+                                    onClick={() => setShowBookSessionPopup(true)}
+                                    className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                                    style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                  >
+                                    Book Career guidance
+                                  </button>
+                                </div>
+
+                                {/* Card 2 */}
+                                <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                      <span>Interested</span>
+                                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                                    </div>
+                                    <span className="text-xl">🚲</span>
+                                  </div>
+                                  <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                    Need help creating a strong first resume?
+                                  </div>
+                                  <button
+                                    onClick={() => setShowBookSessionPopup(true)}
+                                    className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                                    style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                  >
+                                    Resume Review
+                                  </button>
+                                </div>
+
+                                {/* Card 3 - Public Speaking */}
+                                <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                      <span>Interested</span>
+                                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                                    </div>
+                                    <span className="text-xl">🎤</span>
+                                  </div>
+                                  <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                    Want to improve your public speaking skills?
+                                  </div>
+                                  <button
+                                    onClick={() => setShowBookSessionPopup(true)}
+                                    className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                                    style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                  >
+                                    Book Public Speaking
+                                  </button>
+                                </div>
+
+                                {/* Card 4 - Mock Interview */}
+                                <div className="rounded-3xl p-3 shadow-sm h-[140px] flex flex-col" style={{ backgroundColor: '#f4acb7' }}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-700 flex items-center gap-1">
+                                      <span>Interested</span>
+                                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                                    </div>
+                                    <span className="text-xl">🎯</span>
+                                  </div>
+                                  <div className="text-sm font-medium mb-2 flex-1" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                    Applied to a few jobs but no response?
+                                  </div>
+                                  <button
+                                    onClick={() => setShowBookSessionPopup(true)}
+                                    className="w-11/12 mx-auto text-white font-medium py-2 rounded-2xl text-xs transition-colors"
+                                    style={{ fontFamily: "'Rubik', sans-serif", backgroundColor: '#3a3a3a' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3a3a3a'}
+                                  >
+                                    Book Mock Interview
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                            <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-2">
-                              {rescheduleSlotsLoading ? (
-                                <div className="py-6 text-center text-sm text-gray-500">Loading available slots...</div>
-                              ) : rescheduleSlotsError ? (
-                                <div className="py-4 text-sm text-red-600">{rescheduleSlotsError}</div>
-                              ) : rescheduleSlots.length === 0 ? (
-                                <div className="py-4 text-sm text-gray-500">No slots available for this date.</div>
-                              ) : (
-                                <div className="space-y-2">
-                                  {rescheduleSlots.map((slot) => (
-                                    <label
-                                      key={slot.startTime}
-                                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${
-                                        rescheduleModal.selectedSlot?.startTime === slot.startTime
-                                          ? 'border-gray-800 bg-gray-50'
-                                          : 'border-gray-200 hover:border-gray-400'
-                                      }`}
+
+                            {/* Find Your Mentor Section */}
+                            <div className="space-y-8 sm:space-y-10">
+                              {/* Mentors Box - Half Height */}
+                              <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                                <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                  Find Your Mentor
+                                </h3>
+                                <div className="space-y-3">
+                                  {mentors.slice(0, 3).map((mentor) => (
+                                    <div
+                                      key={mentor.id}
+                                      className="flex items-center gap-3 rounded-3xl p-3 cursor-pointer hover:shadow-md transition-all duration-200"
+                                      style={{ backgroundColor: '#f4acb7' }}
+                                      onClick={() => {
+                                        setSelectedMentor(mentor);
+                                        setShowProfilePopup(true);
+                                        setCurrentView('dashboard');
+                                      }}
                                     >
-                                      <div>
-                                        <div className="font-semibold text-gray-900">
-                                          {slot.startDisplayTime} – {slot.endDisplayTime}
-                                        </div>
-                                        <div className="text-xs text-gray-500">{slot.startTime} - {slot.endTime}</div>
+                                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                                        <img
+                                          src={mentor.image}
+                                          alt={mentor.name}
+                                          className="w-full h-full object-cover"
+                                        />
                                       </div>
-                                      <input
-                                        type="radio"
-                                        className="h-4 w-4 text-gray-800"
-                                        checked={rescheduleModal.selectedSlot?.startTime === slot.startTime}
-                                        onChange={() => setRescheduleModal(prev => prev ? ({ ...prev, selectedSlot: slot }) : prev)}
-                                      />
-                                    </label>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-sm truncate" style={{ color: '#000000' }}>{mentor.name}</div>
+                                        <div className="text-xs truncate" style={{ color: '#000000' }}>{mentor.title}</div>
+                                      </div>
+                                      <button
+                                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                                        style={{ backgroundColor: '#5D5869' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShowBookSessionPopup(true);
+                                        }}
+                                      >
+                                        <Phone className="w-4 h-4 text-white" />
+                                      </button>
+                                    </div>
                                   ))}
                                 </div>
+                              </div>
+
+                              {/* Recent Activity Box */}
+                              <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                                <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                  Recent Activity
+                                </h3>
+                                <div className="space-y-3">
+                                  <div className="text-center py-8">
+                                    <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                                    <div className="text-gray-500 text-sm">No recent activity</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bottom Row - Removed, Sessions moved to right column */}
+
+                        </div>
+
+                        {/* Right Column - Upcoming Sessions Section */}
+                        <div className="space-y-8 sm:space-y-10">
+
+                          {/* Upcoming Sessions Card */}
+                          <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-base sm:text-lg font-semibold" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                                Upcoming Sessions
+                              </h3>
+                              <button
+                                className="text-sm font-medium flex items-center gap-1"
+                                style={{ color: '#3a3a3a' }}
+                                onClick={() => scrollToSessions()}
+                              >
+                                See more <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-3">
+                              {sessionsLoading ? (
+                                <div className="space-y-3">
+                                  <SkeletonLoader />
+                                </div>
+                              ) : upcomingSessions.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                                  <div className="text-gray-500 text-sm">No upcoming sessions</div>
+                                </div>
+                              ) : (
+                                upcomingSessions.slice(0, 10).map((session: any) => (
+                                  <div key={session.id} className="rounded-3xl p-4 shadow-sm" style={{ backgroundColor: '#f4acb7' }}>
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm mb-1 truncate" style={{ color: '#000000' }}>
+                                          {session.title}
+                                        </h4>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs mb-2" style={{ color: '#000000' }}>
+                                          <span className="flex items-center gap-1">
+                                            <Calendar className="h-3 w-3" />
+                                            {session.date}
+                                          </span>
+                                          <span>•</span>
+                                          <span>{session.time}</span>
+                                        </div>
+                                        <div className="text-xs" style={{ color: '#000000' }}>
+                                          {session.expertName}
+                                        </div>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <div className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: '#3a3a3a', color: 'white' }}>
+                                          {session.sessionType}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
                               )}
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Message to mentor (optional)</label>
-                            <textarea
-                              value={rescheduleModal.reason}
-                              onChange={(e) => setRescheduleModal(prev => prev ? ({ ...prev, reason: e.target.value }) : prev)}
-                              rows={3}
-                              className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
-                              placeholder="Share helpful context around the change..."
-                            />
+
+                          {/* My Schedule Box */}
+                          <div className="rounded-4xl p-4 sm:p-6 shadow-lg h-[280px] overflow-y-auto scrollbar-hide" style={{ backgroundColor: '#fadde1' }}>
+                            <h3 className="text-base sm:text-lg font-semibold mb-4" style={{ fontFamily: "'Rubik', sans-serif", color: '#000000' }}>
+                              My Schedule
+                            </h3>
+                            <div className="space-y-3">
+                              <div className="text-center py-8">
+                                <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                                <div className="text-gray-500 text-sm">No scheduled events</div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+
+                      </div>
+                    </div>
+
+                    {/* BookSessionPopup modal */}
+                    <div className={`fixed inset-0 z-[9999] ${showBookSessionPopup ? 'block' : 'hidden'}`}>
+                      <BookSessionPopup
+                        onClose={() => {
+                          console.log('Closing BookSessionPopup');
+                          setShowBookSessionPopup(false);
+                        }}
+                        onGoToPayments={(bookingId?: string) => {
+                          try {
+                            if (bookingId) localStorage.setItem('dashboard_target_bookingId', bookingId);
+                            localStorage.setItem('dashboard_redirect_view', 'payments');
+                          } catch { }
+                          setCurrentView('payments');
+                        }}
+                      />
+                    </div>
+
+                    {/* Reschedule Request Modal */}
+                    {rescheduleModal?.session && (
+                      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                        <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
                           <button
-                            type="button"
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
                             onClick={handleCloseRescheduleModal}
                             disabled={rescheduleSubmitting}
-                            className="w-full sm:w-auto px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
                           >
-                            Cancel
+                            <X className="h-5 w-5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={handleRescheduleSubmit}
-                            disabled={rescheduleSubmitting || !rescheduleModal.date || !rescheduleModal.selectedSlot}
-                            className="w-full sm:w-auto px-4 py-2 rounded-xl text-white font-semibold disabled:opacity-60"
-                            style={{ backgroundColor: '#3a3a3a' }}
-                          >
-                            {rescheduleSubmitting ? 'Sending...' : 'Send request'}
-                          </button>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">Request a reschedule</h3>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Pick a new slot that works for you. Your mentor will review and confirm.
+                          </p>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">New date</label>
+                              <input
+                                type="date"
+                                value={rescheduleModal.date}
+                                min={formatDateInputValue(new Date().toISOString())}
+                                onChange={(e) => handleRescheduleDateChange(e.target.value)}
+                                className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-medium text-gray-700">Available slots</label>
+                                <button
+                                  type="button"
+                                  className="text-xs text-gray-500 hover:text-gray-700"
+                                  onClick={() => rescheduleModal.session && fetchRescheduleSlots(rescheduleModal.session, rescheduleModal.date, rescheduleModal.selectedSlot?.startTime || null)}
+                                >
+                                  Refresh
+                                </button>
+                              </div>
+                              <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto p-2">
+                                {rescheduleSlotsLoading ? (
+                                  <div className="py-6 text-center text-sm text-gray-500">Loading available slots...</div>
+                                ) : rescheduleSlotsError ? (
+                                  <div className="py-4 text-sm text-red-600">{rescheduleSlotsError}</div>
+                                ) : rescheduleSlots.length === 0 ? (
+                                  <div className="py-4 text-sm text-gray-500">No slots available for this date.</div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {rescheduleSlots.map((slot) => (
+                                      <label
+                                        key={slot.startTime}
+                                        className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm cursor-pointer ${rescheduleModal.selectedSlot?.startTime === slot.startTime
+                                            ? 'border-gray-800 bg-gray-50'
+                                            : 'border-gray-200 hover:border-gray-400'
+                                          }`}
+                                      >
+                                        <div>
+                                          <div className="font-semibold text-gray-900">
+                                            {slot.startDisplayTime} – {slot.endDisplayTime}
+                                          </div>
+                                          <div className="text-xs text-gray-500">{slot.startTime} - {slot.endTime}</div>
+                                        </div>
+                                        <input
+                                          type="radio"
+                                          className="h-4 w-4 text-gray-800"
+                                          checked={rescheduleModal.selectedSlot?.startTime === slot.startTime}
+                                          onChange={() => setRescheduleModal(prev => prev ? ({ ...prev, selectedSlot: slot }) : prev)}
+                                        />
+                                      </label>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Message to mentor (optional)</label>
+                              <textarea
+                                value={rescheduleModal.reason}
+                                onChange={(e) => setRescheduleModal(prev => prev ? ({ ...prev, reason: e.target.value }) : prev)}
+                                rows={3}
+                                className="w-full border border-gray-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-gray-300 focus:outline-none"
+                                placeholder="Share helpful context around the change..."
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                            <button
+                              type="button"
+                              onClick={handleCloseRescheduleModal}
+                              disabled={rescheduleSubmitting}
+                              className="w-full sm:w-auto px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRescheduleSubmit}
+                              disabled={rescheduleSubmitting || !rescheduleModal.date || !rescheduleModal.selectedSlot}
+                              className="w-full sm:w-auto px-4 py-2 rounded-xl text-white font-semibold disabled:opacity-60"
+                              style={{ backgroundColor: '#3a3a3a' }}
+                            >
+                              {rescheduleSubmitting ? 'Sending...' : 'Send request'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Modern Toast Notification */}
-                  {showMessageToast && (
-                    <div className="fixed top-6 right-6 z-50 flex items-center gap-3 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20" style={{ backgroundColor: '#3a3a3a' }}>
-                      <MessageSquare className="h-6 w-6 text-white" />
-                      <span className="font-semibold">This feature is not available at this moment</span>
-                      <button
-                        className="ml-4 text-white hover:text-gray-200 focus:outline-none transition-colors"
-                        onClick={() => setShowMessageToast(false)}
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Logout Success Toast Notification */}
-                  {showLogoutToast && (
-                    <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
-                      <div className="p-2 bg-white/20 rounded-full">
-                        <CheckCircle className="h-5 w-5 text-white" />
+                    {/* Modern Toast Notification */}
+                    {showMessageToast && (
+                      <div className="fixed top-6 right-6 z-50 flex items-center gap-3 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20" style={{ backgroundColor: '#3a3a3a' }}>
+                        <MessageSquare className="h-6 w-6 text-white" />
+                        <span className="font-semibold">This feature is not available at this moment</span>
+                        <button
+                          className="ml-4 text-white hover:text-gray-200 focus:outline-none transition-colors"
+                          onClick={() => setShowMessageToast(false)}
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">Logout Successful!</span>
-                        <span className="text-xs opacity-90">Account logged out successfully</span>
-                      </div>
-                      <button
-                        className="ml-4 text-white/80 hover:text-white focus:outline-none transition-colors"
-                        onClick={() => setShowLogoutToast(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                    )}
 
-            </section>
-            </>
-          )}
-        </main>
+                    {/* Logout Success Toast Notification */}
+                    {showLogoutToast && (
+                      <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-sm border border-white/20">
+                        <div className="p-2 bg-white/20 rounded-full">
+                          <CheckCircle className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-sm">Logout Successful!</span>
+                          <span className="text-xs opacity-90">Account logged out successfully</span>
+                        </div>
+                        <button
+                          className="ml-4 text-white/80 hover:text-white focus:outline-none transition-colors"
+                          onClick={() => setShowLogoutToast(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
+                  </section>
+                </>
+              )}
+            </main>
+          </div>
         </div>
       </div>
-    </div>
-  </ProtectedRoute>
+    </ProtectedRoute>
   );
 }
 
