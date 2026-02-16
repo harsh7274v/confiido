@@ -384,18 +384,29 @@ export default function SessionsPage() {
                     </span>
                   </div>
 
-                  {/* Meeting Link for Upcoming Sessions */}
-                  {session.status === "Upcoming" && session.meetingLink && (
-                    <div className="mt-2">
-                      <a
-                        href={session.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                      >
-                        <Star className="h-4 w-4" />
-                        Join Meeting
-                      </a>
+                  {/* Meeting Link and Reschedule for Upcoming Sessions */}
+                  {session.status === "Upcoming" && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {session.meetingLink && (
+                        <a
+                          href={session.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                        >
+                          <Star className="h-4 w-4" />
+                          Join Meeting
+                        </a>
+                      )}
+                      {session.rescheduleRequest?.status !== 'pending' && (
+                        <button
+                          onClick={() => handleOpenReschedule(session)}
+                          className="px-4 py-2 rounded-lg text-sm font-medium bg-white/50 hover:bg-white text-gray-800 transition-colors border border-black/10"
+                          style={{ fontFamily: "'Rubik', sans-serif" }}
+                        >
+                          Request reschedule
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -407,12 +418,12 @@ export default function SessionsPage() {
                   {/* Reschedule Request Status */}
                   {session.rescheduleRequest && session.status === "Upcoming" && (
                     <div className={`mt-3 p-3 rounded-lg border text-sm ${session.rescheduleRequest.status === 'pending'
-                        ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
-                        : session.rescheduleRequest.status === 'approved'
-                          ? 'bg-green-50 border-green-200 text-green-800'
-                          : session.rescheduleRequest.status === 'rejected'
-                            ? 'bg-red-50 border-red-200 text-red-800'
-                            : 'bg-gray-50 border-gray-200 text-gray-800'
+                      ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                      : session.rescheduleRequest.status === 'approved'
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : session.rescheduleRequest.status === 'rejected'
+                          ? 'bg-red-50 border-red-200 text-red-800'
+                          : 'bg-gray-50 border-gray-200 text-gray-800'
                       }`}>
                       <p className="font-semibold mb-1">
                         {session.rescheduleRequest.status === 'pending' && '⏳ Reschedule Request Pending'}
@@ -440,24 +451,15 @@ export default function SessionsPage() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-between gap-2 text-sm mt-2 pt-2 border-t border-black/10">
-                    {session.status === "Upcoming" && !session.rescheduleRequest?.status && (
-                      <button
-                        onClick={() => handleOpenReschedule(session)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/50 hover:bg-white text-gray-800 transition-colors border border-black/5"
-                        style={{ fontFamily: "'Rubik', sans-serif" }}
-                      >
-                        Request reschedule
-                      </button>
-                    )}
-                    {session.status === "Completed" && (
+                  {/* Completed Session Points */}
+                  {session.status === "Completed" && (
+                    <div className="flex items-center gap-2 text-sm mt-2 pt-2 border-t border-black/10">
                       <span className="flex items-center gap-1 text-yellow-700 font-medium">
                         <Star className="h-4 w-4" />
                         +{session.pointsEarned} points
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
