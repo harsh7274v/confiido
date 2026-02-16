@@ -35,12 +35,12 @@ class BookingApi {
     if (!token) {
       throw new Error('No authentication token found. Please log in again.');
     }
-    
+
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
-    
+
     console.log('🔍 [FRONTEND] Making authenticated request with token');
     return headers;
   }
@@ -51,7 +51,7 @@ class BookingApi {
       const response = await axios.post(`${API_BASE_URL}/api/bookings`, bookingData, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('Error creating booking:', error);
@@ -60,12 +60,12 @@ class BookingApi {
   }
 
   // Get user's bookings
-  async getUserBookings(status?: string, page: number = 1, limit: number = 10): Promise<{ 
-    success: boolean; 
-    data: { 
-      bookings: Booking[]; 
-      pagination: { page: number; limit: number; total: number; pages: number } 
-    } 
+  async getUserBookings(status?: string, page: number = 1, limit: number = 10): Promise<{
+    success: boolean;
+    data: {
+      bookings: Booking[];
+      pagination: { page: number; limit: number; total: number; pages: number }
+    }
   }> {
     try {
       const params = new URLSearchParams();
@@ -76,7 +76,7 @@ class BookingApi {
       const response = await axios.get(`${API_BASE_URL}/api/bookings?${params}`, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error fetching user bookings:', error);
@@ -90,7 +90,7 @@ class BookingApi {
       const response = await axios.get(`${API_BASE_URL}/api/bookings/${bookingId}`, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error fetching booking:', error);
@@ -104,7 +104,7 @@ class BookingApi {
       const response = await axios.patch(`${API_BASE_URL}/api/bookings/${bookingId}/status`, { status }, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error updating booking status:', error);
@@ -118,7 +118,7 @@ class BookingApi {
       const response = await axios.patch(`${API_BASE_URL}/api/bookings/${bookingId}/cancel`, { reason }, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error cancelling booking:', error);
@@ -174,10 +174,10 @@ class BookingApi {
   // Complete payment for a session (called after successful payment)
   async completePayment(bookingId: string, sessionId: string, paymentMethod?: string, loyaltyPointsUsed?: number): Promise<{ success: boolean; message: string; data: any }> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/bookings/${bookingId}/complete-payment`, { 
-        sessionId, 
-        paymentMethod, 
-        loyaltyPointsUsed 
+      const response = await axios.put(`${API_BASE_URL}/api/bookings/${bookingId}/complete-payment`, {
+        sessionId,
+        paymentMethod,
+        loyaltyPointsUsed
       }, {
         headers: this.getAuthHeaders()
       });
@@ -189,13 +189,13 @@ class BookingApi {
   }
 
   // Get mentor's completed and paid bookings
-  async getMentorBookings(mentorId: string, page: number = 1, limit: number = 10): Promise<{ 
-    success: boolean; 
-    data: { 
-      bookings: any[]; 
-      stats: { 
-        totalEarnings: number; 
-        totalSessions: number; 
+  async getMentorBookings(mentorId: string, page: number = 1, limit: number = 10): Promise<{
+    success: boolean;
+    data: {
+      bookings: any[];
+      stats: {
+        totalEarnings: number;
+        totalSessions: number;
         totalBookings: number;
         completedSessions: number;
         paidSessions: number;
@@ -203,8 +203,8 @@ class BookingApi {
         confirmedSessions: number;
         cancelledSessions: number;
       };
-      pagination: { page: number; limit: number; total: number; pages: number } 
-    } 
+      pagination: { page: number; limit: number; total: number; pages: number }
+    }
   }> {
     try {
       const params = new URLSearchParams();
@@ -214,7 +214,7 @@ class BookingApi {
       const response = await axios.get(`${API_BASE_URL}/api/bookings/mentor/${mentorId}?${params}`, {
         headers: this.getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error: any) {
       console.error('❌ [FRONTEND] Error fetching mentor bookings:', error);
@@ -272,7 +272,8 @@ class BookingApi {
       }
       const querySuffix = params.toString() ? `?${params.toString()}` : '';
       const response = await axios.get(
-        `${API_BASE_URL}/api/availability/userid/${expertUserId}/consecutive-slots/${date}/${duration}${querySuffix}`
+        `${API_BASE_URL}/api/availability/userid/${expertUserId}/consecutive-slots/${date}/${duration}${querySuffix}`,
+        { headers: this.getAuthHeaders() }
       );
       return response.data;
     } catch (error: any) {

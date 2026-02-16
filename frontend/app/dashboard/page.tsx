@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Calendar, Star, Users, Shield, Clock, Bell, Search } from "lucide-react";
+import { Calendar, Star, Users, Shield, Clock, Bell, Search, ExternalLink } from "lucide-react";
 import React, { useEffect, useMemo, useState, useLayoutEffect, useCallback } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import SessionsPage from '../components/SessionsPage';
@@ -1355,30 +1355,35 @@ export default function DashboardPage() {
                                   <div className="text-gray-500 text-sm">No upcoming sessions</div>
                                 </div>
                               ) : (
-                                upcomingSessions.slice(0, 10).map((session: any) => (
+                                upcomingSessions.slice(0, 2).map((session: any) => (
                                   <div key={session.id} className="rounded-3xl p-4 shadow-sm" style={{ backgroundColor: '#f4acb7' }}>
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="flex-1 min-w-0">
-                                        <h4 className="font-semibold text-sm mb-1 truncate" style={{ color: '#000000' }}>
-                                          {session.title}
-                                        </h4>
-                                        <div className="flex flex-wrap items-center gap-2 text-xs mb-2" style={{ color: '#000000' }}>
-                                          <span className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
-                                            {session.date}
-                                          </span>
-                                          <span>•</span>
-                                          <span>{session.time}</span>
-                                        </div>
-                                        <div className="text-xs" style={{ color: '#000000' }}>
-                                          {session.expertName}
-                                        </div>
+                                    <div className="flex flex-col gap-2">
+                                      <h4 className="font-semibold text-sm truncate" style={{ color: '#000000' }}>
+                                        {session.sessionType?.toUpperCase()} session with {session.expertName}
+                                      </h4>
+                                      <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: '#000000' }}>
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {session.date}
+                                        </span>
+                                        <span>•</span>
+                                        <span>{session.time} - {session.endTime}</span>
                                       </div>
-                                      <div className="flex-shrink-0">
-                                        <div className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: '#3a3a3a', color: 'white' }}>
-                                          {session.sessionType}
-                                        </div>
+                                      <div className="text-xs" style={{ color: '#000000' }}>
+                                        {session.expertName}
                                       </div>
+                                      {session.meetingLink && (
+                                        <a
+                                          href={session.meetingLink}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 hover:bg-white transition-colors w-fit"
+                                          style={{ color: '#3a3a3a' }}
+                                        >
+                                          <ExternalLink className="h-3 w-3" />
+                                          Join
+                                        </a>
+                                      )}
                                     </div>
                                   </div>
                                 ))

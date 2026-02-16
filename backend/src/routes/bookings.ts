@@ -1,4 +1,4 @@
- import express from 'express';
+import express from 'express';
 import { body, validationResult, query } from 'express-validator';
 import { protect } from '../middleware/auth';
 import Booking, { ISession } from '../models/Booking';
@@ -34,19 +34,19 @@ const autoCancelExpiredRescheduleRequests = (sessions: ISession[]): boolean => {
       const sessionDateTime = new Date(session.scheduledDate);
       const [hours, minutes] = session.startTime.split(':').map(Number);
       sessionDateTime.setHours(hours, minutes, 0, 0);
-      
+
       // Check if we're within 1 hour of the original session time
       if (sessionDateTime <= oneHourFromNow) {
         session.rescheduleRequest.status = 'cancelled';
         session.rescheduleRequest.respondedAt = new Date();
         session.rescheduleRequest.responseNote = 'Auto-cancelled: Less than 1 hour before original session time';
         hasChanges = true;
-        
+
         console.log(`⏰ [AUTO-CANCEL] Reschedule request auto-cancelled for session ${session.sessionId}`);
       }
     }
   }
-  
+
   return hasChanges;
 };
 
@@ -199,11 +199,11 @@ const handleRescheduleFollowups = async ({
         if (session.notes && session.notes.includes('Service:')) {
           calendarSessionName = session.notes.replace('Service:', '').trim();
         }
-        
+
         // Format: [Confiido] - [Session name] with [Mentor name]
         const mentorName = getDisplayName(mentorUser, 'Mentor');
         const title = `[Confiido] - ${calendarSessionName} with ${mentorName}`;
-        
+
         const calendarResult = await createMeetEventForSession({
           expertUserObjectId,
           clientEmail: clientEmail || booking.clientEmail,
@@ -448,7 +448,7 @@ router.post('/', protect, [
         error: 'Mentor not found'
       });
     }
-    
+
     console.log('✅ [BOOKING] Expert found:', {
       expertId: expert._id,
       userId: expert.userId,
@@ -467,7 +467,7 @@ router.post('/', protect, [
     const startTimeParts = startTime.split(':');
     const startHour = parseInt(startTimeParts[0]);
     const startMinute = parseInt(startTimeParts[1]);
-    
+
     const endHour = Math.floor((startHour * 60 + startMinute + duration) / 60) % 24;
     const endMinute = (startHour * 60 + startMinute + duration) % 60;
     const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
@@ -519,7 +519,7 @@ router.post('/', protect, [
     // expertUser = selected mentor (the one being booked)
     const clientUser = await User.findById(req.user._id);
     const expertUser = await User.findById(expert.userId);
-    
+
     if (!clientUser || !expertUser) {
       return res.status(400).json({
         success: false,
@@ -567,13 +567,13 @@ router.post('/', protect, [
 
     // Try to find existing booking document for this client
     let booking = await Booking.findOne({ clientId: req.user._id });
-    
+
     if (booking) {
       // Add new session to existing booking
       booking.sessions.push(newSession);
       booking.updatedAt = new Date(); // Explicitly update the timestamp
       await booking.save();
-      
+
       console.log('✅ [BOOKING] Session added to existing booking:', {
         bookingId: booking._id,
         sessionId: newSession.sessionId,
@@ -588,9 +588,9 @@ router.post('/', protect, [
         clientEmail: clientUser.email,
         sessions: [newSession]
       };
-      
+
       booking = await Booking.create(bookingData);
-      
+
       console.log('✅ [BOOKING] New booking created:', {
         bookingId: booking._id,
         sessionId: newSession.sessionId,
@@ -616,7 +616,7 @@ router.post('/', protect, [
     res.status(201).json({
       success: true,
       message: 'Session booked successfully',
-      data: { 
+      data: {
         booking,
         session: newSession
       }
@@ -707,17 +707,19 @@ router.get('/user', protect, async (req, res, next) => {
       { $match: filter },
       { $unwind: '$sessions' },
       { $sort: { 'sessions.createdTime': -1, updatedAt: -1 } },
-      { $group: {
-        _id: '$_id',
-        clientId: { $first: '$clientId' },
-        clientUserId: { $first: '$clientUserId' },
-        clientEmail: { $first: '$clientEmail' },
-        sessions: { $push: '$sessions' },
-        totalSessions: { $first: '$totalSessions' },
-        totalSpent: { $first: '$totalSpent' },
-        createdAt: { $first: '$createdAt' },
-        updatedAt: { $first: '$updatedAt' }
-      }},
+      {
+        $group: {
+          _id: '$_id',
+          clientId: { $first: '$clientId' },
+          clientUserId: { $first: '$clientUserId' },
+          clientEmail: { $first: '$clientEmail' },
+          sessions: { $push: '$sessions' },
+          totalSessions: { $first: '$totalSessions' },
+          totalSpent: { $first: '$totalSpent' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' }
+        }
+      },
       { $sort: { 'sessions.createdTime': -1, updatedAt: -1 } },
       { $skip: skip },
       { $limit: parseInt(limit as string) }
@@ -727,7 +729,7 @@ router.get('/user', protect, async (req, res, next) => {
     const populatedBookings = await Booking.populate(bookings, [
       { path: 'clientId', select: 'firstName lastName email' },
       { path: 'sessions.expertId', select: 'title company' },
-      { 
+      {
         path: 'sessions.expertId',
         populate: {
           path: 'userId',
@@ -779,13 +781,13 @@ router.get('/user', protect, async (req, res, next) => {
       success: true,
       data: {
         bookings: populatedBookings,
-        stats: { 
-          total, 
-          paid: totalPaid, 
-          pending: totalPending, 
-          failed: totalFailed, 
-          refunded: totalRefunded, 
-          totalSpent: grandTotalSpent 
+        stats: {
+          total,
+          paid: totalPaid,
+          pending: totalPending,
+          failed: totalFailed,
+          refunded: totalRefunded,
+          totalSpent: grandTotalSpent
         },
         pagination: {
           page: parseInt(page as string),
@@ -827,8 +829,8 @@ router.get('/:id', protect, async (req, res, next) => {
     }
 
     // Check if user is authorized to view this booking
-    if (booking.clientId.toString() !== req.user._id.toString() && 
-        !booking.sessions.some(session => session.expertId.toString() === req.user._id.toString())) {
+    if (booking.clientId.toString() !== req.user._id.toString() &&
+      !booking.sessions.some(session => session.expertId.toString() === req.user._id.toString())) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to view this booking'
@@ -850,7 +852,7 @@ router.get('/:id', protect, async (req, res, next) => {
 router.put('/:id/confirm', protect, async (req, res, next) => {
   try {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
       return res.status(400).json({
         success: false,
@@ -945,8 +947,8 @@ router.put('/:id/cancel', protect, [
     }
 
     // Check if user is authorized to cancel this session
-    if (booking.clientId.toString() !== req.user._id.toString() && 
-        session.expertId.toString() !== req.user._id.toString()) {
+    if (booking.clientId.toString() !== req.user._id.toString() &&
+      session.expertId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to cancel this session'
@@ -992,8 +994,13 @@ router.post('/:bookingId/sessions/:sessionId/reschedule-request', protect, [
     .withMessage('Reason cannot exceed 500 characters')
 ], async (req, res, next) => {
   try {
+    console.log('🔍 [RESCHEDULE REQUEST] Route handler reached!');
+    console.log('🔍 [RESCHEDULE REQUEST] Params:', req.params);
+    console.log('🔍 [RESCHEDULE REQUEST] Body:', req.body);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ [RESCHEDULE REQUEST] Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         errors: errors.array()
@@ -1005,11 +1012,19 @@ router.post('/:bookingId/sessions/:sessionId/reschedule-request', protect, [
 
     const booking = await Booking.findById(bookingId);
     if (!booking) {
+      console.log('❌ [RESCHEDULE REQUEST] Booking not found:', bookingId);
       return res.status(404).json({
         success: false,
         error: 'Booking not found'
       });
     }
+
+    console.log('✅ [RESCHEDULE REQUEST] Booking found');
+    console.log('🔍 [RESCHEDULE REQUEST] Looking for sessionId:', sessionId);
+    console.log('🔍 [RESCHEDULE REQUEST] Available sessions:', booking.sessions.map(s => ({
+      _id: (s as any)._id?.toString(),
+      sessionId: s.sessionId?.toString()
+    })));
 
     if (booking.clientId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -1018,13 +1033,16 @@ router.post('/:bookingId/sessions/:sessionId/reschedule-request', protect, [
       });
     }
 
-    const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
+    const session = booking.sessions.find(s => s.sessionId?.toString() === sessionId || (s as any)._id?.toString() === sessionId);
     if (!session) {
+      console.log('❌ [RESCHEDULE REQUEST] Session not found in booking');
       return res.status(404).json({
         success: false,
         error: 'Session not found'
       });
     }
+
+    console.log('✅ [RESCHEDULE REQUEST] Session found');
 
     if (session.paymentStatus !== 'paid') {
       return res.status(400).json({
@@ -1381,7 +1399,7 @@ router.put('/:bookingId/sessions/:sessionId/reschedule', protect, [
 router.put('/:id/complete', protect, async (req, res, next) => {
   try {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
       return res.status(400).json({
         success: false,
@@ -1442,7 +1460,7 @@ router.put('/:id/complete', protect, async (req, res, next) => {
 router.put('/:id/cancel-expired', protect, async (req, res, next) => {
   try {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
       return res.status(400).json({
         success: false,
@@ -1476,7 +1494,7 @@ router.put('/:id/cancel-expired', protect, async (req, res, next) => {
       session.cancellationReason = 'Booking expired after 5 minutes';
       session.cancelledBy = 'system';
       session.cancellationTime = now;
-      
+
       await booking.save();
 
       res.json({
@@ -1501,7 +1519,7 @@ router.put('/:id/cancel-expired', protect, async (req, res, next) => {
 router.get('/expired/check', protect, async (req, res, next) => {
   try {
     const now = new Date();
-    
+
     // Find all bookings with expired pending sessions (exclude completed/paid sessions)
     const bookings = await Booking.find({
       'sessions.status': 'pending',
@@ -1515,18 +1533,18 @@ router.get('/expired/check', protect, async (req, res, next) => {
 
     for (const booking of bookings) {
       for (const session of booking.sessions) {
-        if (session.status === 'pending' && 
-            session.paymentStatus === 'pending' &&
-            session.timeoutAt && 
-            session.timeoutAt <= now && 
-            session.timeoutStatus === 'active') {
-          
+        if (session.status === 'pending' &&
+          session.paymentStatus === 'pending' &&
+          session.timeoutAt &&
+          session.timeoutAt <= now &&
+          session.timeoutStatus === 'active') {
+
           session.status = 'cancelled';
           session.timeoutStatus = 'expired';
           session.cancellationReason = 'Booking expired after 5 minutes';
           session.cancelledBy = 'system';
           session.cancellationTime = now;
-          
+
           cancelledCount++;
           cancelledSessions.push({
             bookingId: booking._id,
@@ -1536,7 +1554,7 @@ router.get('/expired/check', protect, async (req, res, next) => {
           });
         }
       }
-      
+
       await booking.save();
     }
 
@@ -1559,7 +1577,7 @@ router.get('/expired/check', protect, async (req, res, next) => {
 router.post('/timeout/sync', protect, async (req, res, next) => {
   try {
     const { timeouts } = req.body;
-    
+
     if (!Array.isArray(timeouts)) {
       return res.status(400).json({
         success: false,
@@ -1572,7 +1590,7 @@ router.post('/timeout/sync', protect, async (req, res, next) => {
 
     for (const timeout of timeouts) {
       const { bookingId, sessionId, timeoutAt } = timeout;
-      
+
       const booking = await Booking.findById(bookingId);
       if (!booking) continue;
 
@@ -1587,7 +1605,7 @@ router.post('/timeout/sync', protect, async (req, res, next) => {
         session.cancellationReason = 'Booking expired after 5 minutes';
         session.cancelledBy = 'system';
         session.cancellationTime = now;
-        
+
         expiredSessions.push({
           bookingId: booking._id.toString(),
           sessionId: session.sessionId.toString(),
@@ -1627,7 +1645,7 @@ router.post('/timeout/sync', protect, async (req, res, next) => {
 router.post('/timeout/status', protect, async (req, res, next) => {
   try {
     const { sessionIds } = req.body;
-    
+
     if (!Array.isArray(sessionIds)) {
       return res.status(400).json({
         success: false,
@@ -1647,7 +1665,7 @@ router.post('/timeout/status', protect, async (req, res, next) => {
         const session = booking.sessions.find(s => s.sessionId.toString() === sessionId);
         if (session) {
           const isExpired = session.timeoutAt && session.timeoutAt <= now && session.status === 'pending';
-          
+
           sessionStatuses.push({
             sessionId,
             bookingId: booking._id.toString(),
@@ -1676,7 +1694,7 @@ router.post('/timeout/status', protect, async (req, res, next) => {
 router.put('/:id/cancel-expired-session', protect, async (req, res, next) => {
   try {
     const { sessionId } = req.body;
-    
+
     if (!sessionId) {
       return res.status(400).json({
         success: false,
@@ -1718,7 +1736,7 @@ router.put('/:id/cancel-expired-session', protect, async (req, res, next) => {
       session.cancellationReason = 'Booking expired after timeout';
       session.cancelledBy = 'client';
       session.cancellationTime = now;
-      
+
       await booking.save();
 
       // Emit socket event for real-time updates
@@ -1784,7 +1802,7 @@ router.put('/:id/complete-payment', protect, [
     }
 
     const { sessionId, paymentMethod, loyaltyPointsUsed } = req.body;
-    
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -1825,7 +1843,7 @@ router.put('/:id/complete-payment', protect, [
     session.timeoutStatus = 'completed';
     session.paymentMethod = paymentMethod || 'online';
     session.paymentCompletedAt = new Date();
-    
+
     // Store loyalty points information if provided
     if (loyaltyPointsUsed && loyaltyPointsUsed > 0) {
       session.loyaltyPointsUsed = loyaltyPointsUsed;
@@ -1849,28 +1867,28 @@ router.put('/:id/complete-payment', protect, [
     setImmediate(async () => {
       try {
         console.log('🔄 [BACKGROUND] Starting background tasks for session:', session.sessionId);
-        
+
         // Try to create a real Google Meet event if mentor has Google calendar connected
         try {
           console.log('🔍 [DEBUG] Starting Google Meet event creation...');
           const expertUser = await User.findById(session.expertId);
           const clientUser = await User.findById(booking.clientId);
-          
+
           // Get mentor name for the calendar title
           const expertFound = await User.findOne({ user_id: session.expertUserId });
-          const expertName = expertFound?.firstName 
+          const expertName = expertFound?.firstName
             ? `${expertFound.firstName}${expertFound.lastName ? ' ' + expertFound.lastName : ''}`
             : 'Mentor';
-          
+
           // Extract session name from notes (e.g., "Service: 1:1 Career Guidance" → "1:1 Career Guidance")
           let calendarSessionName: string = session.sessionType;
           if (session.notes && session.notes.includes('Service:')) {
             calendarSessionName = session.notes.replace('Service:', '').trim();
           }
-          
+
           // Format: [Confiido] - [Session name] with [Mentor name]
           const title = `[Confiido] - ${calendarSessionName} with ${expertName}`;
-          
+
           console.log('🔍 [DEBUG] Calling createMeetEventForSession with:', {
             expertUserObjectId: String(session.expertId),
             clientEmail: clientUser?.email || booking.clientEmail,
@@ -1880,7 +1898,7 @@ router.put('/:id/complete-payment', protect, [
             startTime: session.startTime,
             endTime: session.endTime
           });
-          
+
           const { hangoutLink } = await createMeetEventForSession({
             expertUserObjectId: session.expertId as any,
             clientEmail: clientUser?.email || booking.clientEmail,
@@ -1909,7 +1927,7 @@ router.put('/:id/complete-payment', protect, [
             stack: gErr.stack
           });
         }
-    
+
         // Emit socket event for real-time updates
         if (socketService) {
           socketService.emitBookingStatusUpdate(
@@ -1930,7 +1948,7 @@ router.put('/:id/complete-payment', protect, [
         // Send professional confirmation emails to client and mentor
         try {
           const client = await User.findById(booking.clientId);
-          
+
           // FIXED: Use expertUserId (string like "1534") to find the mentor from Users collection
           // session.expertUserId is the user_id field in User model
           let expertUser = null;
@@ -1942,15 +1960,15 @@ router.put('/:id/complete-payment', protect, [
               expertName: expertUser ? `${expertUser.firstName} ${expertUser.lastName}` : 'Not found'
             });
           }
-          
+
           // Fallback: try expertId if expertUserId lookup failed
           if (!expertUser && session.expertId) {
             expertUser = await User.findById(session.expertId);
             console.log('🔍 Fallback: Found expert by expertId (ObjectId)');
           }
-          
+
           const scheduled = new Date(session.scheduledDate);
-          
+
           // Format date nicely (e.g., "Monday, January 15, 2025")
           const scheduledDateFormatted = scheduled.toLocaleDateString('en-US', {
             weekday: 'long',
@@ -2067,13 +2085,13 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
 
     // Find all bookings for this mentor using expertUserId (4-digit string)
     console.log('🔍 [MENTOR BOOKINGS] Searching for bookings with expertUserId:', mentorId);
-    
+
     // First, let's check if there are any bookings at all for this expert
     const allBookingsForExpert = await Booking.find({
       'sessions.expertUserId': mentorId
     });
     console.log('🔍 [MENTOR BOOKINGS] All bookings for expert (any status):', allBookingsForExpert.length);
-    
+
     const bookings = await Booking.find({
       'sessions.expertUserId': mentorId
     })
@@ -2084,7 +2102,7 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
 
     console.log('🔍 [MENTOR BOOKINGS] Found bookings:', bookings.length);
     console.log('🔍 [MENTOR BOOKINGS] Bookings data:', JSON.stringify(bookings, null, 2));
-    
+
     // Debug: Log the first booking's clientId structure
     if (bookings.length > 0) {
       console.log('🔍 [MENTOR BOOKINGS] First booking clientId structure:', JSON.stringify(bookings[0].clientId, null, 2));
@@ -2092,10 +2110,10 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
 
     // Filter sessions to only include ones for this mentor (any status)
     const filteredBookings = bookings.map(booking => {
-      const filteredSessions = booking.sessions.filter(session => 
+      const filteredSessions = booking.sessions.filter(session =>
         session.expertUserId === mentorId
       );
-      
+
       // Auto-cancel expired reschedule requests
       const hasChanges = autoCancelExpiredRescheduleRequests(filteredSessions);
       if (hasChanges) {
@@ -2104,7 +2122,7 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
           console.error('❌ [MENTOR BOOKINGS] Error saving auto-cancelled reschedule requests:', err);
         });
       }
-      
+
       return {
         ...booking.toObject(),
         sessions: filteredSessions
@@ -2126,7 +2144,7 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
     const allBookings = await Booking.find({
       'sessions.expertUserId': mentorId
     });
-    
+
     console.log('🔍 [MENTOR BOOKINGS] All bookings for stats calculation:', allBookings.length);
 
     let totalEarnings = 0;
@@ -2138,14 +2156,14 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
     let cancelledSessions = 0;
 
     console.log('🔍 [MENTOR BOOKINGS] Processing stats for', allBookings.length, 'bookings');
-    
+
     for (const booking of allBookings) {
       console.log('🔍 [MENTOR BOOKINGS] Processing booking:', booking._id, 'with', booking.sessions.length, 'sessions');
       for (const session of booking.sessions) {
         console.log('🔍 [MENTOR BOOKINGS] Session:', session.sessionId, 'expertUserId:', session.expertUserId, 'status:', session.status, 'paymentStatus:', session.paymentStatus);
         if (session.expertUserId === mentorId) {
           totalSessions++;
-          
+
           // Count by status
           switch (session.status) {
             case 'completed':
@@ -2162,13 +2180,13 @@ router.get('/mentor/:mentorId', protect, async (req, res, next) => {
               cancelledSessions++;
               break;
           }
-          
+
           // Count paid sessions
           if (session.paymentStatus === 'paid') {
             paidSessions++;
             totalEarnings += session.finalAmount || session.price || 0;
           }
-          
+
           console.log('🔍 [MENTOR BOOKINGS] Added session to stats. Total sessions:', totalSessions, 'Total earnings:', totalEarnings);
         }
       }

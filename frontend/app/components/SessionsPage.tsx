@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, Clock, User, Star, X } from "lucide-react";
+import { Calendar, Clock, User, Star, X, Mail, ExternalLink } from "lucide-react";
 import bookingApi from "../services/bookingApi";
 
 interface Session {
@@ -11,11 +11,28 @@ interface Session {
   title: string;
   date: string;
   time: string;
+  endTime: string;
   expert: string;
+  expertEmail: string;
   expertUserId: string;
   duration: number;
   status: "Completed" | "Upcoming";
   pointsEarned: number;
+  sessionType: string;
+  price: number;
+  currency: string;
+  notes?: string;
+  meetingLink?: string;
+  paymentStatus: string;
+  rescheduleRequest?: {
+    status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+    requestedBy: 'client' | 'expert';
+    requestedDate: string;
+    requestedStartTime: string;
+    requestedEndTime: string;
+    reason?: string;
+    responseNote?: string;
+  };
 }
 
 export default function SessionsPage() {
@@ -69,15 +86,40 @@ export default function SessionsPage() {
               if (session.paymentStatus !== 'paid') return;
 
               // Determine if session is upcoming or completed
-              // Strictly compare DATES. Only move to completed if session date is in the past (yesterday or earlier).
-              const sessionDate = new Date(session.scheduledDate);
-              const today = new Date();
+              // A session is completed only if:
+              // 1. It's explicitly marked as 'completed' in the backend, OR
+              // 2. The current time is past the session's end time (date + endTime)
 
-              // Normalize to midnight for date-only comparison
-              sessionDate.setHours(0, 0, 0, 0);
-              today.setHours(0, 0, 0, 0);
+              const now = new Date();
 
-              const isCompleted = session.status === 'completed' || sessionDate < today;
+              // Create a datetime object combining scheduledDate and endTime
+              const sessionEndDateTime = new Date(session.scheduledDate);
+              const [endHour, endMinute] = (session.endTime || '23:59').split(':').map(Number);
+              sessionEndDateTime.setHours(endHour, endMinute, 0, 0);
+
+              // Debug logging
+              console.log('🔍 Session Status Debug:', {
+                expert: session.expertId?.userId
+                  ? `${session.expertId.userId.firstName || ''} ${session.expertId.userId.lastName || ''}`.trim()
+                  : 'Expert',
+                sessionId: session.sessionId || session._id,
+                scheduledDate: session.scheduledDate,
+                scheduledDateFormatted: new Date(session.scheduledDate).toLocaleDateString('en-US'),
+                startTime: session.startTime,
+                endTime: session.endTime,
+                backendStatus: session.status,
+                sessionEndDateTime: sessionEndDateTime.toISOString(),
+                sessionEndDateTimeLocal: sessionEndDateTime.toLocaleString('en-US'),
+                currentTime: now.toISOString(),
+                currentTimeLocal: now.toLocaleString('en-US'),
+                isPastEndTime: now > sessionEndDateTime,
+                willBeCompleted: now > sessionEndDateTime
+              });
+
+              // IMPORTANT: Prioritize time-based logic over backend status
+              // A session is ONLY completed if the current time is past the session's end time
+              // This prevents future sessions from being incorrectly marked as completed
+              const isCompleted = now > sessionEndDateTime;
 
               // Get expert name
               const expertName = session.expertId?.userId
@@ -95,11 +137,20 @@ export default function SessionsPage() {
                   day: 'numeric'
                 }),
                 time: session.startTime || '',
+                endTime: session.endTime || '',
                 expert: expertName,
-                expertUserId: session.expertId?.userId?._id,
+                expertEmail: session.expertEmail || session.expertId?.userId?.email || '',
+                expertUserId: session.expertUserId || session.expertId?.userId?.user_id,
                 duration: session.duration || 60,
                 status: isCompleted ? 'Completed' : 'Upcoming',
-                pointsEarned: isCompleted ? 50 : 0
+                pointsEarned: isCompleted ? 50 : 0,
+                sessionType: session.sessionType || 'video',
+                price: session.price || 0,
+                currency: session.currency || 'INR',
+                notes: session.notes || '',
+                meetingLink: session.meetingLink || '',
+                paymentStatus: session.paymentStatus || 'pending',
+                rescheduleRequest: session.rescheduleRequest
               });
             });
           });
@@ -125,17 +176,27 @@ export default function SessionsPage() {
 
       try {
         setLoadingSlots(true);
+
+        console.log('🔍 Fetching slots with params:', {
+          expertUserId: selectedSession.expertUserId,
+          rescheduleDate,
+          duration: selectedSession.duration
+        });
+
         const response = await bookingApi.getAvailableConsecutiveSlots(
           selectedSession.expertUserId,
           rescheduleDate,
           selectedSession.duration
         );
 
+        console.log('✅ Slots response:', response);
+
         if (response.success) {
-          setAvailableSlots(response.data);
+          setAvailableSlots(response.data.consecutiveSlots || response.data);
         }
-      } catch (error) {
-        console.error("Error fetching slots:", error);
+      } catch (error: any) {
+        console.error("❌ Error fetching slots:", error);
+        console.error("Error response:", error.response?.data);
       } finally {
         setLoadingSlots(false);
       }
@@ -157,6 +218,17 @@ export default function SessionsPage() {
 
     try {
       setSubmittingReschedule(true);
+
+      console.log('🔍 Submitting reschedule request:', {
+        bookingId: selectedSession.bookingId,
+        sessionId: selectedSession.sessionId,
+        payload: {
+          scheduledDate: rescheduleDate,
+          startTime: rescheduleTime,
+          reason: rescheduleReason
+        }
+      });
+
       await bookingApi.requestSessionReschedule(
         selectedSession.bookingId,
         selectedSession.sessionId,
@@ -171,8 +243,9 @@ export default function SessionsPage() {
       setIsRescheduleModalOpen(false);
       alert("Reschedule request sent successfully!");
       // Ideally refresh sessions here
-    } catch (error) {
-      console.error("Error rescheduling:", error);
+    } catch (error: any) {
+      console.error("❌ Error rescheduling:", error);
+      console.error("Error response:", error.response?.data);
       alert("Failed to request reschedule");
     } finally {
       setSubmittingReschedule(false);
@@ -252,28 +325,130 @@ export default function SessionsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredSessions.map((session) => (
-                <div key={session.id} className="rounded-3xl p-4 flex flex-col gap-2 shadow-sm relative group" style={{ backgroundColor: '#f4acb7' }}>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" style={{ color: '#000000' }} />
-                    <span className="font-medium" style={{ color: '#000000' }}>{session.title}</span>
+                <div key={session.id} className="rounded-3xl p-5 flex flex-col gap-3 shadow-sm relative group" style={{ backgroundColor: '#f4acb7' }}>
+                  {/* Session Type and Title */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-base uppercase" style={{ color: '#000000' }}>
+                          {session.sessionType.toUpperCase()} session with {session.expert}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Date and Time */}
+                  <div className="flex items-center gap-2 text-sm" style={{ color: '#000000' }}>
+                    <Calendar className="h-4 w-4" />
+                    <span>{session.date}</span>
+                  </div>
+
                   <div className="flex items-center gap-2 text-sm" style={{ color: '#000000' }}>
                     <Clock className="h-4 w-4" />
-                    {session.date} at {session.time}
+                    <span>{session.time} - {session.endTime}</span>
                   </div>
+
+                  {/* Session Type Badge */}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="px-3 py-1 rounded-full bg-white/50 font-medium" style={{ color: '#000000' }}>
+                      {session.sessionType.charAt(0).toUpperCase() + session.sessionType.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Expert Info */}
                   <div className="flex items-center gap-2 text-sm" style={{ color: '#000000' }}>
                     <User className="h-4 w-4" />
-                    Expert: {session.expert}
+                    <span>{session.expert}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 text-sm mt-1">
-                    <span className={session.status === "Completed" ? "text-green-700 font-medium" : "text-blue-700 font-medium"}>{session.status}</span>
-                    {session.status === "Upcoming" && (
+
+                  <div className="flex items-center gap-2 text-sm" style={{ color: '#000000' }}>
+                    <Mail className="h-4 w-4" />
+                    <span className="truncate">{session.expertEmail}</span>
+                  </div>
+
+                  {/* Notes/Service */}
+                  {session.notes && (
+                    <div className="text-sm" style={{ color: '#000000' }}>
+                      <span className="font-medium">Notes:</span>
+                      <div className="mt-1">{session.notes}</div>
+                    </div>
+                  )}
+
+                  {/* Status and Payment */}
+                  <div className="flex items-center gap-2 text-sm mt-2">
+                    <span className={session.status === "Completed" ? "text-green-700 font-medium" : "text-blue-700 font-medium"}>
+                      {session.status}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                      {session.paymentStatus.charAt(0).toUpperCase() + session.paymentStatus.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Meeting Link for Upcoming Sessions */}
+                  {session.status === "Upcoming" && session.meetingLink && (
+                    <div className="mt-2">
+                      <a
+                        href={session.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <Star className="h-4 w-4" />
+                        Join Meeting
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Price */}
+                  <div className="text-sm font-medium" style={{ color: '#000000' }}>
+                    Price: {session.currency} {session.price}
+                  </div>
+
+                  {/* Reschedule Request Status */}
+                  {session.rescheduleRequest && session.status === "Upcoming" && (
+                    <div className={`mt-3 p-3 rounded-lg border text-sm ${session.rescheduleRequest.status === 'pending'
+                        ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                        : session.rescheduleRequest.status === 'approved'
+                          ? 'bg-green-50 border-green-200 text-green-800'
+                          : session.rescheduleRequest.status === 'rejected'
+                            ? 'bg-red-50 border-red-200 text-red-800'
+                            : 'bg-gray-50 border-gray-200 text-gray-800'
+                      }`}>
+                      <p className="font-semibold mb-1">
+                        {session.rescheduleRequest.status === 'pending' && '⏳ Reschedule Request Pending'}
+                        {session.rescheduleRequest.status === 'approved' && '✅ Reschedule Approved'}
+                        {session.rescheduleRequest.status === 'rejected' && '❌ Reschedule Request Declined'}
+                        {session.rescheduleRequest.status === 'cancelled' && '🚫 Reschedule Request Cancelled'}
+                      </p>
+                      <p className="text-xs mt-1">
+                        Requested: {new Date(session.rescheduleRequest.requestedDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })} at {session.rescheduleRequest.requestedStartTime} - {session.rescheduleRequest.requestedEndTime}
+                      </p>
+                      {session.rescheduleRequest.status === 'rejected' && session.rescheduleRequest.responseNote && (
+                        <p className="text-xs mt-2 italic">
+                          Mentor's note: {session.rescheduleRequest.responseNote}
+                        </p>
+                      )}
+                      {session.rescheduleRequest.status === 'pending' && (
+                        <p className="text-xs mt-2">
+                          Waiting for mentor approval...
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between gap-2 text-sm mt-2 pt-2 border-t border-black/10">
+                    {session.status === "Upcoming" && !session.rescheduleRequest?.status && (
                       <button
                         onClick={() => handleOpenReschedule(session)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/50 hover:bg-white text-gray-800 transition-colors border border-black/5"
                         style={{ fontFamily: "'Rubik', sans-serif" }}
                       >
-                        Request Reschedule
+                        Request reschedule
                       </button>
                     )}
                     {session.status === "Completed" && (
@@ -322,18 +497,23 @@ export default function SessionsPage() {
                       <div className="text-center py-2 text-sm text-gray-500">Checking availability...</div>
                     ) : availableSlots.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                        {availableSlots.map(slot => (
-                          <button
-                            key={slot}
-                            onClick={() => setRescheduleTime(slot)}
-                            className={`px-2 py-1.5 text-xs font-medium rounded-lg border transition-all ${rescheduleTime === slot
-                              ? 'bg-[#3a3a3a] text-white border-[#3a3a3a]'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                              }`}
-                          >
-                            {slot}
-                          </button>
-                        ))}
+                        {availableSlots.map((slot: any, index: number) => {
+                          const timeValue = typeof slot === 'string' ? slot : slot.startTime;
+                          const displayTime = typeof slot === 'string' ? slot : (slot.startDisplayTime || slot.startTime);
+
+                          return (
+                            <button
+                              key={`${timeValue}-${index}`}
+                              onClick={() => setRescheduleTime(timeValue)}
+                              className={`px-2 py-1.5 text-xs font-medium rounded-lg border transition-all ${rescheduleTime === timeValue
+                                ? 'bg-[#3a3a3a] text-white border-[#3a3a3a]'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                                }`}
+                            >
+                              {displayTime}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-2 text-sm text-gray-500">No slots available for this date</div>
