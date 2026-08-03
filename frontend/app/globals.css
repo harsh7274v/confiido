@@ -488,3 +488,101 @@ button:hover {
     padding-bottom: 0;
   }
 }
+
+/* ============================================================
+   CONFIIDO LANDING PAGE — DESIGN TOKENS & UTILITIES
+   ============================================================ */
+
+:root {
+  --sand: #F4F1EA;
+  --sand-2: #F8F9F7;
+  --brand: #3E5F44;
+  --brand-hover: #2A422E;
+  --ink: #121C14;
+  --muted: #5C6B60;
+  --terracotta: #D97757;
+}
+
+/* Fonts */
+.font-editorial { font-family: 'Cormorant Garamond', serif; }
+.font-display   { font-family: 'Cabinet Grotesk', ui-sans-serif, sans-serif; }
+.font-body      { font-family: 'Satoshi', ui-sans-serif, sans-serif; }
+.font-mono-num  { font-family: 'Cabinet Grotesk', ui-monospace, monospace; font-feature-settings: "tnum"; }
+
+/* Page background */
+.relative.overflow-x-hidden {
+  background-color: var(--sand);
+}
+
+/* Glassmorphism */
+.glass {
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  background: rgba(255,255,255,0.60);
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 8px 32px rgba(62,95,68,0.10);
+}
+.glass-dark {
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  background: rgba(18,28,20,0.55);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Neomorphism */
+.neo {
+  background: var(--sand-2);
+  box-shadow: -6px -6px 14px #ffffff, 6px 6px 16px rgba(62,95,68,0.12);
+  border: 1px solid #E8EBE8;
+}
+.neo-hover { transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s ease; }
+.neo-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: -3px -3px 8px #ffffff, 3px 3px 10px rgba(62,95,68,0.16);
+}
+.neo-inset {
+  background: var(--sand-2);
+  box-shadow: inset -4px -4px 10px #ffffff, inset 4px 4px 10px rgba(62,95,68,0.10);
+  border: 1px solid #E8EBE8;
+}
+
+/* Blob / hero shapes */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  opacity: .6;
+  will-change: transform;
+}
+@keyframes floaty {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-26px) rotate(8deg); }
+}
+.animate-floaty { animation: floaty 9s ease-in-out infinite; }
+
+/* Marquee */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 32s linear infinite; }
+
+/* Reveal mask */
+.reveal-mask { overflow: hidden; display: block; }
+
+/* Hide scrollbar */
+.no-bar::-webkit-scrollbar { display: none; }
+.no-bar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Accordion open/close animations */
+@keyframes accordion-down {
+  from { height: 0; opacity: 0; }
+  to   { height: var(--radix-accordion-content-height); opacity: 1; }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); opacity: 1; }
+  to   { height: 0; opacity: 0; }
+}
+.data-\[state\=open\]\:animate-accordion-down[data-state=open] {
+  animation: accordion-down 0.22s ease-out;
+}
+.data-\[state\=closed\]\:animate-accordion-up[data-state=closed] {
+  animation: accordion-up 0.22s ease-out;
+}

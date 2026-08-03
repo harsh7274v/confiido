@@ -1,17 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
   // Remove console.log statements in production builds
   // This uses Next.js built-in SWC compiler to remove console statements
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'], // Keep console.error and console.warn for critical debugging
+      exclude: ['error', 'warn'],
     } : false,
+  },
+  turbopack: {
+    // Silence the workspace-root detection warning
+    root: __dirname,
   },
   images: {
     remotePatterns: [
