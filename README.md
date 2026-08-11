@@ -1,41 +1,241 @@
 # Confiido
 
-Confiido is a full-stack career mentorship platform for connecting professionals with experts, booking sessions, sending real-time messages, and handling payments and notifications.
+**Confiido** is a full-stack career mentorship platform that enables users to discover mentors, book mentorship sessions, make secure payments, communicate in real time, and manage scheduled meetings.
 
-The repository is organized as a monorepo with a Next.js frontend and an Express + TypeScript backend.
+The platform is built as a monorepo with a **Next.js frontend** and **Express + TypeScript backend**, with role-based access control, authentication, payment processing, notifications, scheduling, and real-time communication.
 
-## Project Structure
+## 🚀 Key Features
 
-- `frontend/` - Next.js app router frontend
-- `backend/` - Express API, MongoDB models, and background services
-- `backend/api/` - serverless/API deployment variants used for platform-specific builds
-- Root-level scripts - utility and diagnostic scripts used during development and deployment
+### 🔐 Authentication & Authorization
 
-## Features
+* Built a unified **Login / Sign Up interface using Next.js Accordion UI**, allowing users to switch seamlessly between authentication flows.
+* Implemented **email-based authentication with SMTP** for account verification and email notifications.
+* Integrated **Firebase Authentication** for Google OAuth login.
+* Implemented **JWT-based authentication** for securing backend APIs.
+* Developed **Role-Based Access Control (RBAC)** with separate permissions and workflows for **Users and Admins**.
 
-- User authentication with JWT and Firebase support
-- Expert discovery and booking flows
-- Real-time messaging with Socket.IO
-- Payments and transaction handling
-- Email notifications and OTP flows
-- Cloudinary file uploads
-- Google Calendar integration
-- Dashboard, rewards, reviews, analytics, and availability management
+### 👤 User Dashboard
 
-## Prerequisites
+* Developed a personalized dashboard available after successful authentication.
+* Users can manage:
 
-- Node.js 18 or newer
-- npm 9 or newer
-- MongoDB connection string
-- API keys for any services you plan to use, such as Firebase, Razorpay, Stripe, Cloudinary, or Google Calendar
+  * Mentor bookings
+  * Upcoming and completed sessions
+  * Rewards
+  * Reviews
+  * Profile information
+  * Meeting schedules
+  * Payment history
 
-## Local Setup
+### 👨‍🏫 Mentor Discovery & Booking
 
-### 1. Install dependencies
+* Built mentor discovery and availability management functionality.
+* Users can view available mentor schedules and book mentorship sessions.
+* Implemented booking validation to prevent conflicts and invalid time-slot selections.
+* Added functionality for users to **reschedule previously booked meetings** based on mentor availability.
 
-Install dependencies separately for each app:
+### 💳 Payment Integration
+
+* Integrated **Razorpay** for secure online payments.
+* Implemented payment verification and transaction handling on the backend.
+* Booking confirmation is triggered only after successful payment verification.
+* Maintained booking and payment states to ensure consistency between transactions and scheduled sessions.
+
+### 📅 Automated Meeting & Notifications
+
+* After successful payment and booking confirmation:
+
+  * A **meeting link is generated/sent to the user**.
+  * The **mentor receives the meeting details**.
+  * Email notifications are sent through SMTP.
+* Integrated **Google Calendar** functionality for managing scheduled mentorship sessions.
+* Implemented email/OTP-based notification workflows.
+
+### 🎁 Rewards System
+
+* Developed a user **reward system** to encourage engagement on the platform.
+* Users can earn rewards based on eligible platform activities.
+* Reward information is integrated into the user dashboard.
+
+### 💬 Real-Time Communication
+
+* Implemented **Socket.IO** for real-time messaging between users and mentors.
+* Supports live communication without requiring page refreshes.
+* Real-time booking/session updates are synchronized between connected users.
+
+### ☁️ File & Media Management
+
+* Integrated **Cloudinary** for secure file and image uploads.
+* Used cloud-based storage instead of storing media directly on the application server.
+
+---
+
+## 🏗️ Project Architecture
+
+The project follows a **monorepo architecture**:
+
+```text
+Confiido/
+│
+├── frontend/
+│   ├── Next.js
+│   ├── React
+│   ├── TypeScript
+│   └── UI Components
+│
+├── backend/
+│   ├── Express.js
+│   ├── TypeScript
+│   ├── MongoDB
+│   ├── REST APIs
+│   ├── Authentication
+│   ├── RBAC
+│   ├── Payment Services
+│   └── Background Services
+│
+└── backend/api/
+    └── Serverless/API deployment variants
+```
+
+### Technology Stack
+
+**Frontend**
+
+* Next.js
+* React
+* TypeScript
+* CSS/Tailwind CSS
+
+**Backend**
+
+* Node.js
+* Express.js
+* TypeScript
+* REST APIs
+* Socket.IO
+
+**Database**
+
+* MongoDB
+
+**Authentication & Security**
+
+* JWT
+* Firebase Authentication
+* Google OAuth
+* RBAC
+* SMTP
+
+**Payments**
+
+* Razorpay
+
+**Cloud & Integrations**
+
+* Cloudinary
+* Google Calendar
+* Firebase
+* Vercel
+
+---
+
+## ⚙️ Application Flow
+
+```text
+User
+ │
+ ▼
+Login / Sign Up
+ │
+ ├── Email + SMTP
+ │
+ └── Google Authentication
+       │
+       ▼
+   Authentication
+       │
+       ▼
+    RBAC Check
+       │
+   ┌───┴────┐
+   ▼        ▼
+ User      Admin
+   │
+   ▼
+Dashboard
+   │
+   ▼
+Discover Mentor
+   │
+   ▼
+Select Available Slot
+   │
+   ▼
+Razorpay Payment
+   │
+   ▼
+Payment Verification
+   │
+   ▼
+Booking Confirmation
+   │
+   ├──► Meeting Link → User
+   │
+   ├──► Meeting Details → Mentor
+   │
+   ├──► Email Notification
+   │
+   └──► Google Calendar
+```
+
+---
+
+## 🔑 Core Backend Responsibilities
+
+The Express backend provides REST APIs for:
+
+* Authentication and authorization
+* User and mentor management
+* Role-based access control
+* Mentor availability
+* Booking creation and management
+* Meeting rescheduling
+* Payment processing and verification
+* Reward management
+* Reviews and ratings
+* Notifications and OTPs
+* Real-time communication
+* File uploads
+* Dashboard analytics
+
+The frontend communicates with the backend through the configured API URL:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5003
+```
+
+---
+
+## 🛠️ Local Setup
+
+### Prerequisites
+
+* Node.js 18+
+* npm 9+
+* MongoDB
+* Firebase project
+* Razorpay account
+* SMTP credentials
+* Cloudinary account
+* Google Calendar API credentials
+
+### Install Dependencies
 
 ```bash
+git clone <repository-url>
+
+cd Confiido
+
 cd backend
 npm install
 
@@ -43,98 +243,75 @@ cd ../frontend
 npm install
 ```
 
-If you want to use the root workspace tooling, also install from the repository root:
+### Environment Variables
 
-```bash
-cd ..
-npm install
+Create `.env` inside `backend/`:
+
+```env
+PORT=5003
+MONGODB_URI=
+JWT_SECRET=
+FRONTEND_URL=
+
+FIREBASE_=
+EMAIL_=
+SMTP_=
+RAZORPAY_=
+CLOUDINARY_=
+GOOGLE_=
 ```
 
-### 2. Configure environment variables
+Create `.env.local` inside `frontend/`:
 
-Create a `.env` file in `backend/` based on `backend/env.example`.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5003
 
-Common backend variables include:
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+```
 
-- `PORT`
-- `MONGODB_URI`
-- `JWT_SECRET`
-- `FRONTEND_URL`
-- `FIREBASE_*`
-- `EMAIL_*`
-- `CLOUDINARY_*`
-- `STRIPE_*`
-- `RAZORPAY_*`
-- `GOOGLE_*`
-
-For the frontend, create a `.env.local` file in `frontend/` and set at least:
-
-- `NEXT_PUBLIC_API_URL` - backend base URL, usually `http://localhost:5003`
-- `NEXT_PUBLIC_FIREBASE_API_KEY`
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_FIREBASE_APP_ID`
-
-### 3. Run the apps
-
-Start the backend first:
+### Start Backend
 
 ```bash
 cd backend
 npm run dev
 ```
 
-Start the frontend in a second terminal:
+### Start Frontend
+
+In another terminal:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-By default, the backend listens on port `5003`, and the frontend runs on `http://localhost:3000`.
+The application will be available at:
 
-## Available Scripts
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:5003
+```
 
-### Backend
+---
 
-From `backend/`:
+## 📌 Engineering Highlights
 
-- `npm run dev` - start the API with nodemon
-- `npm run build` - compile TypeScript
-- `npm run start` - run the compiled server
-- `npm run test` - run Jest tests
-- `npm run lint` - lint backend code
+* Implemented **role-based authorization** for User and Admin workflows.
+* Integrated multiple authentication mechanisms including **JWT, Firebase Google Authentication, and SMTP-based email workflows**.
+* Built a complete **mentor booking → payment → meeting confirmation** workflow.
+* Integrated **Razorpay payment verification** before confirming bookings.
+* Implemented **meeting rescheduling** with mentor availability validation.
+* Added **real-time communication using Socket.IO**.
+* Automated meeting notifications and meeting-link delivery to both users and mentors.
+* Implemented a **reward system** to improve user engagement.
+* Integrated third-party services including **Firebase, Razorpay, Cloudinary, SMTP, and Google Calendar**.
+* Structured the application as a scalable **Next.js + Express TypeScript monorepo**.
 
-The backend also includes several utility scripts for seeding data, debugging auth, and testing integrations. Check `backend/package.json` for the full list.
-
-### Frontend
-
-From `frontend/`:
-
-- `npm run dev` - start the Next.js dev server
-- `npm run build` - build for production
-- `npm run start` - run the production build
-- `npm run lint` - lint the app
-
-## API and Runtime Notes
-
-- The frontend talks to the backend through `NEXT_PUBLIC_API_URL`.
-- Socket.IO is used for live messaging and booking updates.
-- The backend connects to MongoDB on startup and exposes REST routes under `/api`.
-- CORS is configured to allow local development on `http://localhost:3000` and `http://localhost:3001`.
-
-## Deployment
-
-The backend includes Vercel/serverless-specific files and can be deployed in different environments. Make sure the backend environment variables are set correctly wherever you deploy, and point the frontend to the deployed API URL through `NEXT_PUBLIC_API_URL`.
-
-## Troubleshooting
-
-- If the frontend cannot reach the API, verify `NEXT_PUBLIC_API_URL` and ensure the backend is running.
-- If authentication fails, confirm the JWT and Firebase environment variables are set correctly.
-- If real-time messaging is disconnected, check that the backend CORS origin and Socket.IO URL match your local frontend URL.
-
-## License
+## 📄 License
 
 MIT
